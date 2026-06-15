@@ -572,6 +572,11 @@ export default function App(){
 
   // Verifica autenticação Firebase ao carregar
   useEffect(()=>{
+    // Se URL tem /cadastro, mostra formulário sem login
+    if(window.location.pathname==="/cadastro"){
+      setTela("cadastro");
+      return;
+    }
     const unsub = onAuthStateChanged(auth, (user)=>{
       if(user) setTela("painel");
     });
@@ -613,7 +618,7 @@ export default function App(){
           <div style={{fontSize:56,marginBottom:16}}>✅</div>
           <h2 style={{color:"#1a4a2a",margin:"0 0 10px",fontFamily:"Georgia,serif"}}>Cadastro realizado!</h2>
           <p style={{color:"#4a6a5a",fontFamily:"sans-serif",lineHeight:1.6}}>Dados salvos com sucesso.</p>
-          <button onClick={()=>{setCadastroOk(false);setTela("painel");}} style={{marginTop:20,padding:"10px 24px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontFamily:"sans-serif",fontWeight:600,fontSize:14}}>← Voltar ao painel</button>
+
         </div>
       </div>
     );
