@@ -609,6 +609,20 @@ export default function App(){
 
   if(tela==="login") return <Login onLogin={handleLogin}/>;
 
+  // Rota pública - não precisa carregar dados
+  if(window.location.pathname==="/cadastro"){
+    if(cadastroOk) return(
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#f4f6f0"}}>
+        <div style={{background:"#fff",borderRadius:16,padding:48,textAlign:"center",border:"1px solid #deeade",maxWidth:340}}>
+          <div style={{fontSize:56,marginBottom:16}}>✅</div>
+          <h2 style={{color:"#1a4a2a",margin:"0 0 10px",fontFamily:"Georgia,serif"}}>Cadastro realizado!</h2>
+          <p style={{color:"#4a6a5a",fontFamily:"sans-serif",lineHeight:1.6}}>Dados enviados com sucesso.<br/>Obrigado!</p>
+        </div>
+      </div>
+    );
+    return <FormPaciente onSalvo={handleSalvarCadastro} onVoltar={null} titulo="Espaço Ciriani" salvando={salvandoCad}/>;
+  }
+
   if(!pronto) return <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"100vh",background:"#f4f6f0",fontFamily:"sans-serif",color:"#4a6a5a",fontSize:16}}>Carregando...</div>;
 
   if(tela==="cadastro"){
