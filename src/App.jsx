@@ -1,4 +1,18 @@
 import { useState, useEffect, useRef } from "react";
+import { initializeApp } from "firebase/app";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+
+// ── FIREBASE AUTH ────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDZvF5sKBaGwt9rGJc2awfgQV6qPeeqpBM",
+  authDomain: "consultorio-diego.firebaseapp.com",
+  projectId: "consultorio-diego",
+  storageBucket: "consultorio-diego.firebasestorage.app",
+  messagingSenderId: "891539781587",
+  appId: "1:891539781587:web:da680d4fdd59e8aac1a126"
+};
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const fCPF = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
@@ -10,6 +24,12 @@ const PARENTESCOS = ["Mãe","Pai","Filho(a)","Cônjuge / Parceiro(a)","Irmão / 
 const OBRIG_PAC = ["nome","cpf","nascimento","tel1","emergNome","emergParentesco","emergTel","cep","logradouro","numero","bairro","cidade","estado"];
 const OBRIG_TIT = ["nome","cpf"];
 const VAZIO_PAC = {nome:"",cpf:"",nascimento:"",tel1:"",emergNome:"",emergParentesco:"",emergTel:"",cep:"",logradouro:"",numero:"",complemento:"",bairro:"",cidade:"",estado:""};
+
+// ── CREDENCIAIS DE ACESSO ─────────────────────────────────────────────────────
+// Altere aqui para mudar o login do painel
+const USUARIOS_VALIDOS = [
+  { email: "diegociriani.psi@gmail.com", senha: "EspacoCiriani2024!" },
+];
 
 function chipColor(p){
   if(p==="Pix")return{background:"#d4edda",color:"#155724"};
@@ -23,20 +43,82 @@ function chipColor(p){
 const load = async (k) => { try{const r=await window.storage.get(k);return r?JSON.parse(r.value):[];}catch{return[];} };
 const save = async (k,v) => { try{await window.storage.set(k,JSON.stringify(v));}catch{} };
 
-// ── ESTILOS BASE ─────────────────────────────────────────────────────────────
-const inp = (err) => ({width:"100%",padding:"9px 12px",border:`1.5px solid ${err?"#e74c3c":"#c8ddd0"}`,borderRadius:7,fontSize:14,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:err?"#fff8f8":"#fafdfa",color:"#1a3a2a"});
-const sel = (err) => ({...inp(err),cursor:"pointer"});
-const LBL = ({t,o}) => <label style={{display:"block",fontSize:11,fontWeight:700,color:"#4a6a5a",marginBottom:4,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"}}>{t}{o&&<span style={{color:"#c0392b",marginLeft:2}}>*</span>}</label>;
-const ERR = ({s}) => s?<p style={{fontSize:11,color:"#c0392b",fontFamily:"sans-serif",marginTop:3,marginBottom:0}}>Obrigatório</p>:null;
-const CARD = {background:"#fff",borderRadius:12,padding:18,marginBottom:14,border:"1px solid #deeade"};
-const G2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 14px"};
-const SEC = {margin:"0 0 12px",fontSize:13,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif"};
-
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function Toast({t}){
   if(!t)return null;
   return <div style={{position:"fixed",top:20,right:20,zIndex:9999,background:t.tipo==="erro"?"#c0392b":"#1a6b3c",color:"#fff",padding:"12px 20px",borderRadius:8,fontFamily:"sans-serif",fontSize:14,fontWeight:600,boxShadow:"0 4px 20px rgba(0,0,0,0.25)"}}>{t.msg}</div>;
 }
+
+// ── TELA DE LOGIN ─────────────────────────────────────────────────────────────
+function Login({onLogin}){
+  const [email,setEmail]=useState("");
+  const [senha,setSenha]=useState("");
+  const [erro,setErro]=useState("");
+  const [carregando,setCarregando]=useState(false);
+  const [mostrarSenha,setMostrarSenha]=useState(false);
+
+  function handleLogin(e){
+    e.preventDefault();
+    setCarregando(true);setErro("");
+    setTimeout(()=>{
+      const usuario=USUARIOS_VALIDOS.find(u=>u.email===email.trim()&&u.senha===senha);
+      if(usuario){
+        sessionStorage.setItem("logado","true");
+        onLogin();
+      }else{
+        setErro("E-mail ou senha incorretos.");
+      }
+      setCarregando(false);
+    },600);
+  }
+
+  return(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(135deg,#1a4a2a 0%,#2a7a4a 100%)"}}>
+      <div style={{background:"#fff",borderRadius:20,padding:"48px 40px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{textAlign:"center",marginBottom:32}}>
+          <div style={{fontSize:48,marginBottom:12}}>🏥</div>
+          <h1 style={{margin:"0 0 4px",fontSize:24,fontWeight:700,color:"#1a3a2a",fontFamily:"Georgia,serif"}}>Espaço Ciriani</h1>
+          <p style={{margin:0,fontSize:13,color:"#8aaa9a",fontFamily:"sans-serif"}}>Acesso restrito</p>
+        </div>
+
+        <form onSubmit={handleLogin}>
+          <div style={{marginBottom:16}}>
+            <label style={{display:"block",fontSize:12,fontWeight:700,color:"#4a6a5a",marginBottom:6,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"}}>E-mail</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com" required
+              style={{width:"100%",padding:"12px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"}}/>
+          </div>
+          <div style={{marginBottom:8,position:"relative"}}>
+            <label style={{display:"block",fontSize:12,fontWeight:700,color:"#4a6a5a",marginBottom:6,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"}}>Senha</label>
+            <input type={mostrarSenha?"text":"password"} value={senha} onChange={e=>setSenha(e.target.value)} placeholder="••••••••" required
+              style={{width:"100%",padding:"12px 44px 12px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"}}/>
+            <button type="button" onClick={()=>setMostrarSenha(v=>!v)}
+              style={{position:"absolute",right:12,top:34,background:"none",border:"none",cursor:"pointer",color:"#8aaa9a",fontSize:16}}>
+              {mostrarSenha?"🙈":"👁"}
+            </button>
+          </div>
+          {erro&&<p style={{color:"#c0392b",fontFamily:"sans-serif",fontSize:13,marginBottom:12,textAlign:"center"}}>{erro}</p>}
+          <button type="submit" disabled={carregando}
+            style={{width:"100%",padding:14,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",marginTop:8,opacity:carregando?0.7:1}}>
+            {carregando?"Entrando...":"Entrar →"}
+          </button>
+        </form>
+
+        <p style={{textAlign:"center",fontSize:11,color:"#c8ddd0",fontFamily:"sans-serif",marginTop:24,marginBottom:0}}>
+          Acesso exclusivo para profissionais do Espaço Ciriani
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── LABEL / ERRO ──────────────────────────────────────────────────────────────
+const LBL = ({t,o}) => <label style={{display:"block",fontSize:11,fontWeight:700,color:"#4a6a5a",marginBottom:4,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"}}>{t}{o&&<span style={{color:"#c0392b",marginLeft:2}}>*</span>}</label>;
+const ERR = ({s}) => s?<p style={{fontSize:11,color:"#c0392b",fontFamily:"sans-serif",marginTop:3,marginBottom:0}}>Obrigatório</p>:null;
+const inp = (err) => ({width:"100%",padding:"9px 12px",border:`1.5px solid ${err?"#e74c3c":"#c8ddd0"}`,borderRadius:7,fontSize:14,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:err?"#fff8f8":"#fafdfa",color:"#1a3a2a"});
+const sel = (err) => ({...inp(err),cursor:"pointer"});
+const CARD = {background:"#fff",borderRadius:12,padding:18,marginBottom:14,border:"1px solid #deeade"};
+const G2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 14px"};
+const SEC = {margin:"0 0 12px",fontSize:13,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif"};
 
 // ── FORM PACIENTE ─────────────────────────────────────────────────────────────
 function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
@@ -220,30 +302,16 @@ function AbaRelatorio({registros,pacientes,titulares}){
   function selPac(p){setPacSel(p);setBusca(p.nome);setSugestoes([]);}
 
   const regs=pacSel?registros.filter(r=>r.nome===pacSel.nome):registros;
-  const titPac=pacSel?titulares.find(t=>t.pacienteId===pacSel.id):null;
 
-  function exportarExcel(){
-    // Monta CSV com as 6 colunas para a prefeitura
-    const dados=pacSel?regs:[...regs];
-    if(!dados.length){return;}
-
-    // Para cada registro, busca o titular
-    const linhas=dados.map(r=>{
+  function exportarCSV(){
+    if(!regs.length)return;
+    const linhas=regs.map(r=>{
       const pac=pacientes.find(p=>p.nome===r.nome);
       const tit=pac?titulares.find(t=>t.pacienteId===pac.id):null;
-      return[
-        r.nome,
-        pac?.cpf||r.cpf||"",
-        tit?tit.nome:r.nome,
-        tit?tit.cpf:(pac?.cpf||r.cpf||""),
-        r.pagamento,
-        r.valor!=="—"?r.valor:""
-      ];
+      return[r.nome,pac?.cpf||r.cpf||"",tit?tit.nome:r.nome,tit?tit.cpf:(pac?.cpf||r.cpf||""),r.pagamento,r.valor!=="—"?r.valor:""];
     });
-
     const header=["Nome Completo","CPF do Paciente","Nome do Titular","CPF do Titular","Forma de Pagamento","Valor (R$)"];
-    const rows=[header,...linhas];
-    const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const csv=[header,...linhas].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
     const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"});
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");a.href=url;
@@ -258,36 +326,22 @@ function AbaRelatorio({registros,pacientes,titulares}){
   return(
     <div>
       <div style={CARD}>
-        <h3 style={{...SEC,marginBottom:14}}>Consultar pagamentos por paciente</h3>
-        <p style={{margin:"0 0 12px",fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Digite o nome para filtrar, ou deixe em branco para ver todos.</p>
+        <h3 style={{...SEC,marginBottom:14}}>Consultar pagamentos</h3>
         <div style={{position:"relative",marginBottom:16}}>
-          <LBL t="Nome do paciente"/>
-          <input style={{...inp(false),fontSize:15,padding:"11px 14px"}} value={busca} onChange={e=>{setBusca(e.target.value);if(!e.target.value)setPacSel(null);}} placeholder="Buscar paciente..." autoComplete="off" onBlur={()=>setTimeout(()=>setSugestoes([]),150)}/>
+          <LBL t="Filtrar por paciente"/>
+          <input style={{...inp(false),fontSize:15,padding:"11px 14px"}} value={busca} onChange={e=>{setBusca(e.target.value);if(!e.target.value)setPacSel(null);}} placeholder="Digite o nome ou deixe em branco para ver todos..." autoComplete="off" onBlur={()=>setTimeout(()=>setSugestoes([]),150)}/>
           {sugestoes.length>0&&<ul style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",border:"1.5px solid #c8ddd0",borderRadius:8,zIndex:100,listStyle:"none",margin:0,padding:"4px 0",boxShadow:"0 8px 24px rgba(0,40,20,0.12)",maxHeight:200,overflowY:"auto"}}>
             {sugestoes.map((p,i)=><li key={i} style={{padding:"10px 16px",cursor:"pointer",fontFamily:"sans-serif",fontSize:14}} onMouseDown={()=>selPac(p)}>
-              <span style={{fontWeight:600}}>{p.nome}</span>
-              <span style={{color:"#888",fontSize:12,marginLeft:8}}>{p.cpf}</span>
+              <span style={{fontWeight:600}}>{p.nome}</span><span style={{color:"#888",fontSize:12,marginLeft:8}}>{p.cpf}</span>
             </li>)}
           </ul>}
         </div>
-
-        {pacSel&&(()=>{
-          const tit=titulares.find(t=>t.pacienteId===pacSel.id);
-          return(
-            <div style={{background:"#e8f4ec",borderRadius:8,padding:"12px 16px",marginBottom:16,fontFamily:"sans-serif",fontSize:13}}>
-              <div style={{fontWeight:700,color:"#1a4a2a",marginBottom:4}}>{pacSel.nome}</div>
-              <div style={{color:"#2a6a3a"}}>CPF: {pacSel.cpf}</div>
-              {tit&&<div style={{color:"#2a6a3a",marginTop:4}}>Titular: <strong>{tit.nome}</strong> ({tit.parentesco}) — CPF: {tit.cpf}</div>}
-            </div>
-          );
-        })()}
-
         <div style={{display:"flex",gap:10,alignItems:"center",justifyContent:"space-between",flexWrap:"wrap"}}>
           <div style={{fontFamily:"sans-serif",fontSize:13,color:"#4a6a5a"}}>
             <strong>{regs.length}</strong> registro(s)
             {totalValor>0&&<span style={{marginLeft:12}}>Total: <strong>R$ {totalValor.toFixed(2).replace(".",",")}</strong></span>}
           </div>
-          <button onClick={exportarExcel} disabled={!regs.length} style={{padding:"9px 18px",background:"#1a4a2a",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"sans-serif",opacity:regs.length?1:0.5}}>
+          <button onClick={exportarCSV} disabled={!regs.length} style={{padding:"9px 18px",background:"#1a4a2a",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"sans-serif",opacity:regs.length?1:0.5}}>
             ↓ Exportar para Nota Fiscal
           </button>
         </div>
@@ -302,7 +356,7 @@ function AbaRelatorio({registros,pacientes,titulares}){
             <tbody>{regs.map(r=>{
               const pac=pacientes.find(p=>p.nome===r.nome);
               const tit=pac?titulares.find(t=>t.pacienteId===pac.id):null;
-              return <tr key={r.id}>
+              return<tr key={r.id}>
                 <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",whiteSpace:"nowrap"}}>{r.data}</td>
                 <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
                 <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",color:"#666"}}>{pac?.cpf||r.cpf||"—"}</td>
@@ -320,7 +374,7 @@ function AbaRelatorio({registros,pacientes,titulares}){
 }
 
 // ── PAINEL ────────────────────────────────────────────────────────────────────
-function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,onCadastro}){
+function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,onCadastro,onLogout}){
   const [aba,setAba]=useState("pagamentos");
   const [nome,setNome]=useState("");const [pacSel,setPacSel]=useState(null);
   const [pagamento,setPagamento]=useState("");const [valor,setValor]=useState("");
@@ -345,7 +399,6 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
   function selPac(p){
     setNome(p.nome);setPacSel(p);setSugestoes([]);setSidx(-1);
-    // auto-detecta titular cadastrado
     const tit=titulares.find(t=>t.pacienteId===p.id);
     if(tit){setTitularOpcao("outro");setTitularSel(tit);}
     else{setTitularOpcao("proprio");setTitularSel(null);}
@@ -400,9 +453,15 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       </div>}
 
       <header style={{display:"flex",alignItems:"center",gap:16,marginBottom:24}}>
-        <div style={{fontSize:38}}>📋</div>
-        <div><h1 style={{margin:0,fontSize:24,fontWeight:700,color:"#1a3a2a"}}>Espaço Ciriani</h1><p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Espaço Ciriani</p></div>
-        <button onClick={onCadastro} style={{marginLeft:"auto",padding:"9px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>📋 Formulário paciente</button>
+        <div style={{fontSize:38}}>🏥</div>
+        <div>
+          <h1 style={{margin:0,fontSize:24,fontWeight:700,color:"#1a3a2a"}}>Espaço Ciriani</h1>
+          <p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Painel administrativo</p>
+        </div>
+        <div style={{marginLeft:"auto",display:"flex",gap:10}}>
+          <button onClick={onCadastro} style={{padding:"9px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>📋 Formulário</button>
+          <button onClick={onLogout} style={{padding:"9px 16px",background:"#fff",color:"#c0392b",border:"1.5px solid #f5c6cb",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Sair</button>
+        </div>
       </header>
 
       {/* ABAS */}
@@ -424,12 +483,9 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
                 </li>)}
               </ul>}
             </div>
-
             {pacSel&&<div style={{gridColumn:"1/-1",background:"#e8f4ec",borderRadius:8,padding:"10px 14px",fontFamily:"sans-serif",fontSize:13,color:"#1a4a2a"}}>
               ✓ <strong>{pacSel.nome}</strong> — CPF: {pacSel.cpf}{pacSel.tel1&&` · Tel: ${pacSel.tel1}`}
             </div>}
-
-            {/* TITULAR */}
             {pacSel&&<div style={{gridColumn:"1/-1"}}>
               <label style={LBS}>Quem paga?</label>
               <div style={{display:"flex",gap:10,marginBottom:titularOpcao==="outro"?10:0}}>
@@ -449,12 +505,11 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
                     {titsPacSel.map(t=><option key={t.id} value={t.id}>{t.nome} — {t.cpf}</option>)}
                   </select>
                   :<div style={{background:"#fff3cd",borderRadius:7,padding:"10px 14px",fontFamily:"sans-serif",fontSize:13,color:"#856404",marginTop:6}}>
-                    Nenhum titular cadastrado para este paciente. Vá em <strong>Titulares</strong> para cadastrar.
+                    Nenhum titular cadastrado. Vá em <strong>Titulares</strong> para cadastrar.
                   </div>
                 }
               </>}
             </div>}
-
             <div>
               <label style={LBS}>Forma de pagamento</label>
               <select id="pag" style={{...INS,cursor:"pointer"}} value={pagamento} onChange={e=>setPagamento(e.target.value)}>
@@ -488,7 +543,6 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         {registros.length===0&&<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15}}>Nenhum pagamento registrado ainda.</div>}
       </>}
 
-      {/* PACIENTES */}
       {aba==="pacientes"&&<section style={CARD2}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
           <h2 style={{margin:0,fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Pacientes cadastrados</h2>
@@ -509,10 +563,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         }
       </section>}
 
-      {/* TITULARES */}
       {aba==="titulares"&&<AbaTitulares titulares={titulares} setTitulares={setTitulares} pacientes={pacientes} showT={showT}/>}
-
-      {/* RELATÓRIO */}
       {aba==="relatorio"&&<AbaRelatorio registros={registros} pacientes={pacientes} titulares={titulares}/>}
     </div>
   );
@@ -520,7 +571,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
 // ── APP PRINCIPAL ─────────────────────────────────────────────────────────────
 export default function App(){
-  const [tela,setTela]=useState("painel");
+  const [tela,setTela]=useState("login");
   const [pacientes,setPacientes]=useState([]);
   const [registros,setRegistros]=useState([]);
   const [titulares,setTitulares]=useState([]);
@@ -528,12 +579,27 @@ export default function App(){
   const [salvandoCad,setSalvandoCad]=useState(false);
   const [cadastroOk,setCadastroOk]=useState(false);
 
+  // Verifica se já estava logado na sessão
   useEffect(()=>{
-    (async()=>{
-      const [p,r,t]=await Promise.all([load("pac"),load("reg"),load("tit")]);
-      setPacientes(p);setRegistros(r);setTitulares(t);setPronto(true);
-    })();
+    const logado=sessionStorage.getItem("logado");
+    if(logado==="true") setTela("painel");
   },[]);
+
+  useEffect(()=>{
+    if(tela==="painel"&&!pronto){
+      (async()=>{
+        const [p,r,t]=await Promise.all([load("pac"),load("reg"),load("tit")]);
+        setPacientes(p);setRegistros(r);setTitulares(t);setPronto(true);
+      })();
+    }
+  },[tela]);
+
+  function handleLogin(){setTela("painel");}
+
+  function handleLogout(){
+    sessionStorage.removeItem("logado");
+    setTela("login");setPronto(false);
+  }
 
   async function handleSalvarCadastro(dados){
     setSalvandoCad(true);
@@ -543,7 +609,9 @@ export default function App(){
     setCadastroOk(true);setSalvandoCad(false);
   }
 
-  if(!pronto)return <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"100vh",background:"#f4f6f0",fontFamily:"sans-serif",color:"#4a6a5a",fontSize:16}}>Carregando...</div>;
+  if(tela==="login") return <Login onLogin={handleLogin}/>;
+
+  if(!pronto) return <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"100vh",background:"#f4f6f0",fontFamily:"sans-serif",color:"#4a6a5a",fontSize:16}}>Carregando...</div>;
 
   if(tela==="cadastro"){
     if(cadastroOk)return(
@@ -559,5 +627,5 @@ export default function App(){
     return <FormPaciente onSalvo={handleSalvarCadastro} onVoltar={()=>setTela("painel")} titulo="Espaço Ciriani" salvando={salvandoCad}/>;
   }
 
-  return <Painel pacientes={pacientes} setPacientes={setPacientes} registros={registros} setRegistros={setRegistros} titulares={titulares} setTitulares={setTitulares} onCadastro={()=>{setCadastroOk(false);setTela("cadastro");}}/>;
+  return <Painel pacientes={pacientes} setPacientes={setPacientes} registros={registros} setRegistros={setRegistros} titulares={titulares} setTitulares={setTitulares} onCadastro={()=>{setCadastroOk(false);setTela("cadastro");}} onLogout={handleLogout}/>;
 }
