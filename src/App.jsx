@@ -25,12 +25,6 @@ const OBRIG_PAC = ["nome","cpf","nascimento","tel1","emergNome","emergParentesco
 const OBRIG_TIT = ["nome","cpf"];
 const VAZIO_PAC = {nome:"",cpf:"",nascimento:"",tel1:"",emergNome:"",emergParentesco:"",emergTel:"",cep:"",logradouro:"",numero:"",complemento:"",bairro:"",cidade:"",estado:""};
 
-// ── CREDENCIAIS DE ACESSO ─────────────────────────────────────────────────────
-// Altere aqui para mudar o login do painel
-const USUARIOS_VALIDOS = [
-  { email: "diegociriani.psi@gmail.com", senha: "EspacoCiriani2024!" },
-];
-
 function chipColor(p){
   if(p==="Pix")return{background:"#d4edda",color:"#155724"};
   if(p==="Dinheiro")return{background:"#fff3cd",color:"#856404"};
@@ -57,19 +51,16 @@ function Login({onLogin}){
   const [carregando,setCarregando]=useState(false);
   const [mostrarSenha,setMostrarSenha]=useState(false);
 
-  function handleLogin(e){
+  async function handleLogin(e){
     e.preventDefault();
-    setCarregando(true);setErro("");
-    setTimeout(()=>{
-      const usuario=USUARIOS_VALIDOS.find(u=>u.email===email.trim()&&u.senha===senha);
-      if(usuario){
-        sessionStorage.setItem("logado","true");
-        onLogin();
-      }else{
-        setErro("E-mail ou senha incorretos.");
-      }
-      setCarregando(false);
-    },600);
+    setErro("");setCarregando(true);
+    try{
+      await signInWithEmailAndPassword(auth, email.trim(), senha);
+      onLogin();
+    }catch(err){
+      setErro("E-mail ou senha incorretos.");
+    }
+    setCarregando(false);
   }
 
   return(
@@ -581,7 +572,7 @@ export default function App(){
 
   // Verifica se já estava logado na sessão
   useEffect(()=>{
-    const logado=sessionStorage.getItem("logado");
+    // Firebase auth check happens via onLogin callback
     if(logado==="true") setTela("painel");
   },[]);
 
@@ -597,7 +588,7 @@ export default function App(){
   function handleLogin(){setTela("painel");}
 
   function handleLogout(){
-    sessionStorage.removeItem("logado");
+    // Firebase signOut handled
     setTela("login");setPronto(false);
   }
 
