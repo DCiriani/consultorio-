@@ -401,7 +401,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
       <header style={{display:"flex",alignItems:"center",gap:16,marginBottom:24}}>
         <div style={{fontSize:38}}>📋</div>
-        <div><h1 style={{margin:0,fontSize:24,fontWeight:700,color:"#1a3a2a"}}>Consultório</h1><p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Painel do psicólogo</p></div>
+        <div><h1 style={{margin:0,fontSize:24,fontWeight:700,color:"#1a3a2a"}}>Espaço Ciriani</h1><p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Espaço Ciriani</p></div>
         <button onClick={onCadastro} style={{marginLeft:"auto",padding:"9px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>📋 Formulário paciente</button>
       </header>
 
@@ -556,7 +556,7 @@ export default function App(){
         </div>
       </div>
     );
-    return <FormPaciente onSalvo={handleSalvarCadastro} onVoltar={()=>setTela("painel")} titulo="Diego Ciriani — Psicólogo" salvando={salvandoCad}/>;
+    return <FormPaciente onSalvo={handleSalvarCadastro} onVoltar={()=>setTela("painel")} titulo="Espaço Ciriani" salvando={salvandoCad}/>;
   }
 
   return <Painel pacientes={pacientes} setPacientes={setPacientes} registros={registros} setRegistros={setRegistros} titulares={titulares} setTitulares={setTitulares} onCadastro={()=>{setCadastroOk(false);setTela("cadastro");}}/>;
