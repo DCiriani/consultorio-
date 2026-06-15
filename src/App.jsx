@@ -570,10 +570,12 @@ export default function App(){
   const [salvandoCad,setSalvandoCad]=useState(false);
   const [cadastroOk,setCadastroOk]=useState(false);
 
-  // Verifica se já estava logado na sessão
+  // Verifica autenticação Firebase ao carregar
   useEffect(()=>{
-    // Firebase auth check happens via onLogin callback
-    if(logado==="true") setTela("painel");
+    const unsub = onAuthStateChanged(auth, (user)=>{
+      if(user) setTela("painel");
+    });
+    return ()=>unsub();
   },[]);
 
   useEffect(()=>{
