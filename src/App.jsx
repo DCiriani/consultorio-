@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 
 // ── FIREBASE AUTH ────────────────────────────────────────────────────────────
 const firebaseConfig = {
@@ -13,6 +14,7 @@ const firebaseConfig = {
 };
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const fCPF = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
@@ -34,8 +36,28 @@ function chipColor(p){
 }
 
 // ── STORAGE ───────────────────────────────────────────────────────────────────
-const load = async (k) => { try{const r=await window.storage.get(k);return r?JSON.parse(r.value):[];}catch{return[];} };
-const save = async (k,v) => { try{await window.storage.set(k,JSON.stringify(v));}catch{} };
+// ── FIRESTORE ─────────────────────────────────────────────────────────────────
+const COLECOES = { pac: "pacientes", reg: "pagamentos", tit: "titulares" };
+
+async function load(chave){
+  try{
+    const snap = await getDocs(collection(db, COLECOES[chave]));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }catch(e){ console.error(e); return []; }
+}
+
+async function addItem(chave, dados){
+  const ref = await addDoc(collection(db, COLECOES[chave]), { ...dados, criadoEm: serverTimestamp() });
+  return ref.id;
+}
+
+async function deleteItem(chave, id){
+  try{ await deleteDoc(doc(db, COLECOES[chave], id)); }catch(e){ console.error(e); }
+}
+
+async function updateItem(chave, id, dados){
+  try{ await updateDoc(doc(db, COLECOES[chave], id), dados); }catch(e){ console.error(e); }
+}
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function Toast({t}){
@@ -221,15 +243,16 @@ function AbaTitulares({titulares,setTitulares,pacientes,showT}){
     OBRIG_TIT.forEach(k=>{if(!f[k]?.trim())e[k]=true;});
     setErros(e);
     if(Object.keys(e).length>0){showT("Preencha todos os campos obrigatórios.","erro");return;}
-    const novo={id:Date.now().toString(),...f};
-    const a=[...titulares,novo];
-    setTitulares(a);await save("tit",a);
+    const novoId=await addItem("tit",f);
+    const a=[...titulares,{id:novoId,...f}];
+    setTitulares(a);
     setF({pacienteId:"",nome:"",cpf:"",parentesco:""});
     showT("Titular cadastrado!");
   }
 
   async function excluir(id){
-    const a=titulares.filter(x=>x.id!==id);setTitulares(a);await save("tit",a);showT("Titular removido.");
+    await deleteItem("tit",id);
+    const a=titulares.filter(x=>x.id!==id);setTitulares(a);showT("Titular removido.");
   }
 
   const pacNome=(id)=>pacientes.find(p=>p.id===id)?.nome||"—";
@@ -297,7 +320,7 @@ function AbaRelatorio({registros,setRegistros,pacientes,titulares}){
     const atualizado={...reg,nfEmitida:!reg.nfEmitida};
     const novaLista=registros.map(r=>r.id===reg.id?atualizado:r);
     setRegistros(novaLista);
-    await save("reg",novaLista);
+    await updateItem("reg",reg.id,{nfEmitida:atualizado.nfEmitida});
   }
 
   const regsBase=pacSel?registros.filter(r=>r.nome===pacSel.nome):registros;
@@ -433,19 +456,20 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   async function registrar(){
     if(!nome||!pagamento){showT("Selecione o paciente e a forma de pagamento.","erro");return;}
     setSalvandoPag(true);
-    const novo={id:Date.now().toString(),data,nome,cpf:pacSel?.cpf||"",pagamento,valor:valor||"—",titularId:titularOpcao==="outro"?titularSel?.id:null};
-    const a=[novo,...registros];setRegistros(a);await save("reg",a);
+    const novo={data,nome,cpf:pacSel?.cpf||"",pagamento,valor:valor||"—",titularId:titularOpcao==="outro"?titularSel?.id:null,nfEmitida:false};
+    const novoId=await addItem("reg",novo);
+    const a=[{...novo,id:novoId},...registros];setRegistros(a);
     setNome("");setPacSel(null);setPagamento("");setValor("");setTitularOpcao("proprio");setTitularSel(null);
     nomeRef.current?.focus();showT("Pagamento registrado!");setSalvandoPag(false);
   }
 
-  async function excluirReg(id){const a=registros.filter(x=>x.id!==id);setRegistros(a);await save("reg",a);}
+  async function excluirReg(id){await deleteItem("reg",id);const a=registros.filter(x=>x.id!==id);setRegistros(a);}
 
   async function salvarNovoPac(dados){
     setSalvandoPac(true);
-    const novo={id:Date.now().toString(),...dados};
-    const a=[...pacientes,novo].sort((a,b)=>a.nome.localeCompare(b.nome));
-    setPacientes(a);await save("pac",a);setModalCad(false);showT("Paciente cadastrado!");setSalvandoPac(false);
+    const novoId=await addItem("pac",dados);
+    const a=[...pacientes,{id:novoId,...dados}].sort((a,b)=>a.nome.localeCompare(b.nome));
+    setPacientes(a);setModalCad(false);showT("Paciente cadastrado!");setSalvandoPac(false);
   }
 
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
@@ -574,7 +598,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
                 <div style={{fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif",marginTop:2}}>CPF: {p.cpf}{p.tel1&&` · ${p.tel1}`}{p.cidade&&` · ${p.cidade}`}</div>
               </div>
               <button onClick={()=>setDetalhe(p)} style={{padding:"6px 14px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",color:"#1a4a2a",marginRight:4}}>Ver ficha</button>
-              <button onClick={async()=>{const a=pacientes.filter(x=>x.id!==p.id);setPacientes(a);await save("pac",a);showT("Removido.");}} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}}>✕</button>
+              <button onClick={async()=>{await deleteItem("pac",p.id);const a=pacientes.filter(x=>x.id!==p.id);setPacientes(a);showT("Removido.");}} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}}>✕</button>
             </div>)}
           </div>
         }
@@ -627,10 +651,14 @@ export default function App(){
 
   async function handleSalvarCadastro(dados){
     setSalvandoCad(true);
-    const novo={id:Date.now().toString(),...dados};
-    const a=[...pacientes,novo].sort((a,b)=>a.nome.localeCompare(b.nome));
-    setPacientes(a);await save("pac",a);
-    setCadastroOk(true);setSalvandoCad(false);
+    try{
+      await addItem("pac",dados);
+      setCadastroOk(true);
+    }catch(e){
+      console.error(e);
+      alert("Erro ao salvar cadastro. Tente novamente.");
+    }
+    setSalvandoCad(false);
   }
 
   if(tela==="login") return <Login onLogin={handleLogin}/>;
