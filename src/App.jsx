@@ -279,10 +279,11 @@ function AbaTitulares({titulares,setTitulares,pacientes,showT}){
 }
 
 // ── ABA RELATÓRIO ─────────────────────────────────────────────────────────────
-function AbaRelatorio({registros,pacientes,titulares}){
+function AbaRelatorio({registros,setRegistros,pacientes,titulares}){
   const [busca,setBusca]=useState("");
   const [sugestoes,setSugestoes]=useState([]);
   const [pacSel,setPacSel]=useState(null);
+  const [filtroNF,setFiltroNF]=useState("todos");
 
   useEffect(()=>{
     if(busca.trim().length<2){setSugestoes([]);return;}
@@ -292,7 +293,21 @@ function AbaRelatorio({registros,pacientes,titulares}){
 
   function selPac(p){setPacSel(p);setBusca(p.nome);setSugestoes([]);}
 
-  const regs=pacSel?registros.filter(r=>r.nome===pacSel.nome):registros;
+  async function toggleNF(reg){
+    const atualizado={...reg,nfEmitida:!reg.nfEmitida};
+    const novaLista=registros.map(r=>r.id===reg.id?atualizado:r);
+    setRegistros(novaLista);
+    await save("reg",novaLista);
+  }
+
+  const regsBase=pacSel?registros.filter(r=>r.nome===pacSel.nome):registros;
+  const regsOrdenados=[...regsBase].sort((a,b)=>a.nome.localeCompare(b.nome)||a.data.localeCompare(b.data));
+  const regs=regsOrdenados.filter(r=>{
+    if(filtroNF==="pendente") return !r.nfEmitida;
+    if(filtroNF==="emitida") return r.nfEmitida;
+    return true;
+  });
+  const pendentes=registros.filter(r=>!r.nfEmitida).length;
 
   function exportarCSV(){
     if(!regs.length)return;
@@ -317,7 +332,13 @@ function AbaRelatorio({registros,pacientes,titulares}){
   return(
     <div>
       <div style={CARD}>
-        <h3 style={{...SEC,marginBottom:14}}>Consultar pagamentos</h3>
+        <h3 style={{...SEC,marginBottom:14}}>Relatório de pagamentos</h3>
+        <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+          {[["todos","Todos"],["pendente","⏳ NF pendente"],["emitida","✅ NF emitida"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setFiltroNF(v)} style={{padding:"7px 14px",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:filtroNF===v?"#2a7a4a":"#fff",color:filtroNF===v?"#fff":"#4a6a5a",border:filtroNF===v?"1.5px solid #2a7a4a":"1.5px solid #c8ddd0",fontWeight:filtroNF===v?700:400}}>{l}</button>
+          ))}
+          {pendentes>0&&<span style={{fontFamily:"sans-serif",fontSize:13,color:"#c0392b",fontWeight:600,alignSelf:"center",marginLeft:8}}>⚠ {pendentes} pendente(s)</span>}
+        </div>
         <div style={{position:"relative",marginBottom:16}}>
           <LBL t="Filtrar por paciente"/>
           <input style={{...inp(false),fontSize:15,padding:"11px 14px"}} value={busca} onChange={e=>{setBusca(e.target.value);if(!e.target.value)setPacSel(null);}} placeholder="Digite o nome ou deixe em branco para ver todos..." autoComplete="off" onBlur={()=>setTimeout(()=>setSugestoes([]),150)}/>
@@ -342,18 +363,23 @@ function AbaRelatorio({registros,pacientes,titulares}){
         <div style={{overflowX:"auto"}}>
           <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"sans-serif",fontSize:13}}>
             <thead><tr style={{background:"#f4f6f0"}}>
-              {["Data","Paciente","CPF","Titular","Pagamento","Valor"].map(h=><th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:"#4a6a5a",borderBottom:"2px solid #deeade",textTransform:"uppercase",letterSpacing:"0.04em",whiteSpace:"nowrap"}}>{h}</th>)}
+              {["Paciente","CPF","Data","Titular","Pagamento","Valor","NF"].map(h=><th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:"#4a6a5a",borderBottom:"2px solid #deeade",textTransform:"uppercase",letterSpacing:"0.04em",whiteSpace:"nowrap"}}>{h}</th>)}
             </tr></thead>
-            <tbody>{regs.map(r=>{
+            <tbody>{regs.map((r,i)=>{
               const pac=pacientes.find(p=>p.nome===r.nome);
               const tit=pac?titulares.find(t=>t.pacienteId===pac.id):null;
-              return<tr key={r.id}>
-                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",whiteSpace:"nowrap"}}>{r.data}</td>
-                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
-                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",color:"#666"}}>{pac?.cpf||r.cpf||"—"}</td>
-                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec"}}>{tit?<span style={{fontSize:12}}>{tit.nome}<br/><span style={{color:"#888"}}>{tit.cpf}</span></span>:<span style={{color:"#aaa",fontSize:12}}>Próprio</span>}</td>
-                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec"}}><span style={{...{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600},...chipColor(r.pagamento)}}>{r.pagamento}</span></td>
-                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.valor!=="—"?`R$ ${r.valor}`:"—"}</td>
+              const prevNome=i>0?regs[i-1].nome:"";
+              const novoGrupo=r.nome!==prevNome;
+              return<tr key={r.id} style={{background:r.nfEmitida?"#f0faf4":novoGrupo&&i>0?"#f7faf8":"#fff"}}>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600,borderTop:novoGrupo&&i>0?"2px solid #c8ddd0":"none"}}>{r.nome}</td>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",color:"#666",borderTop:novoGrupo&&i>0?"2px solid #c8ddd0":"none"}}>{pac?.cpf||r.cpf||"—"}</td>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",whiteSpace:"nowrap",borderTop:novoGrupo&&i>0?"2px solid #c8ddd0":"none"}}>{r.data}</td>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",borderTop:novoGrupo&&i>0?"2px solid #c8ddd0":"none"}}>{tit?<span style={{fontSize:12}}>{tit.nome}<br/><span style={{color:"#888"}}>{tit.cpf}</span></span>:<span style={{color:"#aaa",fontSize:12}}>Próprio</span>}</td>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",borderTop:novoGrupo&&i>0?"2px solid #c8ddd0":"none"}}><span style={{...{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600},...chipColor(r.pagamento)}}>{r.pagamento}</span></td>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600,borderTop:novoGrupo&&i>0?"2px solid #c8ddd0":"none"}}>{r.valor!=="—"?`R$ ${r.valor}`:"—"}</td>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",textAlign:"center",borderTop:novoGrupo&&i>0?"2px solid #c8ddd0":"none"}}>
+                  <input type="checkbox" checked={!!r.nfEmitida} onChange={()=>toggleNF(r)} style={{accentColor:"#2a7a4a",width:16,height:16,cursor:"pointer"}} title={r.nfEmitida?"NF emitida":"Marcar como emitida"}/>
+                </td>
               </tr>;
             })}</tbody>
           </table>
@@ -555,7 +581,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       </section>}
 
       {aba==="titulares"&&<AbaTitulares titulares={titulares} setTitulares={setTitulares} pacientes={pacientes} showT={showT}/>}
-      {aba==="relatorio"&&<AbaRelatorio registros={registros} pacientes={pacientes} titulares={titulares}/>}
+      {aba==="relatorio"&&<AbaRelatorio registros={registros} setRegistros={setRegistros} pacientes={pacientes} titulares={titulares}/>}
     </div>
   );
 }
