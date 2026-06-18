@@ -333,80 +333,56 @@ function AbaRelatorio({registros,setRegistros,pacientes,titulares}){
   });
   const pendentes=registros.filter(r=>!r.nfEmitida).length;
 
-  function exportarCSV(){
-if(!regs.length)return;
+function exportarCSV(){
+  if(!regs.length)return;
 
-const linhas=regs.map(r=>{
-const pac=pacientes.find(p=>p.nome===r.nome);
-const tit=pac?titulares.find(t=>t.pacienteId===pac.id):null;
-const valorNum=r.valor!=="—"?parseFloat(r.valor.replace(",",".")):0;
+  const linhas=regs.map(r=>{
+    const pac=pacientes.find(p=>p.nome===r.nome);
+    const tit=pac?titulares.find(t=>t.pacienteId===pac.id):null;
+    const valorNum=r.valor!=="—"?parseFloat(r.valor.replace(",",".")):0;
 
-```
-return [
-  r.nome,
-  pac?.cpf||r.cpf||"",
-  tit?tit.nome:"",
-  tit?tit.cpf:"",
-  r.pagamento.toUpperCase().replace("CARTÃO DE ",""),
-  valorNum,
-  r.nfEmitida ? "EMITIDA" : "PENDENTE"
-];
-```
+    return [
+      r.nome,
+      pac?.cpf||r.cpf||"",
+      tit?tit.nome:"",
+      tit?tit.cpf:"",
+      r.pagamento.toUpperCase().replace("CARTÃO DE ",""),
+      valorNum,
+      r.nfEmitida ? "EMITIDA" : "PENDENTE"
+    ];
+  });
 
-});
+  const header=[
+    "PACIENTE",
+    "CPF PACIENTE",
+    "TITULAR",
+    "CPF TITULAR",
+    "FORMA DE PAGAMENTO",
+    "VALOR",
+    "STATUS NF"
+  ];
 
-const header=[
-"PACIENTE",
-"CPF PACIENTE",
-"TITULAR",
-"CPF TITULAR",
-"FORMA DE PAGAMENTO",
-"VALOR",
-"STATUS NF"
-];
+  const ws=XLSX.utils.aoa_to_sheet([header,...linhas]);
 
-const ws=XLSX.utils.aoa_to_sheet([header,...linhas]);
+  ws["!cols"]=[
+    {wch:28},
+    {wch:16},
+    {wch:22},
+    {wch:16},
+    {wch:18},
+    {wch:12},
+    {wch:15}
+  ];
 
-ws["!cols"]=[
-{wch:28},
-{wch:16},
-{wch:22},
-{wch:16},
-{wch:18},
-{wch:12},
-{wch:15}
-];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Pagamentos");
 
-ws["!autofilter"]={ref:`A1:G${linhas.length+1}`};
+  const mes=new Date()
+    .toLocaleDateString("pt-BR",{month:"2-digit",year:"numeric"})
+    .replace("/","-");
 
-for(let c=0;c<header.length;c++){
-const ref=XLSX.utils.encode_cell({r:0,c});
-if(ws[ref]) ws[ref].s={
-font:{bold:true},
-fill:{fgColor:{rgb:"D9D9D9"}}
-};
+  XLSX.writeFile(wb,`notas-fiscais-${mes}.xlsx`);
 }
-
-for(let i=0;i<linhas.length;i++){
-const ref=XLSX.utils.encode_cell({r:i+1,c:5});
-if(ws[ref]) ws[ref].z='"R$ "#,##0.00';
-}
-
-const wb=XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb,ws,"Pagamentos");
-
-const mes=new Date()
-.toLocaleDateString("pt-BR",{month:"2-digit",year:"numeric"})
-.replace("/","-");
-
-XLSX.writeFile(
-wb,
-`notas-fiscais-${mes}.xlsx`,
-{cellStyles:true}
-);
-}
-
-
   const totalValor=regs.filter(r=>r.valor!=="—").reduce((s,r)=>{
     const v=parseFloat(r.valor.replace(",","."));return s+(isNaN(v)?0:v);
   },0);
