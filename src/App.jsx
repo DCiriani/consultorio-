@@ -342,14 +342,14 @@ function exportarCSV(){
     const valorNum=r.valor!=="—"?parseFloat(r.valor.replace(",",".")):0;
 
     return [
-      r.nome,
-      pac?.cpf||r.cpf||"",
-      tit?tit.nome:"",
-      tit?tit.cpf:"",
-      r.pagamento.toUpperCase().replace("CARTÃO DE ",""),
-      valorNum,
-      r.nfEmitida ? "EMITIDA" : "PENDENTE"
-    ];
+  r.nome,
+  pac?.cpf||r.cpf||"",
+  tit?tit.nome:"",
+  tit?tit.cpf:"",
+  r.pagamento.toUpperCase().replace("CARTÃO DE ",""),
+  valorNum > 0 ? `R$ ${valorNum.toFixed(2).replace(".", ",")}` : "",
+  r.nfEmitida ? "EMITIDA" : "PENDENTE"
+];
   });
 
   const header=[
