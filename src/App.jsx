@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
@@ -337,15 +338,25 @@ function AbaRelatorio({registros,setRegistros,pacientes,titulares}){
     const linhas=regs.map(r=>{
       const pac=pacientes.find(p=>p.nome===r.nome);
       const tit=pac?titulares.find(t=>t.pacienteId===pac.id):null;
-      return[r.nome,pac?.cpf||r.cpf||"",tit?tit.nome:r.nome,tit?tit.cpf:(pac?.cpf||r.cpf||""),r.pagamento,r.valor!=="—"?r.valor:""];
+      const valorNum=r.valor!=="—"?parseFloat(r.valor.replace(",",".")):0;
+      return[r.nome,pac?.cpf||r.cpf||"",tit?tit.nome:"",tit?tit.cpf:"",r.pagamento.toUpperCase().replace("CARTÃO DE ",""),valorNum];
     });
-    const header=["Nome Completo","CPF do Paciente","Nome do Titular","CPF do Titular","Forma de Pagamento","Valor (R$)"];
-    const csv=[header,...linhas].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");a.href=url;
+    const header=["PACIENTE","CPF PACIENTE","TITULAR","CPF TITULAR","FORMA DE PAGAMENTO","VALOR"];
+    const ws=XLSX.utils.aoa_to_sheet([header,...linhas]);
+    ws["!cols"]=[{wch:28},{wch:16},{wch:22},{wch:16},{wch:18},{wch:12}];
+    for(let c=0;c<header.length;c++){
+      const ref=XLSX.utils.encode_cell({r:0,c});
+      if(ws[ref]) ws[ref].s={font:{bold:true},fill:{fgColor:{rgb:"D9D9D9"}}};
+    }
+    ws["!autofilter"]={ref:`A1:F${linhas.length+1}`};
+    for(let i=0;i<linhas.length;i++){
+      const ref=XLSX.utils.encode_cell({r:i+1,c:5});
+      if(ws[ref]) ws[ref].z='"R$ "#,##0.00';
+    }
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Pagamentos");
     const mes=new Date().toLocaleDateString("pt-BR",{month:"2-digit",year:"numeric"}).replace("/","-");
-    a.download=`notas-fiscais-${mes}.csv`;a.click();URL.revokeObjectURL(url);
+    XLSX.writeFile(wb,`notas-fiscais-${mes}.xlsx`,{cellStyles:true});
   }
 
   const totalValor=regs.filter(r=>r.valor!=="—").reduce((s,r)=>{
@@ -377,7 +388,7 @@ function AbaRelatorio({registros,setRegistros,pacientes,titulares}){
             {totalValor>0&&<span style={{marginLeft:12}}>Total: <strong>R$ {totalValor.toFixed(2).replace(".",",")}</strong></span>}
           </div>
           <button onClick={exportarCSV} disabled={!regs.length} style={{padding:"9px 18px",background:"#1a4a2a",color:"#fff",border:"none",borderRadius:8,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"sans-serif",opacity:regs.length?1:0.5}}>
-            ↓ Exportar para Nota Fiscal
+            ↓ Exportar Excel
           </button>
         </div>
       </div>
