@@ -630,29 +630,52 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
     </div>
 
     <div style={{marginTop:30}}>
-      <h3 style={{marginBottom:15,color:"#c0392b"}}>
-        NF Pendentes
-      </h3>
+  <h3 style={{marginBottom:15,color:"#c0392b"}}>
+    NF Pendentes
+  </h3>
 
-      {registros.filter(r=>!r.nfEmitida).slice(0,5).map(r=>(
-        <div
-          key={r.id}
-          style={{
-            padding:"12px",
-            marginBottom:8,
-            background:"#fff5f5",
-            border:"1px solid #f5c6cb",
-            borderRadius:8
-          }}
-        >
-          <strong>{r.nome}</strong> — R$ {r.valor}
-        </div>
-      ))}
-    </div>
-  </section>
+  <table style={{
+    width:"100%",
+    borderCollapse:"collapse",
+    fontFamily:"sans-serif"
+  }}>
+    <thead>
+      <tr>
+        <th style={{textAlign:"left",padding:"10px"}}>Paciente</th>
+        <th style={{textAlign:"left",padding:"10px"}}>Valor</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {registros
+        .filter(r=>!r.nfEmitida)
+        .slice(0,5)
+        .map(r=>(
+          <tr key={r.id}>
+            <td style={{
+              padding:"10px",
+              borderBottom:"1px solid #eef4ec",
+              fontWeight:600
+            }}>
+              {r.nome}
+            </td>
+
+            <td style={{
+              padding:"10px",
+              borderBottom:"1px solid #eef4ec"
+            }}>
+              R$ {r.valor}
+            </td>
+          </tr>
+        ))}
+    </tbody>
+  </table>
+</div>
+
+</section>
 </>}
 
-      {/* PAGAMENTOS */}
+{/* PAGAMENTOS */}
       {aba==="pagamentos"&&<>
         <section style={CARD2}>
           <h2 style={{margin:"0 0 18px",fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Registrar pagamento</h2>
