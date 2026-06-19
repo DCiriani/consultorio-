@@ -559,12 +559,12 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       Dashboard
     </h2>
 
-    <div style={{
-      display:"grid",
-      gridTemplateColumns:"repeat(4,minmax(0,1fr))"
-      gap:16,
-      marginBottom:24
-    }}>
+  <div style={{
+  display:"grid",
+  gridTemplateColumns:"repeat(4,minmax(0,1fr))",
+  gap:16,
+  marginBottom:24
+}}>
       <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pacientes</div>
         <div style={{fontSize:32,fontWeight:700,color:"#1a3a2a"}}>
