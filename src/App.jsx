@@ -546,55 +546,103 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         {ABAS.map(a=><button key={a.k} onClick={()=>setAba(a.k)} style={{padding:"9px 16px",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:aba===a.k?"#2a7a4a":"#fff",color:aba===a.k?"#fff":"#4a6a5a",border:aba===a.k?"1.5px solid #2a7a4a":"1.5px solid #c8ddd0",fontWeight:aba===a.k?700:400}}>{a.l}</button>)}
       </div>
 {aba==="dashboard"&&<>
-
   <section style={CARD2}>
     <h2 style={{margin:"0 0 20px",fontSize:22,fontWeight:700,color:"#1a3a2a"}}>
       Dashboard
     </h2>
 
-```
-<div style={{
-  display:"grid",
-  gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
-  gap:16,
-  marginBottom:24
-}}>
-  <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
-    <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pacientes</div>
-    <div style={{fontSize:32,fontWeight:700,color:"#1a3a2a"}}>
-      {pacientes.length}
-    </div>
-  </div>
+    <div style={{
+      display:"grid",
+      gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
+      gap:16,
+      marginBottom:24
+    }}>
+      <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
+        <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pacientes</div>
+        <div style={{fontSize:32,fontWeight:700,color:"#1a3a2a"}}>
+          {pacientes.length}
+        </div>
+      </div>
 
-  <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
-    <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pagamentos</div>
-    <div style={{fontSize:32,fontWeight:700,color:"#1a3a2a"}}>
-      {registros.length}
-    </div>
-  </div>
+      <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
+        <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pagamentos</div>
+        <div style={{fontSize:32,fontWeight:700,color:"#1a3a2a"}}>
+          {registros.length}
+        </div>
+      </div>
 
-  <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
-    <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>NF Pendentes</div>
-    <div style={{fontSize:32,fontWeight:700,color:"#c0392b"}}>
-      {registros.filter(r=>!r.nfEmitida).length}
-    </div>
-  </div>
+      <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
+        <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>NF Pendentes</div>
+        <div style={{fontSize:32,fontWeight:700,color:"#c0392b"}}>
+          {registros.filter(r=>!r.nfEmitida).length}
+        </div>
+      </div>
 
-  <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
-    <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Receita</div>
-    <div style={{fontSize:32,fontWeight:700,color:"#2a7a4a"}}>
-      R$ {registros
-        .filter(r=>r.valor && r.valor!=="—")
-        .reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0)
-        .toLocaleString("pt-BR",{minimumFractionDigits:2})}
+      <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
+        <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Receita</div>
+        <div style={{fontSize:32,fontWeight:700,color:"#2a7a4a"}}>
+          R$ {registros
+            .filter(r=>r.valor && r.valor!=="—")
+            .reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0)
+            .toLocaleString("pt-BR",{minimumFractionDigits:2})}
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-```
 
+    <div style={{marginTop:30}}>
+      <h3 style={{marginBottom:15,color:"#1a3a2a"}}>
+        Últimos pagamentos
+      </h3>
+
+      <div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"sans-serif"}}>
+          <thead>
+            <tr>
+              <th style={{textAlign:"left",padding:"10px"}}>Data</th>
+              <th style={{textAlign:"left",padding:"10px"}}>Paciente</th>
+              <th style={{textAlign:"left",padding:"10px"}}>Pagamento</th>
+              <th style={{textAlign:"left",padding:"10px"}}>Valor</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {registros.slice(0,5).map(r=>(
+              <tr key={r.id}>
+                <td style={{padding:"10px",borderBottom:"1px solid #eef4ec"}}>{r.data}</td>
+                <td style={{padding:"10px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
+                <td style={{padding:"10px",borderBottom:"1px solid #eef4ec"}}>{r.pagamento}</td>
+                <td style={{padding:"10px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>
+                  R$ {r.valor}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style={{marginTop:30}}>
+      <h3 style={{marginBottom:15,color:"#c0392b"}}>
+        NF Pendentes
+      </h3>
+
+      {registros.filter(r=>!r.nfEmitida).slice(0,5).map(r=>(
+        <div
+          key={r.id}
+          style={{
+            padding:"12px",
+            marginBottom:8,
+            background:"#fff5f5",
+            border:"1px solid #f5c6cb",
+            borderRadius:8
+          }}
+        >
+          <strong>{r.nome}</strong> — R$ {r.valor}
+        </div>
+      ))}
+    </div>
   </section>
 </>}
-
 
       {/* PAGAMENTOS */}
       {aba==="pagamentos"&&<>
