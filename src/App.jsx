@@ -508,7 +508,13 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   }
 
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
-  const ROOT={fontFamily:"Georgia,serif",maxWidth:900,margin:"0 auto",padding:"24px 16px 60px",background:"#f4f6f0",minHeight:"100vh"};
+  const ROOT={
+  fontFamily:"Georgia,serif",
+  width:"100%",
+  minHeight:"100vh",
+  background:"#f4f6f0",
+  padding:"24px"
+};
   const CARD2={background:"#fff",borderRadius:14,padding:24,marginBottom:20,boxShadow:"0 2px 12px rgba(0,40,20,0.07)",border:"1px solid #deeade"};
   const LBS={display:"block",fontSize:12,fontWeight:600,color:"#4a6a5a",marginBottom:5,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"};
   const INS={width:"100%",padding:"10px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"};
@@ -539,8 +545,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
           <button onClick={onCadastro} style={{padding:"9px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>📋 Formulário</button>
           <button onClick={onLogout} style={{padding:"9px 16px",background:"#fff",color:"#c0392b",border:"1.5px solid #f5c6cb",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Sair</button>
         </div>
-      </header>
-
+</header>
       {/* ABAS */}
       <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
         {ABAS.map(a=><button key={a.k} onClick={()=>setAba(a.k)} style={{padding:"9px 16px",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:aba===a.k?"#2a7a4a":"#fff",color:aba===a.k?"#fff":"#4a6a5a",border:aba===a.k?"1.5px solid #2a7a4a":"1.5px solid #c8ddd0",fontWeight:aba===a.k?700:400}}>{a.l}</button>)}
