@@ -508,12 +508,15 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   }
 
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
-  const ROOT={
+ const ROOT={
   fontFamily:"Georgia,serif",
   width:"100%",
+  maxWidth:"100%",
   minHeight:"100vh",
   background:"#f4f6f0",
-  padding:"24px"
+  padding:"24px",
+  overflowX:"hidden",
+  boxSizing:"border-box"
 };
   const CARD2={background:"#fff",borderRadius:14,padding:24,marginBottom:20,boxShadow:"0 2px 12px rgba(0,40,20,0.07)",border:"1px solid #deeade"};
   const LBS={display:"block",fontSize:12,fontWeight:600,color:"#4a6a5a",marginBottom:5,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"};
@@ -558,7 +561,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
     <div style={{
       display:"grid",
-      gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",
+      gridTemplateColumns:"repeat(4,minmax(0,1fr))"
       gap:16,
       marginBottom:24
     }}>
