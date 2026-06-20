@@ -680,20 +680,44 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"sans-serif"}}>
           <thead>
             <tr>
-              <th style={{textAlign:"left",padding:"10px"}}>Data</th>
-              <th style={{textAlign:"left",padding:"10px"}}>Paciente</th>
-              <th style={{textAlign:"left",padding:"10px"}}>Pagamento</th>
-              <th style={{textAlign:"left",padding:"10px"}}>Valor</th>
+              <th style={{
+  textAlign:"left",
+  padding:"14px 12px",
+  fontSize:13,
+  color:"#5f7167",
+  borderBottom:"2px solid #dbe8df"
+}}>Data</th>
+              <th style={{
+  textAlign:"left",
+  padding:"14px 12px",
+  fontSize:13,
+  color:"#5f7167",
+  borderBottom:"2px solid #dbe8df"
+}}>Paciente</th>
+              <th style={{
+  textAlign:"left",
+  padding:"14px 12px",
+  fontSize:13,
+  color:"#5f7167",
+  borderBottom:"2px solid #dbe8df"
+}}>Pagamento</th>
+              <th style={{
+  textAlign:"left",
+  padding:"14px 12px",
+  fontSize:13,
+  color:"#5f7167",
+  borderBottom:"2px solid #dbe8df"
+}}>Valor</th>
             </tr>
           </thead>
 
           <tbody>
             {registros.slice(0,5).map(r=>(
               <tr key={r.id}>
-                <td style={{padding:"10px",borderBottom:"1px solid #eef4ec"}}>{r.data}</td>
-                <td style={{padding:"10px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
-                <td style={{padding:"10px",borderBottom:"1px solid #eef4ec"}}>{r.pagamento}</td>
-                <td style={{padding:"10px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>
+                <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec"}}>{r.data}</td>
+                <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
+                <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec"}}>{r.pagamento}</td>
+                <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>
                   R$ {r.valor}
                 </td>
               </tr>
@@ -721,8 +745,20 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   }}>
     <thead>
       <tr>
-        <th style={{textAlign:"left",padding:"10px"}}>Paciente</th>
-        <th style={{textAlign:"left",padding:"10px"}}>Valor</th>
+        <th style={{
+  textAlign:"left",
+  padding:"14px 12px",
+  fontSize:13,
+  color:"#5f7167",
+  borderBottom:"2px solid #dbe8df"
+}}>Paciente</th>
+        <th style={{
+  textAlign:"left",
+  padding:"14px 12px",
+  fontSize:13,
+  color:"#5f7167",
+  borderBottom:"2px solid #dbe8df"
+}}>Valor</th>
       </tr>
     </thead>
 
