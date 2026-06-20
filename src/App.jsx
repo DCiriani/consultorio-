@@ -728,20 +728,21 @@ top: window.innerWidth < 768 ? 0 : 20,
       </h3>
 
       <div style={{overflowX:"auto"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"sans-serif"}}>
+        <table style={{
+  width:"100%",
+  borderCollapse:"collapse",
+  fontFamily:"sans-serif",
+  tableLayout:"fixed"
+}}>
           <thead>
             <tr>
-              <th style={{
-  textAlign:"left",
+              <td style={{
+  display: window.innerWidth < 768 ? "none" : "table-cell",
   padding:"14px 12px",
-  fontSize:12,
-  fontWeight:600,
-  letterSpacing:"0.3px",
-  color:"#6b7d73",
-  borderBottom:"2px solid #dbe8df"
+  borderBottom:"1px solid #eef4ec"
 }}>
-  Data
-</th>
+  {r.data}
+</td>
               <th style={{
   textAlign:"left",
   padding:"14px 12px",
@@ -782,7 +783,14 @@ top: window.innerWidth < 768 ? 0 : 20,
       {registros.slice(0,5).map(r=>(
               <tr key={r.id}>
                 <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec"}}>{r.data}</td>
-                <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
+                <td style={{
+  padding:"14px 12px",
+  borderBottom:"1px solid #eef4ec",
+  fontWeight:600,
+  wordBreak:"break-word"
+}}>
+  {r.nome}
+</td>
                 <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec"}}>{r.pagamento}</td>
                 <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>
                   R$ {r.valor}
@@ -921,7 +929,12 @@ top: window.innerWidth < 768 ? 0 : 20,
         {registros.length>0&&<section style={CARD2}>
           <h2 style={{margin:"0 0 16px",fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Últimos registros</h2>
           <div style={{overflowX:"auto"}}>
-            <table style={{width:"100%",borderCollapse:"collapse",fontFamily:"sans-serif"}}>
+            <table style={{
+  width:"100%",
+  borderCollapse:"collapse",
+  fontFamily:"sans-serif",
+  tableLayout:"fixed"
+}}>
               <thead><tr>{["Data","Paciente","Pagamento","Valor",""].map(h=><th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:"#4a6a5a",borderBottom:"2px solid #deeade",textTransform:"uppercase"}}>{h}</th>)}</tr></thead>
               <tbody>{registros.slice(0,20).map(r=><tr key={r.id}>
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec",whiteSpace:"nowrap"}}>{r.data}</td>
