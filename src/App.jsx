@@ -611,28 +611,28 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 }}>
       <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pacientes</div>
-        <div style={{fontSize:32,fontWeight:700,color:"#1a3a2a"}}>
+        <div style={{fontSize:42,fontWeight:700,color:"#1a3a2a"}}>
           {pacientes.length}
         </div>
       </div>
 
       <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pagamentos</div>
-        <div style={{fontSize:32,fontWeight:700,color:"#1a3a2a"}}>
+        <div style={{fontSize:42,fontWeight:700,color:"#1a3a2a"}}>
           {registros.length}
         </div>
       </div>
 
       <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>NF Pendentes</div>
-        <div style={{fontSize:32,fontWeight:700,color:"#c0392b"}}>
+        <div style={{fontSize:42,fontWeight:700,color:"#c0392b"}}>
           {registros.filter(r=>!r.nfEmitida).length}
         </div>
       </div>
 
       <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Receita</div>
-        <div style={{fontSize:32,fontWeight:700,color:"#2a7a4a"}}>
+        <div style={{fontSize:24,fontWeight:700,color:"#2a7a4a"}}>
           R$ {registros
             .filter(r=>r.valor && r.valor!=="—")
             .reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0)
