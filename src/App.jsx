@@ -671,7 +671,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       </div>
     </div>
 
-    <div style={{marginTop:30}}>
+    <div style={{marginTop:20}}>
 <h3 style={{
   marginBottom:18,
   color:"#143d2b",
@@ -749,7 +749,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       </div>
     </div>
 
-    <div style={{marginTop:30}}>
+    <div style={{marginTop:20}}>
 <h3 style={{
   marginBottom:18,
   color:"#c0392b",
