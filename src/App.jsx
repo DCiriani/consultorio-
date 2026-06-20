@@ -736,13 +736,18 @@ top: window.innerWidth < 768 ? 0 : 20,
 }}>
           <thead>
             <tr>
-              <td style={{
+              <th style={{
   display: window.innerWidth < 768 ? "none" : "table-cell",
+  textAlign:"left",
   padding:"14px 12px",
-  borderBottom:"1px solid #eef4ec"
+  fontSize:12,
+  fontWeight:600,
+  letterSpacing:"0.3px",
+  color:"#6b7d73",
+  borderBottom:"2px solid #dbe8df"
 }}>
-  {r.data}
-</td>
+  Data
+</th>
               <th style={{
   textAlign:"left",
   padding:"14px 12px",
@@ -782,7 +787,13 @@ top: window.innerWidth < 768 ? 0 : 20,
           <tbody>
       {registros.slice(0,5).map(r=>(
               <tr key={r.id}>
-                <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec"}}>{r.data}</td>
+                <td style={{
+  display: window.innerWidth < 768 ? "none" : "table-cell",
+  padding:"14px 12px",
+  borderBottom:"1px solid #eef4ec"
+}}>
+  {r.data}
+</td>
                 <td style={{
   padding:"14px 12px",
   borderBottom:"1px solid #eef4ec",
