@@ -561,7 +561,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   background:"#fff",
   border:"1px solid #dbe8df",
   borderRadius:12,
-  padding:10,
+  padding:16,
   position:"sticky",
   top:20,
 }}>
@@ -577,6 +577,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
           borderRadius:8,
           cursor:"pointer",
           fontSize:14,
+          fontWeight:500,
           fontFamily:"sans-serif",
           background:aba===a.k?"#2a7a4a":"#fff",
           color:aba===a.k?"#fff":"#4a6a5a",
@@ -609,7 +610,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   gap:16,
   marginBottom:24
 }}>
-      <div style={{background:"#fff",padding:10,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -649,10 +650,9 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
       <div style={{
   background:"#fff",
-  padding:10,
+  padding:16,
   borderRadius:12,
   border:"1px solid #dbe8df",
-  borderTop:"3px solid #2a7a4a"
 }}>
         <div style={{
   fontSize:12,
