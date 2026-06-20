@@ -538,7 +538,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
 
-      <header style={{display:"flex",alignItems:"center",gap:16,marginBottom:24}}>
+      <header style={{display:"flex",alignItems:"center",gap:16,marginBottom:40}}>
         <div style={{fontSize:38}}>🏥</div>
         <div>
           <h1 style={{margin:0,fontSize:22,fontWeight:600,color:"#1a3a2a"}}>Espaço Ciriani</h1>
@@ -561,7 +561,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   background:"#fff",
   border:"1px solid #dbe8df",
   borderRadius:12,
-  padding:12,
+  padding:10,
   position:"sticky",
   top:20,
 }}>
@@ -607,9 +607,9 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   display:"grid",
   gridTemplateColumns:"repeat(4,minmax(0,1fr))",
   gap:16,
-  marginBottom:24
+  marginBottom:40
 }}>
-      <div style={{background:"#fff",padding:12,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:10,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -622,7 +622,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-<div style={{background:"#fff",padding:12,borderRadius:12,border:"1px solid #dbe8df"}}>
+<div style={{background:"#fff",padding:12,borderRadius:10,border:"1px solid #dbe8df"}}>
           <div style={{
   fontSize:12,
   fontWeight:500,
@@ -634,7 +634,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:12,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:12,borderRadius:10,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -647,7 +647,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:12,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:10,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
