@@ -610,7 +610,13 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   gap:16,
   marginBottom:24
 }}>
-      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{
+  background:"#fff",
+  padding:"10px 14px",
+  borderRadius:10,
+  border:"1px solid #dbe8df",
+  minHeight:72
+}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -618,24 +624,36 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   marginBottom:8
 }}>
   Pacientes</div>
-<div style={{fontSize:24,fontWeight:600,color:"#1a3a2a"}}>
+<div style={{fontSize:20,fontWeight:600,color:"#1a3a2a"}}>
             {pacientes.length}
         </div>
       </div>
 
-<div style={{background:"#fff",padding:12,borderRadius:10,border:"1px solid #dbe8df"}}>
+<<div style={{
+  background:"#fff",
+  padding:"10px 14px",
+  borderRadius:10,
+  border:"1px solid #dbe8df",
+  minHeight:72
+}}>
           <div style={{
   fontSize:12,
   fontWeight:500,
   color:"#6b7d73",
   marginBottom:8
 }}>Pagamentos</div>
-        <div style={{fontSize:24,fontWeight:600,color:"#1a3a2a"}}>
+        <div style={{fontSize:20,fontWeight:600,color:"#1a3a2a"}}>
           {registros.length}
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:12,borderRadius:10,border:"1px solid #dbe8df"}}>
+      <div style={{
+  background:"#fff",
+  padding:"10px 14px",
+  borderRadius:10,
+  border:"1px solid #dbe8df",
+  minHeight:72
+}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -643,7 +661,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   marginBottom:8
 }}>
   NF Pendentes</div>
-        <div style={{fontSize:24,fontWeight:600,color:"#c0392b"}}>
+        <div style={{fontSize:20,fontWeight:600,color:"#c0392b"}}>
           {registros.filter(r=>!r.nfEmitida).length}
         </div>
       </div>
