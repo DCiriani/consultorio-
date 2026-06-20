@@ -91,7 +91,7 @@ function Login({onLogin}){
       <div style={{background:"#fff",borderRadius:20,padding:"48px 40px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <div style={{textAlign:"center",marginBottom:32}}>
           <div style={{fontSize:48,marginBottom:12}}>🏥</div>
-          <h1 style={{margin:"0 0 4px",fontSize:24,fontWeight:700,color:"#1a3a2a",fontFamily:"Georgia,serif"}}>Espaço Ciriani</h1>
+          <h1 style={{margin:"0 0 4px",fontSize:22,fontWeight:600,color:"#1a3a2a",fontFamily:"Georgia,serif"}}>Espaço Ciriani</h1>
           <p style={{margin:0,fontSize:13,color:"#8aaa9a",fontFamily:"sans-serif"}}>Acesso restrito</p>
         </div>
 
@@ -541,7 +541,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       <header style={{display:"flex",alignItems:"center",gap:16,marginBottom:24}}>
         <div style={{fontSize:38}}>🏥</div>
         <div>
-          <h1 style={{margin:0,fontSize:24,fontWeight:700,color:"#1a3a2a"}}>Espaço Ciriani</h1>
+          <h1 style={{margin:0,fontSize:22,fontWeight:600,color:"#1a3a2a"}}>Espaço Ciriani</h1>
           <p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Painel administrativo</p>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:10}}>
@@ -617,8 +617,8 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   marginBottom:8
 }}>
   Pacientes</div>
-        <div style={{fontSize:42,fontWeight:700,color:"#1a3a2a"}}>
-          {pacientes.length}
+<div style={{fontSize:24,fontWeight:600,color:"#1a3a2a"}}>
+            {pacientes.length}
         </div>
       </div>
 
@@ -642,7 +642,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   marginBottom:8
 }}>
   NF Pendentes</div>
-        <div style={{fontSize:42,fontWeight:700,color:"#c0392b"}}>
+        <div style={{fontSize:24,fontWeight:600,color:"#c0392b"}}>
           {registros.filter(r=>!r.nfEmitida).length}
         </div>
       </div>
@@ -656,7 +656,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 }}>
   Receita
 </div>
-        <div style={{fontSize:24,fontWeight:700,color:"#2a7a4a"}}>
+        <div style={{fontSize:22,fontWeight:600,color:"#2a7a4a"}}>
           R$ {registros
             .filter(r=>r.valor && r.valor!=="—")
             .reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0)
