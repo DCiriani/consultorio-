@@ -509,7 +509,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
  const ROOT={
-  fontFamily:"Georgia,serif",
+  fontFamily:"system-ui, sans-serif",
   width:"100%",
   maxWidth:"100%",
   minHeight:"100vh",
