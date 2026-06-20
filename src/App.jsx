@@ -607,7 +607,10 @@ top: window.innerWidth < 768 ? 0 : 20,
 
   <div style={{
   display:"grid",
-  gridTemplateColumns:"repeat(4,minmax(0,1fr))",
+  gridTemplateColumns:
+    window.innerWidth < 768
+      ? "repeat(2,minmax(0,1fr))"
+      : "repeat(4,minmax(0,1fr))",
   gap:16,
   marginBottom:24
 }}>
