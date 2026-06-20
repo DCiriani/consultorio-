@@ -538,7 +538,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
 
-      <header style={{display:"flex",alignItems:"center",gap:16,marginBottom:40}}>
+      <header style={{display:"flex",alignItems:"center",gap:16,marginBottom:24}}>
         <div style={{fontSize:38}}>🏥</div>
         <div>
           <h1 style={{margin:0,fontSize:22,fontWeight:600,color:"#1a3a2a"}}>Espaço Ciriani</h1>
@@ -595,7 +595,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   <section style={CARD2}>
   <h2 style={{
   margin:"0 0 20px",
-  fontSize:28,
+  fontSize:20,
   fontWeight:600,
   color:"#143d2b",
   fontFamily:"Inter,sans-serif"
@@ -607,7 +607,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   display:"grid",
   gridTemplateColumns:"repeat(4,minmax(0,1fr))",
   gap:16,
-  marginBottom:40
+  marginBottom:24
 }}>
       <div style={{background:"#fff",padding:10,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
@@ -667,9 +667,9 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
     <div style={{marginTop:30}}>
 <h3 style={{
-  marginBottom:15,
+  marginBottom:18,
   color:"#143d2b",
-  fontSize:18,
+  fontSize:16,
   fontWeight:600,
   fontFamily:"Inter,sans-serif"
 }}>
@@ -745,9 +745,9 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
     <div style={{marginTop:30}}>
 <h3 style={{
-  marginBottom:15,
+  marginBottom:18,
   color:"#c0392b",
-  fontSize:18,
+  fontSize:16,
   fontWeight:600,
   fontFamily:"Inter,sans-serif"
 }}>
