@@ -550,9 +550,45 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
 </header>
       {/* ABAS */}
-      <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
-        {ABAS.map(a=><button key={a.k} onClick={()=>setAba(a.k)} style={{padding:"9px 16px",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:aba===a.k?"#2a7a4a":"#fff",color:aba===a.k?"#fff":"#4a6a5a",border:aba===a.k?"1.5px solid #2a7a4a":"1.5px solid #c8ddd0",fontWeight:aba===a.k?700:400}}>{a.l}</button>)}
-      </div>
+<div style={{
+  display:"flex",
+  gap:20,
+  alignItems:"flex-start"
+}}>
+
+  <div style={{
+    width:220,
+    background:"#fff",
+    border:"1px solid #dbe8df",
+    borderRadius:12,
+    padding:12
+  }}>
+    {ABAS.map(a=>(
+      <button
+        key={a.k}
+        onClick={()=>setAba(a.k)}
+        style={{
+          width:"100%",
+          textAlign:"left",
+          marginBottom:8,
+          padding:"12px",
+          borderRadius:8,
+          cursor:"pointer",
+          fontSize:14,
+          fontFamily:"sans-serif",
+          background:aba===a.k?"#2a7a4a":"#fff",
+          color:aba===a.k?"#fff":"#4a6a5a",
+          border:aba===a.k
+            ?"1.5px solid #2a7a4a"
+            :"1.5px solid #c8ddd0"
+        }}
+      >
+        {a.l}
+      </button>
+    ))}
+  </div>
+
+  <div style={{flex:1}}>
 {aba==="dashboard"&&<>
   <section style={CARD2}>
     <h2 style={{margin:"0 0 20px",fontSize:22,fontWeight:700,color:"#1a3a2a"}}>
@@ -770,9 +806,13 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       </section>}
 
       {aba==="titulares"&&<AbaTitulares titulares={titulares} setTitulares={setTitulares} pacientes={pacientes} showT={showT}/>}
-      {aba==="relatorio"&&<AbaRelatorio registros={registros} setRegistros={setRegistros} pacientes={pacientes} titulares={titulares}/>}
-    </div>
-  );
+{aba==="relatorio"&&<AbaRelatorio registros={registros} setRegistros={setRegistros} pacientes={pacientes} titulares={titulares}/>}
+
+</div>
+</div>
+</div>
+
+);
 }
 
 // ── APP PRINCIPAL ─────────────────────────────────────────────────────────────
