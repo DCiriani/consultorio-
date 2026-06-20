@@ -593,9 +593,15 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   <div style={{flex:1}}>
 {aba==="dashboard"&&<>
   <section style={CARD2}>
-    <h2 style={{margin:"0 0 20px",fontSize:22,fontWeight:700,color:"#1a3a2a"}}>
-      Dashboard
-    </h2>
+  <h2 style={{
+  margin:"0 0 20px",
+  fontSize:28,
+  fontWeight:600,
+  color:"#143d2b",
+  fontFamily:"Inter,sans-serif"
+}}>
+  Dashboard
+</h2>
 
   <div style={{
   display:"grid",
@@ -636,8 +642,14 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
     </div>
 
     <div style={{marginTop:30}}>
-      <h3 style={{marginBottom:15,color:"#1a3a2a"}}>
-        Últimos pagamentos
+<h3 style={{
+  marginBottom:15,
+  color:"#143d2b",
+  fontSize:22,
+  fontWeight:600,
+  fontFamily:"Inter,sans-serif"
+}}>
+          Últimos pagamentos
       </h3>
 
       <div style={{overflowX:"auto"}}>
@@ -668,8 +680,14 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
     </div>
 
     <div style={{marginTop:30}}>
-  <h3 style={{marginBottom:15,color:"#c0392b"}}>
-    NF Pendentes
+<h3 style={{
+  marginBottom:15,
+  color:"#c0392b",
+  fontSize:22,
+  fontWeight:600,
+  fontFamily:"Inter,sans-serif"
+}}>
+      NF Pendentes
   </h3>
 
   <table style={{
