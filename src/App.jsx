@@ -552,18 +552,19 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       {/* ABAS */}
 <div style={{
   display:"flex",
+  flexDirection: window.innerWidth < 768 ? "column" : "row",
   gap:30,
   alignItems:"flex-start"
 }}>
 
  <div style={{
-  width:190,
+  width: window.innerWidth < 768 ? "100%" : 190,
   background:"#fff",
   border:"1px solid #dbe8df",
   borderRadius:12,
   padding:16,
-  position:"sticky",
-  top:20,
+  position: window.innerWidth < 768 ? "relative" : "sticky",
+top: window.innerWidth < 768 ? 0 : 20,
 }}>
     {ABAS.map(a=>(
       <button
