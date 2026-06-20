@@ -732,7 +732,6 @@ top: window.innerWidth < 768 ? 0 : 20,
   width:"100%",
   borderCollapse:"collapse",
   fontFamily:"sans-serif",
-  tableLayout:"fixed"
 }}>
           <thead>
             <tr>
@@ -944,7 +943,6 @@ top: window.innerWidth < 768 ? 0 : 20,
   width:"100%",
   borderCollapse:"collapse",
   fontFamily:"sans-serif",
-  tableLayout:"fixed"
 }}>
               <thead><tr>{["Data","Paciente","Pagamento","Valor",""].map(h=><th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:"#4a6a5a",borderBottom:"2px solid #deeade",textTransform:"uppercase"}}>{h}</th>)}</tr></thead>
               <tbody>{registros.slice(0,20).map(r=><tr key={r.id}>
