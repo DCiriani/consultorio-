@@ -514,11 +514,18 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   maxWidth:"100%",
   minHeight:"100vh",
   background:"#f4f6f0",
-  padding:"24px",
+  padding: window.innerWidth < 768 ? "12px" : "24px",
   overflowX:"hidden",
   boxSizing:"border-box"
 };
-  const CARD2={background:"#fff",borderRadius:14,padding:24,marginBottom:20,boxShadow:"0 2px 12px rgba(0,40,20,0.07)",border:"1px solid #deeade"};
+  const CARD2={
+  background:"#fff",
+  borderRadius:14,
+  padding: window.innerWidth < 768 ? 12 : 24,
+  marginBottom:20,
+  boxShadow:"0 2px 12px rgba(0,40,20,0.07)",
+  border:"1px solid #deeade"
+}
   const LBS={display:"block",fontSize:12,fontWeight:600,color:"#4a6a5a",marginBottom:5,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"};
   const INS={width:"100%",padding:"10px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"};
 
@@ -538,13 +545,24 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
 
-      <header style={{display:"flex",alignItems:"center",gap:16,marginBottom:24}}>
+      <header style={{
+  display:"flex",
+  flexDirection: window.innerWidth < 768 ? "column" : "row",
+  alignItems: window.innerWidth < 768 ? "flex-start" : "center",
+  gap:16,
+  marginBottom:24
+}}>
         <div style={{fontSize:38}}>🏥</div>
         <div>
           <h1 style={{margin:0,fontSize:22,fontWeight:600,color:"#1a3a2a"}}>Espaço Ciriani</h1>
           <p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Painel administrativo</p>
         </div>
-        <div style={{marginLeft:"auto",display:"flex",gap:10}}>
+        <div style={{
+  marginLeft: window.innerWidth < 768 ? 0 : "auto",
+  display:"flex",
+  gap:10,
+  width: window.innerWidth < 768 ? "100%" : "auto"
+}}>
           <button onClick={onCadastro} style={{padding:"9px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>📋 Formulário</button>
           <button onClick={onLogout} style={{padding:"9px 16px",background:"#fff",color:"#c0392b",border:"1.5px solid #f5c6cb",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Sair</button>
         </div>
@@ -592,7 +610,12 @@ top: window.innerWidth < 768 ? 0 : 20,
     ))}
   </div>
 
-  <div style={{flex:1}}>
+  <div style={{
+  flex:1,
+  width:"100%",
+  minWidth:0,
+  overflowX:"hidden"
+}}>
 {aba==="dashboard"&&<>
   <section style={CARD2}>
   <h2 style={{
@@ -609,7 +632,7 @@ top: window.innerWidth < 768 ? 0 : 20,
   display:"grid",
   gridTemplateColumns:
     window.innerWidth < 768
-      ? "repeat(2,minmax(0,1fr))"
+      ? "1fr"
       : "repeat(4,minmax(0,1fr))",
   gap:16,
   marginBottom:24
