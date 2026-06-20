@@ -609,7 +609,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   gap:16,
   marginBottom:24
 }}>
-      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:14,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -622,19 +622,19 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
-        <div style={{
+<div style={{background:"#fff",padding:14,borderRadius:12,border:"1px solid #dbe8df"}}>
+          <div style={{
   fontSize:12,
   fontWeight:500,
   color:"#6b7d73",
   marginBottom:8
 }}>Pagamentos</div>
-        <div style={{fontSize:42,fontWeight:700,color:"#1a3a2a"}}>
+        <div style={{fontSize:24,fontWeight:600,color:"#1a3a2a"}}>
           {registros.length}
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:14,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -647,7 +647,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:14,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -669,7 +669,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 <h3 style={{
   marginBottom:15,
   color:"#143d2b",
-  fontSize:22,
+  fontSize:18,
   fontWeight:600,
   fontFamily:"Inter,sans-serif"
 }}>
@@ -683,36 +683,52 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
               <th style={{
   textAlign:"left",
   padding:"14px 12px",
-  fontSize:13,
-  color:"#5f7167",
+  fontSize:12,
+  fontWeight:600,
+  letterSpacing:"0.3px",
+  color:"#6b7d73",
   borderBottom:"2px solid #dbe8df"
-}}>Data</th>
+}}>
+  Data
+</th>
               <th style={{
   textAlign:"left",
   padding:"14px 12px",
-  fontSize:13,
-  color:"#5f7167",
+  fontSize:12,
+  fontWeight:600,
+  letterSpacing:"0.3px",
+  color:"#6b7d73",
   borderBottom:"2px solid #dbe8df"
-}}>Paciente</th>
+}}>
+  Paciente
+  </th>
               <th style={{
   textAlign:"left",
   padding:"14px 12px",
-  fontSize:13,
-  color:"#5f7167",
+  fontSize:12,
+  fontWeight:600,
+  letterSpacing:"0.3px",
+  color:"#6b7d73",
   borderBottom:"2px solid #dbe8df"
-}}>Pagamento</th>
+}}>
+  Pagamento
+  </th>
               <th style={{
   textAlign:"left",
   padding:"14px 12px",
-  fontSize:13,
-  color:"#5f7167",
+  fontSize:12,
+  fontWeight:600,
+  letterSpacing:"0.3px",
+  color:"#6b7d73",
   borderBottom:"2px solid #dbe8df"
-}}>Valor</th>
+}}>
+  Valor
+  </th>
             </tr>
           </thead>
 
           <tbody>
-            {registros.slice(0,5).map(r=>(
+      {registros.slice(0,5).map(r=>(
               <tr key={r.id}>
                 <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec"}}>{r.data}</td>
                 <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
@@ -731,7 +747,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 <h3 style={{
   marginBottom:15,
   color:"#c0392b",
-  fontSize:22,
+  fontSize:18,
   fontWeight:600,
   fontFamily:"Inter,sans-serif"
 }}>
@@ -748,15 +764,19 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         <th style={{
   textAlign:"left",
   padding:"14px 12px",
-  fontSize:13,
-  color:"#5f7167",
+  fontSize:12,
+  fontWeight:600,
+  letterSpacing:"0.3px",
+  color:"#6b7d73",
   borderBottom:"2px solid #dbe8df"
 }}>Paciente</th>
         <th style={{
   textAlign:"left",
   padding:"14px 12px",
-  fontSize:13,
-  color:"#5f7167",
+  fontSize:12,
+  fontWeight:600,
+  letterSpacing:"0.3px",
+  color:"#6b7d73",
   borderBottom:"2px solid #dbe8df"
 }}>Valor</th>
       </tr>
