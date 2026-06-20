@@ -112,7 +112,7 @@ function Login({onLogin}){
           </div>
           {erro&&<p style={{color:"#c0392b",fontFamily:"sans-serif",fontSize:13,marginBottom:12,textAlign:"center"}}>{erro}</p>}
           <button type="submit" disabled={carregando}
-            style={{width:"100%",padding:14,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",marginTop:8,opacity:carregando?0.7:1}}>
+            style={{width:"100%",padding:12,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",marginTop:8,opacity:carregando?0.7:1}}>
             {carregando?"Entrando...":"Entrar →"}
           </button>
         </form>
@@ -198,7 +198,7 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
         </div>
       </div>
 
-      <button onClick={()=>{if(validar())onSalvo(f);}} disabled={salvando} style={{width:"100%",padding:14,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",opacity:salvando?0.7:1}}>
+      <button onClick={()=>{if(validar())onSalvo(f);}} disabled={salvando} style={{width:"100%",padding:12,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",opacity:salvando?0.7:1}}>
         {salvando?"Salvando...":"Enviar cadastro →"}
       </button>
       <p style={{textAlign:"center",fontSize:11,color:"#8aaa9a",fontFamily:"sans-serif",marginTop:12}}>Dados confidenciais protegidos pelo sigilo profissional.</p>
@@ -557,7 +557,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 }}>
 
  <div style={{
-  width:260,
+  width:190,
   background:"#fff",
   border:"1px solid #dbe8df",
   borderRadius:12,
@@ -609,7 +609,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   gap:16,
   marginBottom:24
 }}>
-      <div style={{background:"#fff",padding:14,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:12,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -622,7 +622,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-<div style={{background:"#fff",padding:14,borderRadius:12,border:"1px solid #dbe8df"}}>
+<div style={{background:"#fff",padding:12,borderRadius:12,border:"1px solid #dbe8df"}}>
           <div style={{
   fontSize:12,
   fontWeight:500,
@@ -634,7 +634,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:14,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:12,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -647,7 +647,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:14,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{background:"#fff",padding:12,borderRadius:12,border:"1px solid #dbe8df"}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
@@ -862,7 +862,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
             <div><label style={LBS}>Data</label><input style={INS} value={data} onChange={e=>setData(e.target.value)}/></div>
             <div><label style={LBS}>Valor (R$)</label><input style={INS} placeholder="ex: 200,00" value={valor} onChange={e=>setValor(e.target.value)}/></div>
           </div>
-          <button onClick={registrar} disabled={salvandoPag} style={{width:"100%",padding:14,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",opacity:salvandoPag?0.7:1}}>
+          <button onClick={registrar} disabled={salvandoPag} style={{width:"100%",padding:12,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",opacity:salvandoPag?0.7:1}}>
             {salvandoPag?"Salvando...":"✓ Registrar pagamento"}
           </button>
         </section>
