@@ -609,29 +609,53 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   gap:16,
   marginBottom:24
 }}>
-      <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
-        <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pacientes</div>
+      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
+        <div style={{
+  fontSize:12,
+  fontWeight:500,
+  color:"#6b7d73",
+  marginBottom:8
+}}>
+  Pacientes</div>
         <div style={{fontSize:42,fontWeight:700,color:"#1a3a2a"}}>
           {pacientes.length}
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
-        <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Pagamentos</div>
+      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
+        <div style={{
+  fontSize:12,
+  fontWeight:500,
+  color:"#6b7d73",
+  marginBottom:8
+}}>Pagamentos</div>
         <div style={{fontSize:42,fontWeight:700,color:"#1a3a2a"}}>
           {registros.length}
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
-        <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>NF Pendentes</div>
+      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
+        <div style={{
+  fontSize:12,
+  fontWeight:500,
+  color:"#6b7d73",
+  marginBottom:8
+}}>
+  NF Pendentes</div>
         <div style={{fontSize:42,fontWeight:700,color:"#c0392b"}}>
           {registros.filter(r=>!r.nfEmitida).length}
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:20,borderRadius:12,border:"1px solid #dbe8df"}}>
-        <div style={{fontSize:13,color:"#5a7a6a",marginBottom:8}}>Receita</div>
+      <div style={{background:"#fff",padding:16,borderRadius:12,border:"1px solid #dbe8df"}}>
+        <div style={{
+  fontSize:12,
+  fontWeight:500,
+  color:"#6b7d73",
+  marginBottom:8
+}}>
+  Receita
+</div>
         <div style={{fontSize:24,fontWeight:700,color:"#2a7a4a"}}>
           R$ {registros
             .filter(r=>r.valor && r.valor!=="—")
