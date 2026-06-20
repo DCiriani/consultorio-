@@ -647,7 +647,13 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
         </div>
       </div>
 
-      <div style={{background:"#fff",padding:10,borderRadius:12,border:"1px solid #dbe8df"}}>
+      <div style={{
+  background:"#fff",
+  padding:10,
+  borderRadius:12,
+  border:"1px solid #dbe8df",
+  borderTop:"3px solid #2a7a4a"
+}}>
         <div style={{
   fontSize:12,
   fontWeight:500,
