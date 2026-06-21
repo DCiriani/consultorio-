@@ -506,7 +506,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
     const a=[...pacientes,{id:novoId,...dados}].sort((a,b)=>a.nome.localeCompare(b.nome));
     setPacientes(a);setModalCad(false);showT("Paciente cadastrado!");setSalvandoPac(false);
   }
-
+const isMobile = window.innerWidth < 768;
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
  const ROOT={
   fontFamily:"system-ui, sans-serif",
@@ -536,7 +536,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 {k:"titulares",l:`🧾 Titulares (${titulares.length})`},
 {k:"relatorio",l:"📊 Relatório"},
 ];
-const isMobile = isMobile;
+
   return(
     <div style={ROOT}>
       <Toast t={toast}/>
