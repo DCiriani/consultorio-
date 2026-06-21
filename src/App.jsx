@@ -620,7 +620,7 @@ top: isMobile ? 0 : 20,
   <section style={CARD2}>
   <h2 style={{
   margin:"0 0 20px",
-  fontSize:20,
+  fontSize: isMobile ? 24 : 20,
   fontWeight:600,
   color:"#143d2b",
   fontFamily:"Inter,sans-serif"
@@ -634,7 +634,7 @@ top: isMobile ? 0 : 20,
     isMobile
       ? "1fr"
       : "repeat(4,minmax(0,1fr))",
-  gap:16,
+  gap: isMobile ? 12 : 16,
   marginBottom:24
 }}>
       <div style={{
@@ -642,7 +642,9 @@ top: isMobile ? 0 : 20,
   padding: isMobile ? "16px" : "10px 14px",
   borderRadius:10,
   border:"1px solid #dbe8df",
-  minHeight:72
+  minHeight:72,
+  width:"100%",
+  boxSizing:"border-box"
 }}>
         <div style={{
   fontSize:12,
@@ -661,7 +663,9 @@ top: isMobile ? 0 : 20,
   padding: isMobile ? "16px" : "10px 14px",
   borderRadius:10,
   border:"1px solid #dbe8df",
-  minHeight:72
+  minHeight:72,
+  width:"100%",
+  boxSizing:"border-box"
 }}>
           <div style={{
   fontSize:12,
@@ -679,7 +683,9 @@ top: isMobile ? 0 : 20,
   padding: isMobile ? "16px" : "10px 14px",
   borderRadius:10,
   border:"1px solid #dbe8df",
-  minHeight:72
+  minHeight:72,
+  width:"100%",
+  boxSizing:"border-box"
 }}>
         <div style={{
   fontSize:12,
@@ -700,10 +706,13 @@ top: isMobile ? 0 : 20,
   border:"1px solid #dbe8df",
 }}>
         <div style={{
-  fontSize:12,
-  fontWeight:500,
-  color:"#6b7d73",
-  marginBottom:8
+  background:"#fff",
+  padding: isMobile ? "16px" : "10px 14px",
+  borderRadius:10,
+  border:"1px solid #dbe8df",
+  minHeight:72,
+  width:"100%",
+  boxSizing:"border-box"
 }}>
   Receita
 </div>
