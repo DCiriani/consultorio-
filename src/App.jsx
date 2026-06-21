@@ -704,27 +704,33 @@ top: isMobile ? 0 : 20,
   padding:16,
   borderRadius:12,
   border:"1px solid #dbe8df",
-}}>
-        <div style={{
-  background:"#fff",
-  padding:16,
-  borderRadius:12,
-  border:"1px solid #dbe8df",
   width:"100%",
   boxSizing:"border-box"
 }}>
-  Receita
-</div>
-        <div style={{fontSize: isMobile ? 30 : 22,fontWeight:600,color:"#2a7a4a"}}>
-          R$ {registros
-            .filter(r=>r.valor && r.valor!=="—")
-            .reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0)
-            .toLocaleString("pt-BR",{minimumFractionDigits:2})}
-        </div>
-      </div>
-    </div>
+  <div style={{
+    fontSize:12,
+    fontWeight:500,
+    color:"#6b7d73",
+    marginBottom:8
+  }}>
+    Receita
+  </div>
 
-    <div style={{marginTop:20}}>
+  <div style={{
+    fontSize: isMobile ? 30 : 22,
+    fontWeight:600,
+    color:"#2a7a4a"
+  }}>
+    R$ {registros
+      .filter(r=>r.valor && r.valor!=="—")
+      .reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0)
+      .toLocaleString("pt-BR",{minimumFractionDigits:2})}
+  </div>
+</div> {/* fecha card Receita */}
+
+</div> {/* fecha grid principal */}
+
+<div style={{marginTop:20}}>
 <h3 style={{
   marginBottom:18,
   color:"#143d2b",
@@ -788,65 +794,48 @@ top: isMobile ? 0 : 20,
       NF Pendentes
   </h3>
 
-  <table style={{
-    width:"100%",
-    borderCollapse:"collapse",
-    fontFamily:"sans-serif"
-  }}>
-    <thead>
-      <tr>
-        <th style={{
-  textAlign:"left",
-  padding:"14px 12px",
-  fontSize:12,
-  fontWeight:600,
-  letterSpacing:"0.3px",
-  color:"#6b7d73",
-  borderBottom:"2px solid #dbe8df"
-}}>Paciente</th>
-        <th style={{
-  textAlign:"left",
-  padding:"14px 12px",
-  fontSize:12,
-  fontWeight:600,
-  letterSpacing:"0.3px",
-  color:"#6b7d73",
-  borderBottom:"2px solid #dbe8df"
-}}>Valor</th>
-      </tr>
-    </thead>
+  <div style={{
+  display:"flex",
+  flexDirection:"column",
+  gap:12
+}}>
+  {registros
+    .filter(r=>!r.nfEmitida)
+    .slice(0,5)
+    .map(r => (
+      <div
+        key={r.id}
+        style={{
+          background:"#fff",
+          border:"1px solid #e0ede5",
+          borderRadius:12,
+          padding:16
+        }}
+      >
+        <div style={{
+          fontWeight:700,
+          fontSize:15,
+          color:"#1a3a2a",
+          marginBottom:8
+        }}>
+          {r.nome}
+        </div>
 
-    <tbody>
-      {registros
-        .filter(r=>!r.nfEmitida)
-        .slice(0,5)
-        .map(r=>(
-          <tr key={r.id}>
-            <td style={{
-              padding:"10px",
-              borderBottom:"1px solid #eef4ec",
-              fontWeight:600
-            }}>
-              {r.nome}
-            </td>
-
-            <td style={{
-              padding:"10px",
-              borderBottom:"1px solid #eef4ec"
-            }}>
-              R$ {r.valor}
-            </td>
-          </tr>
-        ))}
-    </tbody>
-</table>
-</div>
-
-</div>
+        <div style={{
+          fontSize:16,
+          fontWeight:700,
+          color:"#c0392b"
+        }}>
+          R$ {r.valor}
+        </div>
+      </div>
+    ))}
+</div>   {/* fecha lista NF Pendentes */}
+</div>   {/* fecha bloco NF Pendentes */}
+</div>   {/* fecha bloco Últimos pagamentos */}
 
 </section>
 </>}
-
 {/* PAGAMENTOS */}
       {aba==="pagamentos"&&<>
         <section style={CARD2}>
@@ -945,8 +934,23 @@ top: isMobile ? 0 : 20,
         }
       </section>}
 
-      {aba==="titulares"&&<AbaTitulares titulares={titulares} setTitulares={setTitulares} pacientes={pacientes} showT={showT}/>}
-{aba==="relatorio"&&<AbaRelatorio registros={registros} setRegistros={setRegistros} pacientes={pacientes} titulares={titulares}/>}
+      {aba==="titulares"&&(
+  <AbaTitulares
+    titulares={titulares}
+    setTitulares={setTitulares}
+    pacientes={pacientes}
+    showT={showT}
+  />
+)}
+
+{aba==="relatorio"&&(
+  <AbaRelatorio
+    registros={registros}
+    setRegistros={setRegistros}
+    pacientes={pacientes}
+    titulares={titulares}
+  />
+)}
 
 </div>
 </div>
@@ -955,7 +959,7 @@ top: isMobile ? 0 : 20,
 );
 }
 
-// ── APP PRINCIPAL ─────────────────────────────────────────────────────────────
+// APP PRINCIPAL
 export default function App(){
   const [tela,setTela]=useState("login");
   const [pacientes,setPacientes]=useState([]);
