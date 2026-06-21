@@ -514,14 +514,14 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   maxWidth:"100%",
   minHeight:"100vh",
   background:"#f4f6f0",
-  padding: window.innerWidth < 768 ? "12px" : "24px",
+  padding: isMobile ? "12px" : "24px",
   overflowX:"hidden",
   boxSizing:"border-box"
 };
   const CARD2={
   background:"#fff",
   borderRadius:14,
-  padding: window.innerWidth < 768 ? 12 : 24,
+  padding: isMobile ? 12 : 24,
   marginBottom:20,
   boxShadow:"0 2px 12px rgba(0,40,20,0.07)",
   border:"1px solid #deeade"
@@ -536,7 +536,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 {k:"titulares",l:`🧾 Titulares (${titulares.length})`},
 {k:"relatorio",l:"📊 Relatório"},
 ];
-
+const isMobile = isMobile;
   return(
     <div style={ROOT}>
       <Toast t={toast}/>
@@ -547,8 +547,8 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
 
       <header style={{
   display:"flex",
-  flexDirection: window.innerWidth < 768 ? "column" : "row",
-  alignItems: window.innerWidth < 768 ? "flex-start" : "center",
+  flexDirection: isMobile ? "column" : "row",
+  alignItems: isMobile ? "flex-start" : "center",
   gap:16,
   marginBottom:24
 }}>
@@ -558,10 +558,10 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
           <p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Painel administrativo</p>
         </div>
         <div style={{
-  marginLeft: window.innerWidth < 768 ? 0 : "auto",
+  marginLeft: isMobile ? 0 : "auto",
   display:"flex",
   gap:10,
-  width: window.innerWidth < 768 ? "100%" : "auto"
+  width: isMobile ? "100%" : "auto"
 }}>
           <button onClick={onCadastro} style={{padding:"9px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>📋 Formulário</button>
           <button onClick={onLogout} style={{padding:"9px 16px",background:"#fff",color:"#c0392b",border:"1.5px solid #f5c6cb",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Sair</button>
@@ -570,19 +570,19 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
       {/* ABAS */}
 <div style={{
   display:"flex",
-  flexDirection: window.innerWidth < 768 ? "column" : "row",
+  flexDirection: isMobile ? "column" : "row",
   gap:30,
   alignItems:"flex-start"
 }}>
 
  <div style={{
-  width: window.innerWidth < 768 ? "100%" : 190,
+  width: isMobile ? "100%" : 190,
   background:"#fff",
   border:"1px solid #dbe8df",
   borderRadius:12,
   padding:16,
-  position: window.innerWidth < 768 ? "relative" : "sticky",
-top: window.innerWidth < 768 ? 0 : 20,
+  position: isMobile ? "relative" : "sticky",
+top: isMobile ? 0 : 20,
 }}>
     {ABAS.map(a=>(
       <button
@@ -631,7 +631,7 @@ top: window.innerWidth < 768 ? 0 : 20,
   <div style={{
   display:"grid",
   gridTemplateColumns:
-    window.innerWidth < 768
+    isMobile
       ? "1fr"
       : "repeat(4,minmax(0,1fr))",
   gap:16,
@@ -736,7 +736,7 @@ top: window.innerWidth < 768 ? 0 : 20,
           <thead>
             <tr>
               <th style={{
-  display: window.innerWidth < 768 ? "none" : "table-cell",
+  display: isMobile ? "none" : "table-cell",
   textAlign:"left",
   padding:"14px 12px",
   fontSize:12,
@@ -787,7 +787,7 @@ top: window.innerWidth < 768 ? 0 : 20,
       {registros.slice(0,5).map(r=>(
               <tr key={r.id}>
                 <td style={{
-  display: window.innerWidth < 768 ? "none" : "table-cell",
+  display: isMobile ? "none" : "table-cell",
   padding:"14px 12px",
   borderBottom:"1px solid #eef4ec"
 }}>
