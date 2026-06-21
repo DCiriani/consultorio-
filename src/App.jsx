@@ -810,8 +810,7 @@ top: window.innerWidth < 768 ? 0 : 20,
           </tbody>
         </table>
       </div>
-    </div>
-
+      
     <div style={{marginTop:20}}>
 <h3 style={{
   marginBottom:18,
@@ -874,7 +873,9 @@ top: window.innerWidth < 768 ? 0 : 20,
           </tr>
         ))}
     </tbody>
-  </table>
+</table>
+</div>
+
 </div>
 
 </section>
