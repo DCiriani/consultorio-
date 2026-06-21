@@ -639,7 +639,7 @@ top: isMobile ? 0 : 20,
 }}>
       <div style={{
   background:"#fff",
-  padding:"10px 14px",
+  padding: isMobile ? "16px" : "10px 14px",
   borderRadius:10,
   border:"1px solid #dbe8df",
   minHeight:72
@@ -651,14 +651,14 @@ top: isMobile ? 0 : 20,
   marginBottom:8
 }}>
   Pacientes</div>
-<div style={{fontSize:20,fontWeight:600,color:"#1a3a2a"}}>
+<div style={{fontSize: isMobile ? 28 : 20,fontWeight:600,color:"#1a3a2a"}}>
             {pacientes.length}
         </div>
       </div>
 
 <div style={{
   background:"#fff",
-  padding:"10px 14px",
+  padding: isMobile ? "16px" : "10px 14px",
   borderRadius:10,
   border:"1px solid #dbe8df",
   minHeight:72
@@ -669,14 +669,14 @@ top: isMobile ? 0 : 20,
   color:"#6b7d73",
   marginBottom:8
 }}>Pagamentos</div>
-        <div style={{fontSize:20,fontWeight:600,color:"#1a3a2a"}}>
+        <div style={{fontSize: isMobile ? 28 : 20,fontWeight:600,color:"#1a3a2a"}}>
           {registros.length}
         </div>
       </div>
 
       <div style={{
   background:"#fff",
-  padding:"10px 14px",
+  padding: isMobile ? "16px" : "10px 14px",
   borderRadius:10,
   border:"1px solid #dbe8df",
   minHeight:72
@@ -688,7 +688,7 @@ top: isMobile ? 0 : 20,
   marginBottom:8
 }}>
   NF Pendentes</div>
-        <div style={{fontSize:20,fontWeight:600,color:"#c0392b"}}>
+        <div style={{fontSize: isMobile ? 28 : 20,fontWeight:600,color:"#c0392b"}}>
           {registros.filter(r=>!r.nfEmitida).length}
         </div>
       </div>
@@ -707,7 +707,7 @@ top: isMobile ? 0 : 20,
 }}>
   Receita
 </div>
-        <div style={{fontSize:22,fontWeight:600,color:"#2a7a4a"}}>
+        <div style={{fontSize: isMobile ? 30 : 22,fontWeight:600,color:"#2a7a4a"}}>
           R$ {registros
             .filter(r=>r.valor && r.valor!=="—")
             .reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0)
@@ -895,7 +895,7 @@ top: isMobile ? 0 : 20,
                 </li>)}
               </ul>}
             </div>
-            {pacSel&&<div style={{gridColumn:"1/-1",background:"#e8f4ec",borderRadius:8,padding:"10px 14px",fontFamily:"sans-serif",fontSize:13,color:"#1a4a2a"}}>
+            {pacSel&&<div style={{gridColumn:"1/-1",background:"#e8f4ec",borderRadius:8,padding: isMobile ? "16px" : "10px 14px",fontFamily:"sans-serif",fontSize:13,color:"#1a4a2a"}}>
               ✓ <strong>{pacSel.nome}</strong> — CPF: {pacSel.cpf}{pacSel.tel1&&` · Tel: ${pacSel.tel1}`}
             </div>}
             {pacSel&&<div style={{gridColumn:"1/-1"}}>
