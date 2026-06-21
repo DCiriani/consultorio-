@@ -447,7 +447,17 @@ function exportarCSV(){
     </div>
   );
 }
-
+function IconAba({nome,color="currentColor",size=17}){
+  const st={fill:"none",stroke:color,strokeWidth:1.8,strokeLinecap:"round",strokeLinejoin:"round"};
+  const paths={
+    dashboard:<><rect x="3" y="3" width="7" height="9" rx="1.5" {...st}/><rect x="14" y="3" width="7" height="5" rx="1.5" {...st}/><rect x="14" y="12" width="7" height="9" rx="1.5" {...st}/><rect x="3" y="16" width="7" height="5" rx="1.5" {...st}/></>,
+    pagamentos:<><rect x="2.5" y="5.5" width="19" height="13" rx="2.2" {...st}/><line x1="2.5" y1="9.5" x2="21.5" y2="9.5" {...st}/></>,
+    pacientes:<><circle cx="12" cy="8" r="3.5" {...st}/><path d="M5 20c0-3.5 3-6.5 7-6.5s7 3 7 6.5" {...st}/></>,
+    titulares:<><path d="M6 2.5h9l3 3v16H6z" {...st}/><line x1="9" y1="9" x2="15" y2="9" {...st}/><line x1="9" y1="13" x2="15" y2="13" {...st}/><line x1="9" y1="17" x2="13" y2="17" {...st}/></>,
+    relatorio:<><line x1="5" y1="20" x2="5" y2="11" {...st}/><line x1="12" y1="20" x2="12" y2="6" {...st}/><line x1="19" y1="20" x2="19" y2="14" {...st}/><line x1="3" y1="20" x2="21" y2="20" {...st}/></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24">{paths[nome]}</svg>;
+}
 // ── PAINEL ────────────────────────────────────────────────────────────────────
 function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,onCadastro,onLogout}){
   const [aba,setAba]=useState("dashboard");
@@ -461,6 +471,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   const [modalCad,setModalCad]=useState(false);
   const [salvandoPag,setSalvandoPag]=useState(false);
   const [salvandoPac,setSalvandoPac]=useState(false);
+  const [tabPag,setTabPag]=useState("recentes");
   const nomeRef=useRef(null);
 
   function showT(msg,tipo="ok"){setToast({msg,tipo});setTimeout(()=>setToast(null),2500);}
@@ -528,13 +539,12 @@ const isMobile = window.innerWidth < 768;
 }
   const LBS={display:"block",fontSize:12,fontWeight:600,color:"#4a6a5a",marginBottom:5,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"};
   const INS={width:"100%",padding:"10px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"};
-
-  const ABAS=[
-{k:"dashboard",l:"🏠 Dashboard"},
-{k:"pagamentos",l:`💳 Pagamentos (${registros.length})`},
-{k:"pacientes",l:`👤 Pacientes (${pacientes.length})`},
-{k:"titulares",l:`🧾 Titulares (${titulares.length})`},
-{k:"relatorio",l:"📊 Relatório"},
+const ABAS=[
+{k:"dashboard",l:"Dashboard",icon:"dashboard"},
+{k:"pagamentos",l:`Pagamentos (${registros.length})`,icon:"pagamentos"},
+{k:"pacientes",l:`Pacientes (${pacientes.length})`,icon:"pacientes"},
+{k:"titulares",l:`Titulares (${titulares.length})`,icon:"titulares"},
+{k:"relatorio",l:"Relatório",icon:"relatorio"},
 ];
 
   return(
@@ -577,37 +587,42 @@ const isMobile = window.innerWidth < 768;
 
  <div style={{
   width: isMobile ? "100%" : 190,
-  background:"#fff",
-  border:"1px solid #dbe8df",
+background:"#1C3D2E",
+  border:"1px solid #1C3D2E",
   borderRadius:12,
   padding:16,
   position: isMobile ? "relative" : "sticky",
 top: isMobile ? 0 : 20,
 }}>
-    {ABAS.map(a=>(
-      <button
-        key={a.k}
-        onClick={()=>setAba(a.k)}
-        style={{
-          width:"100%",
-          textAlign:"left",
-          marginBottom:8,
-          padding:"12px",
-          borderRadius:8,
-          cursor:"pointer",
-          fontSize:14,
-          fontWeight:500,
-          fontFamily:"sans-serif",
-          background:aba===a.k?"#2a7a4a":"#fff",
-          color:aba===a.k?"#fff":"#4a6a5a",
-          border:aba===a.k
-            ?"1.5px solid #2a7a4a"
-            :"1.5px solid #c8ddd0"
-        }}
-      >
-        {a.l}
-      </button>
-    ))}
+    {ABAS.map(a=>{
+  const ativo = aba===a.k;
+  return (
+    <button
+      key={a.k}
+      onClick={()=>setAba(a.k)}
+      style={{
+        display:"flex",
+        alignItems:"center",
+        gap:10,
+        width:"100%",
+        textAlign:"left",
+        marginBottom:6,
+        padding:"10px 12px",
+        borderRadius:9,
+        cursor:"pointer",
+        fontSize:14,
+        fontWeight: ativo ? 700 : 500,
+        fontFamily:"sans-serif",
+        background: ativo ? "#3D7A63" : "transparent",
+        color: ativo ? "#fff" : "#5a7a6a",
+        border:"none",
+      }}
+    >
+      <IconAba nome={a.icon} color={ativo ? "#fff" : "#7FA08E"} size={17} />
+      <span style={{flex:1}}>{a.l}</span>
+    </button>
+  );
+})}
   </div>
 
   <div style={{
@@ -619,222 +634,120 @@ top: isMobile ? 0 : 20,
 {aba==="dashboard"&&<>
   <section style={CARD2}>
   <h2 style={{
-  margin:"0 0 20px",
-  fontSize: isMobile ? 24 : 20,
-  fontWeight:600,
-  color:"#143d2b",
-  fontFamily:"Inter,sans-serif"
-}}>
-  Dashboard
-</h2>
-
-  <div style={{
-  display:"grid",
-  gridTemplateColumns:
-    isMobile
-      ? "1fr"
-      : "repeat(4,minmax(0,1fr))",
-  gap: isMobile ? 12 : 16,
-  marginBottom:24
-}}>
-      <div style={{
-  background:"#fff",
-  padding: isMobile ? "16px" : "10px 14px",
-  borderRadius:10,
-  border:"1px solid #dbe8df",
-  minHeight:72,
-  width:"100%",
-  boxSizing:"border-box"
-}}>
-        <div style={{
-  fontSize:12,
-  fontWeight:500,
-  color:"#6b7d73",
-  marginBottom:8
-}}>
-  Pacientes</div>
-<div style={{fontSize: isMobile ? 28 : 20,fontWeight:600,color:"#1a3a2a"}}>
-            {pacientes.length}
-        </div>
-      </div>
-
-<div style={{
-  background:"#fff",
-  padding: isMobile ? "16px" : "10px 14px",
-  borderRadius:10,
-  border:"1px solid #dbe8df",
-  minHeight:72,
-  width:"100%",
-  boxSizing:"border-box"
-}}>
-          <div style={{
-  fontSize:12,
-  fontWeight:500,
-  color:"#6b7d73",
-  marginBottom:8
-}}>Pagamentos</div>
-        <div style={{fontSize: isMobile ? 28 : 20,fontWeight:600,color:"#1a3a2a"}}>
-          {registros.length}
-        </div>
-      </div>
-
-      <div style={{
-  background:"#fff",
-  padding: isMobile ? "16px" : "10px 14px",
-  borderRadius:10,
-  border:"1px solid #dbe8df",
-  minHeight:72,
-  width:"100%",
-  boxSizing:"border-box"
-}}>
-        <div style={{
-  fontSize:12,
-  fontWeight:500,
-  color:"#6b7d73",
-  marginBottom:8
-}}>
-  NF Pendentes</div>
-        <div style={{fontSize: isMobile ? 28 : 20,fontWeight:600,color:"#c0392b"}}>
-          {registros.filter(r=>!r.nfEmitida).length}
-        </div>
-      </div>
-
-      <div style={{
-  background:"#fff",
-  padding:16,
-  borderRadius:12,
-  border:"1px solid #dbe8df",
-  width:"100%",
-  boxSizing:"border-box"
-}}>
-  <div style={{
-    fontSize:12,
-    fontWeight:500,
-    color:"#6b7d73",
-    marginBottom:8
+    margin:"0 0 20px",
+    fontSize: isMobile ? 24 : 20,
+    fontWeight:400,
+    color:"#1C3D2E",
+    fontFamily:"Georgia,serif"
   }}>
-    Receita
+    Dashboard
+  </h2>
+
+  <div style={{
+    display:"grid",
+    gridTemplateColumns:"1fr 1fr",
+    gap:12,
+    marginBottom:24
+  }}>
+    {[
+      { label:"Pacientes",    value: pacientes.length, accent:"#3D7A63" },
+      { label:"Pagamentos",   value: registros.length, accent:"#3D7A63" },
+      { label:"NF pendentes", value: String(registros.filter(r=>!r.nfEmitida).length).padStart(2,"0"), accent:"#B9762F" },
+      { label:"Receita",      value: `R$ ${registros.filter(r=>r.valor&&r.valor!=="—").reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`, accent:"#3D7A63" },
+    ].map((m,i)=>{
+      const len=String(m.value).length;
+      const fontSize = len<=2?28:len<=4?24:len<=7?19:16;
+      return (
+        <div key={i} style={{
+          background:"#fff", borderRadius:14, border:"1px solid #E3E0D8",
+          padding:"18px 18px 16px", minHeight:88,
+          display:"flex", flexDirection:"column",
+          position:"relative", boxSizing:"border-box"
+        }}>
+          <div style={{position:"absolute",top:0,left:0,bottom:0,width:4,background:m.accent,borderRadius:"14px 0 0 14px"}}/>
+          <span style={{
+            display:"inline-block", width:"fit-content",
+            fontFamily:"sans-serif", fontSize:"12px", fontWeight:600,
+            color:"#6B7A72", paddingLeft:8, whiteSpace:"nowrap",
+            lineHeight:"15px", marginBottom:10
+          }}>{m.label}</span>
+          <span style={{
+            display:"block",
+            fontFamily:"sans-serif", fontSize:`${fontSize}px`, fontWeight:800,
+            color: m.accent==="#B9762F" ? "#B9762F" : "#1C3D2E",
+            paddingLeft:8, letterSpacing:"-0.5px", lineHeight:1,
+            whiteSpace:"nowrap"
+          }}>{m.value}</span>
+        </div>
+      );
+    })}
   </div>
 
-  <div style={{
-    fontSize: isMobile ? 30 : 22,
-    fontWeight:600,
-    color:"#2a7a4a"
-  }}>
-    R$ {registros
-      .filter(r=>r.valor && r.valor!=="—")
-      .reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0)
-      .toLocaleString("pt-BR",{minimumFractionDigits:2})}
-  </div>
-</div> {/* fecha card Receita */}
-
-</div> {/* fecha grid principal */}
-
-<div style={{marginTop:20}}>
-<h3 style={{
-  marginBottom:18,
-  color:"#143d2b",
-  fontSize:16,
-  fontWeight:600,
-  fontFamily:"Inter,sans-serif"
-}}>
-          Últimos pagamentos
-      </h3>
-
-      <div style={{
-  display:"flex",
-  flexDirection:"column",
-  gap:12
-}}>
-  {registros.slice(0,5).map(r => (
-    <div
-      key={r.id}
-      style={{
-        background:"#fff",
-        border:"1px solid #e0ede5",
-        borderRadius:12,
-        padding:16
-      }}
-    >
-      <div style={{
-        fontWeight:700,
-        fontSize:15,
-        color:"#1a3a2a",
-        marginBottom:8
-      }}>
-        {r.nome}
-      </div>
-
-      <div style={{
-        fontSize:14,
-        color:"#5a7a6a",
-        marginBottom:6
-      }}>
-        Pagamento: {r.pagamento}
-      </div>
-
-      <div style={{
-        fontSize:16,
-        fontWeight:700,
-        color:"#2a7a4a"
-      }}>
-        R$ {r.valor}
-      </div>
-    </div>
-  ))}
-</div>
-    <div style={{marginTop:20}}>
-<h3 style={{
-  marginBottom:18,
-  color:"#c0392b",
-  fontSize:16,
-  fontWeight:600,
-  fontFamily:"Inter,sans-serif"
-}}>
-      NF Pendentes
-  </h3>
-
-  <div style={{
-  display:"flex",
-  flexDirection:"column",
-  gap:12
-}}>
-  {registros
-    .filter(r=>!r.nfEmitida)
-    .slice(0,5)
-    .map(r => (
-      <div
-        key={r.id}
+  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+    <h3 style={{fontFamily:"sans-serif",fontSize:15,fontWeight:700,color:"#1C3D2E",margin:0}}>
+      Pagamentos
+    </h3>
+    <div style={{display:"flex",gap:6}}>
+      <button
+        onClick={()=>setTabPag("recentes")}
         style={{
-          background:"#fff",
-          border:"1px solid #e0ede5",
-          borderRadius:12,
-          padding:16
+          fontFamily:"sans-serif", fontSize:11, fontWeight:700, padding:"5px 11px",
+          borderRadius:20, border:"none", cursor:"pointer",
+          background: tabPag==="recentes" ? "#1C3D2E" : "#fff",
+          color: tabPag==="recentes" ? "#fff" : "#6B7A72"
         }}
-      >
-        <div style={{
-          fontWeight:700,
-          fontSize:15,
-          color:"#1a3a2a",
-          marginBottom:8
-        }}>
-          {r.nome}
-        </div>
+      >Recentes</button>
+      <button
+        onClick={()=>setTabPag("pendentes")}
+        style={{
+          fontFamily:"sans-serif", fontSize:11, fontWeight:700, padding:"5px 11px",
+          borderRadius:20, border:"none", cursor:"pointer",
+          background: tabPag==="pendentes" ? "#B9762F" : "#fff",
+          color: tabPag==="pendentes" ? "#fff" : "#6B7A72"
+        }}
+      >Pendentes ({registros.filter(r=>!r.nfEmitida).length})</button>
+    </div>
+  </div>
 
-        <div style={{
-          fontSize:16,
-          fontWeight:700,
-          color:"#c0392b"
+  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+    {(tabPag==="pendentes" ? registros.filter(r=>!r.nfEmitida) : registros.slice(0,5)).map(r=>{
+      const initials = r.nome.split(" ").slice(0,2).map(n=>n[0]).join("").toUpperCase();
+      return (
+        <div key={r.id} style={{
+          background:"#fff", borderRadius:12, border:"1px solid #E3E0D8",
+          padding:"14px 16px", display:"flex", alignItems:"center", gap:14
         }}>
-          R$ {r.valor}
+          <div style={{
+            width:38, height:38, borderRadius:"50%", flexShrink:0,
+            background:"#E7EFE9", color:"#3D7A63",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontWeight:700, fontSize:13, fontFamily:"sans-serif"
+          }}>{initials}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.nome}</div>
+            <div style={{fontFamily:"sans-serif",fontSize:12,color:"#6B7A72",marginTop:2}}>{r.pagamento}</div>
+          </div>
+          <div style={{textAlign:"right",flexShrink:0}}>
+            <div style={{fontFamily:"sans-serif",fontSize:15,fontWeight:800,color:"#1C3D2E"}}>
+              {r.valor!=="—" ? `R$ ${r.valor}` : "—"}
+            </div>
+            <div style={{
+              fontFamily:"sans-serif", fontSize:10, fontWeight:700, letterSpacing:"0.4px",
+              color: r.nfEmitida ? "#3D7A63" : "#B9762F", marginTop:3
+            }}>
+              {r.nfEmitida ? "NF EMITIDA" : "NF PENDENTE"}
+            </div>
+          </div>
         </div>
+      );
+    })}
+    {registros.length===0 && (
+      <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:30,fontSize:14}}>
+        Nenhum pagamento registrado ainda.
       </div>
-    ))}
-</div>   {/* fecha lista NF Pendentes */}
-</div>   {/* fecha bloco NF Pendentes */}
-</div>   {/* fecha bloco Últimos pagamentos */}
-
-</section>
+    )}
+  </div>
+  </section>
 </>}
 {/* PAGAMENTOS */}
       {aba==="pagamentos"&&<>
