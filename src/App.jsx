@@ -707,10 +707,9 @@ top: isMobile ? 0 : 20,
 }}>
         <div style={{
   background:"#fff",
-  padding: isMobile ? "16px" : "10px 14px",
-  borderRadius:10,
+  padding:16,
+  borderRadius:12,
   border:"1px solid #dbe8df",
-  minHeight:72,
   width:"100%",
   boxSizing:"border-box"
 }}>
@@ -736,90 +735,48 @@ top: isMobile ? 0 : 20,
           Últimos pagamentos
       </h3>
 
-      <div style={{overflowX:"auto"}}>
-        <table style={{
-  width:"100%",
-  borderCollapse:"collapse",
-  fontFamily:"sans-serif",
+      <div style={{
+  display:"flex",
+  flexDirection:"column",
+  gap:12
 }}>
-          <thead>
-            <tr>
-              <th style={{
-  display: isMobile ? "none" : "table-cell",
-  textAlign:"left",
-  padding:"14px 12px",
-  fontSize:12,
-  fontWeight:600,
-  letterSpacing:"0.3px",
-  color:"#6b7d73",
-  borderBottom:"2px solid #dbe8df"
-}}>
-  Data
-</th>
-              <th style={{
-  textAlign:"left",
-  padding:"14px 12px",
-  fontSize:12,
-  fontWeight:600,
-  letterSpacing:"0.3px",
-  color:"#6b7d73",
-  borderBottom:"2px solid #dbe8df"
-}}>
-  Paciente
-  </th>
-              <th style={{
-  textAlign:"left",
-  padding:"14px 12px",
-  fontSize:12,
-  fontWeight:600,
-  letterSpacing:"0.3px",
-  color:"#6b7d73",
-  borderBottom:"2px solid #dbe8df"
-}}>
-  Pagamento
-  </th>
-              <th style={{
-  textAlign:"left",
-  padding:"14px 12px",
-  fontSize:12,
-  fontWeight:600,
-  letterSpacing:"0.3px",
-  color:"#6b7d73",
-  borderBottom:"2px solid #dbe8df"
-}}>
-  Valor
-  </th>
-            </tr>
-          </thead>
-
-          <tbody>
-      {registros.slice(0,5).map(r=>(
-              <tr key={r.id}>
-                <td style={{
-  display: isMobile ? "none" : "table-cell",
-  padding:"14px 12px",
-  borderBottom:"1px solid #eef4ec"
-}}>
-  {r.data}
-</td>
-                <td style={{
-  padding:"14px 12px",
-  borderBottom:"1px solid #eef4ec",
-  fontWeight:600,
-  wordBreak:"break-word"
-}}>
-  {r.nome}
-</td>
-                <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec"}}>{r.pagamento}</td>
-                <td style={{padding:"14px 12px",borderBottom:"1px solid #eef4ec",fontWeight:600}}>
-                  R$ {r.valor}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+  {registros.slice(0,5).map(r => (
+    <div
+      key={r.id}
+      style={{
+        background:"#fff",
+        border:"1px solid #e0ede5",
+        borderRadius:12,
+        padding:16
+      }}
+    >
+      <div style={{
+        fontWeight:700,
+        fontSize:15,
+        color:"#1a3a2a",
+        marginBottom:8
+      }}>
+        {r.nome}
       </div>
-      
+
+      <div style={{
+        fontSize:14,
+        color:"#5a7a6a",
+        marginBottom:6
+      }}>
+        Pagamento: {r.pagamento}
+      </div>
+
+      <div style={{
+        fontSize:16,
+        fontWeight:700,
+        color:"#2a7a4a"
+      }}>
+        R$ {r.valor}
+      </div>
+    </div>
+  ))}
+</div>
     <div style={{marginTop:20}}>
 <h3 style={{
   marginBottom:18,
