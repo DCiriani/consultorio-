@@ -582,12 +582,17 @@ const ABAS=[
   display:"flex",
   flexDirection: isMobile ? "column" : "row",
   gap:30,
-  alignItems:"flex-start"
+  alignItems:"flex-start",
+  width:"100%",
+  maxWidth:"100%",
+  boxSizing:"border-box"
 }}>
 
  <div style={{
   width: isMobile ? "100%" : 190,
-background:"#1C3D2E",
+  maxWidth: isMobile ? "100%" : 190,
+  boxSizing:"border-box",
+  background:"#1C3D2E",
   border:"1px solid #1C3D2E",
   borderRadius:12,
   padding:16,
