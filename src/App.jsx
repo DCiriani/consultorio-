@@ -206,38 +206,6 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
   );
 }
 
-    
-
-  const totalFiltrado=pagsFiltrados.filter(r=>r.valor!=="—").reduce((s,r)=>s+(parseFloat(r.valor.replace(",","."))||0),0);
-
-  return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
-      <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>{p.nome}</h3>
-          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
-        </div>
-
-        <div style={{display:"flex",gap:6,marginBottom:18}}>
-          {[["dados","📋 Dados"],["pagamentos",`💳 Pagamentos (${pagsPaciente.length})`]].map(([v,l])=>(
-            <button key={v} onClick={()=>setAbaModal(v)} style={{padding:"7px 14px",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:abaModal===v?"#2a7a4a":"#f4f6f0",color:abaModal===v?"#fff":"#4a6a5a",border:"none",fontWeight:abaModal===v?700:400}}>{l}</button>
-          ))}
-        </div>
-
-        {abaModal==="dados"&&<>
-          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",marginBottom:8}}>Dados pessoais</div>
-          <Row l="CPF" v={p.cpf}/><Row l="Nascimento" v={p.nascimento}/><Row l="Telefone" v={p.tel1}/>
-          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Contato de emergência</div>
-          <Row l="Nome" v={p.emergNome}/><Row l="Parentesco" v={p.emergParentesco}/><Row l="Telefone" v={p.emergTel}/>
-          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Endereço</div>
-          <Row l="CEP" v={p.cep}/><Row l="Logradouro" v={[p.logradouro,p.numero,p.complemento].filter(Boolean).join(", ")}/><Row l="Bairro" v={p.bairro}/><Row l="Cidade/UF" v={[p.cidade,p.estado].filter(Boolean).join(" - ")}/>
-          {tits.length>0&&<>
-            <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Titulares do pagamento</div>
-            {tits.map(t=><div key={t.id}><Row l="Nome" v={t.nome}/><Row l="CPF" v={t.cpf}/>{t.parentesco&&<Row l="Parentesco" v={t.parentesco}/>}</div>)}
-          </>}
-        </>}
-
-        
 // ── MODAL FICHA ───────────────────────────────────────────────────────────────
 function ModalFicha({p,titulares,registros,onClose}){
   const [abaModal,setAbaModal]=useState("dados");
