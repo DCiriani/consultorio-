@@ -509,6 +509,10 @@ function IconAba({nome,color="currentColor",size=17}){
 // ── PAINEL ────────────────────────────────────────────────────────────────────
 function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,onCadastro,onLogout}){
   const [aba,setAba]=useState("dashboard");
+  const [filtroProf,setFiltroProf]=useState("todos");
+const pacientesFiltrados = filtroProf==="todos" ? pacientes : pacientes.filter(p=>p.profissional===filtroProf);
+const nomesFiltrados = new Set(pacientesFiltrados.map(p=>p.nome));
+const registrosFiltrados = filtroProf==="todos" ? registros : registros.filter(r=>nomesFiltrados.has(r.nome));
   const [nome,setNome]=useState("");const [pacSel,setPacSel]=useState(null);
   const [pagamento,setPagamento]=useState("");const [valor,setValor]=useState("");
   const [data,setData]=useState(HOJE());
@@ -589,8 +593,8 @@ const isMobile = window.innerWidth < 768;
   const INS={width:"100%",padding:"10px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"};
 const ABAS=[
 {k:"dashboard",l:"Dashboard",icon:"dashboard"},
-{k:"pagamentos",l:`Pagamentos (${registros.length})`,icon:"pagamentos"},
-{k:"pacientes",l:`Pacientes (${pacientes.length})`,icon:"pacientes"},
+{k:"pagamentos",l:`Pagamentos (${registrosFiltrados.length})`,icon:"pagamentos"},
+{k:"pacientes",l:`Pacientes (${pacientesFiltrados.length})`,icon:"pacientes"},
 {k:"titulares",l:`Titulares (${titulares.length})`,icon:"titulares"},
 {k:"relatorio",l:"Relatório",icon:"relatorio"},
 ];
@@ -703,10 +707,10 @@ top: isMobile ? 0 : 20,
     marginBottom:24
   }}>
     {[
-      { label:"Pacientes",    value: pacientes.length, accent:"#3D7A63" },
-      { label:"Pagamentos",   value: registros.length, accent:"#3D7A63" },
-      { label:"NF pendentes", value: String(registros.filter(r=>!r.nfEmitida).length).padStart(2,"0"), accent:"#B9762F" },
-      { label:"Receita",      value: `R$ ${registros.filter(r=>r.valor&&r.valor!=="—").reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`, accent:"#3D7A63" },
+      { label:"Pacientes",    value: pacientesFiltrados.length, accent:"#3D7A63" },
+      { label:"Pagamentos",   value: registrosFiltrados.length, accent:"#3D7A63" },
+      { label:"NF pendentes", value: String(registrosFiltrados.filter(r=>!r.nfEmitida).length).padStart(2,"0"), accent:"#B9762F" },
+      { label:"Receita",      value: `R$ ${registrosFiltrados.filter(r=>r.valor&&r.valor!=="—").reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`, accent:"#3D7A63" },
     ].map((m,i)=>{
       const len=String(m.value).length;
       const fontSize = len<=2?28:len<=4?24:len<=7?19:16;
@@ -758,12 +762,12 @@ top: isMobile ? 0 : 20,
           background: tabPag==="pendentes" ? "#B9762F" : "#fff",
           color: tabPag==="pendentes" ? "#fff" : "#6B7A72"
         }}
-      >Pendentes ({registros.filter(r=>!r.nfEmitida).length})</button>
+      >Pendentes ({registrosFiltrados.filter(r=>!r.nfEmitida).length})</button>
     </div>
   </div>
 
   <div style={{display:"flex",flexDirection:"column",gap:8}}>
-    {(tabPag==="pendentes" ? registros.filter(r=>!r.nfEmitida) : registros.slice(0,5)).map(r=>{
+    {(tabPag==="pendentes" ? registrosFiltrados.filter(r=>!r.nfEmitida) : registrosFiltrados.slice(0,5)).map(r=>{
       const initials = r.nome.split(" ").slice(0,2).map(n=>n[0]).join("").toUpperCase();
       return (
         <div key={r.id} style={{
@@ -867,7 +871,7 @@ top: isMobile ? 0 : 20,
   fontFamily:"sans-serif",
 }}>
               <thead><tr>{["Data","Paciente","Pagamento","Valor",""].map(h=><th key={h} style={{textAlign:"left",padding:"10px 12px",fontSize:11,fontWeight:700,color:"#4a6a5a",borderBottom:"2px solid #deeade",textTransform:"uppercase"}}>{h}</th>)}</tr></thead>
-              <tbody>{registros.slice(0,20).map(r=><tr key={r.id}>
+              <tbody>{registrosFiltrados.slice(0,20).map(r=><tr key={r.id}>
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec",whiteSpace:"nowrap"}}>{r.data}</td>
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec"}}><span style={{...{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600},...chipColor(r.pagamento)}}>{r.pagamento}</span></td>
@@ -885,11 +889,10 @@ top: isMobile ? 0 : 20,
           <h2 style={{margin:0,fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Pacientes cadastrados</h2>
           <button onClick={()=>setModalCad(true)} style={{padding:"8px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>+ Cadastrar manual</button>
         </div>
-        {pacientes.length===0
+        {pacientesFiltrados.length===0
           ?<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15,lineHeight:1.8}}>Nenhum paciente ainda.</div>
           :<div style={{display:"flex",flexDirection:"column",gap:10}}>
-            {pacientes.map(p=><div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#f7faf8",borderRadius:10,border:"1px solid #e0ede5"}}>
-              <div style={{flex:1}}>
+{pacientesFiltrados.map(p=><div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#f7faf8",borderRadius:10,border:"1px solid #e0ede5"}}>              <div style={{flex:1}}>
                 <div style={{fontWeight:700,fontSize:15,color:"#1a3a2a"}}>{p.nome}</div>
                 <div style={{fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif",marginTop:2}}>CPF: {p.cpf}{p.tel1&&` · ${p.tel1}`}{p.cidade&&` · ${p.cidade}`}</div>
               </div>
