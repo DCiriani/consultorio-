@@ -20,6 +20,7 @@ const db = getFirestore(firebaseApp);
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const fCPF = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
 const fTel = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.length<=10?d.replace(/(\d{2})(\d{4})(\d{0,4})/,"($1) $2-$3").replace(/-$/,""):d.replace(/(\d{2})(\d{5})(\d{0,4})/,"($1) $2-$3").replace(/-$/,""); };
+const fData = r => { const d = r.replace(/\D/g,"").slice(0,8); return d.replace(/(\d{2})(\d)/,"$1/$2").replace(/(\d{2})(\d)/,"$1/$2"); };
 const fCEP = r => { const d=r.replace(/\D/g,"").slice(0,8); return d.replace(/(\d{5})(\d{0,3})/,"$1-$2").replace(/-$/,""); };
 const HOJE = () => new Date().toLocaleDateString("pt-BR");
 const FORMAS = ["Pix","Cartão de Débito","Cartão de Crédito","Dinheiro"];
@@ -165,7 +166,7 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
         <div style={G2}>
           <div style={{gridColumn:"1/-1"}}><LBL t="Nome completo" o/><input style={inp(erros.nome)} value={f.nome} onChange={e=>up("nome",e.target.value)} placeholder="Nome completo"/><ERR s={erros.nome}/></div>
           <div><LBL t="CPF" o/><input style={inp(erros.cpf)} value={f.cpf} onChange={e=>up("cpf",fCPF(e.target.value))} placeholder="000.000.000-00"/><ERR s={erros.cpf}/></div>
-          <div><LBL t="Nascimento" o/><input style={inp(erros.nascimento)} type="date" value={f.nascimento} onChange={e=>up("nascimento",e.target.value)}/><ERR s={erros.nascimento}/></div>
+          <div><LBL t="Nascimento" o/><input style={inp(erros.nascimento)} type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10} value={f.nascimento} onChange={e=>up("nascimento",fData(e.target.value))}/><ERR s={erros.nascimento}/></div>
         </div>
       </div>
 
