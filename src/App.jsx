@@ -91,7 +91,7 @@ function Login({onLogin}){
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(135deg,#1a4a2a 0%,#2a7a4a 100%)"}}>
       <div style={{background:"#fff",borderRadius:20,padding:"48px 40px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{fontSize:48,marginBottom:12}}>🏥</div>
+          <div style={{fontSize:48,marginBottom:12}}>🧠</div>
           <h1 style={{margin:"0 0 4px",fontSize:22,fontWeight:600,color:"#1a3a2a",fontFamily:"Georgia,serif"}}>Espaço Ciriani</h1>
           <p style={{margin:0,fontSize:13,color:"#8aaa9a",fontFamily:"sans-serif"}}>Acesso restrito</p>
         </div>
@@ -156,7 +156,7 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
     <div style={{fontFamily:"Georgia,serif",maxWidth:560,margin:"0 auto",padding:"20px 16px 60px",background:"#f4f6f0",minHeight:"100vh"}}>
       {onVoltar&&<button onClick={onVoltar} style={{background:"none",border:"none",color:"#2a7a4a",cursor:"pointer",fontFamily:"sans-serif",fontSize:13,marginBottom:16,padding:0}}>← Voltar</button>}
       <div style={{textAlign:"center",marginBottom:22}}>
-        <div style={{fontSize:36}}>🏥</div>
+        <div style={{fontSize:36}}>🧠</div>
         <h1 style={{margin:"6px 0 2px",fontSize:20,fontWeight:700,color:"#1a3a2a"}}>{titulo||"Ficha de cadastro"}</h1>
         <p style={{margin:0,fontSize:12,color:"#5a7a6a",fontFamily:"sans-serif"}}>Todos os campos com <span style={{color:"#c0392b"}}>*</span> são obrigatórios</p>
       </div>
@@ -563,7 +563,7 @@ const ABAS=[
   gap:16,
   marginBottom:24
 }}>
-        <div style={{fontSize:38}}>🏥</div>
+        <div style={{fontSize:38}}>🧠</div>
         <div>
           <h1 style={{margin:0,fontSize:22,fontWeight:600,color:"#1a3a2a"}}>Espaço Ciriani</h1>
           <p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Painel administrativo</p>
