@@ -206,13 +206,7 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
   );
 }
 
-    if(filtroAno!=="todos"&&a!==filtroAno)return false;
-    if(filtroMes!=="todos"&&m!==filtroMes)return false;
-    return true;
-  }).sort((a,b)=>{
-    const [da,ma,aa]=a.data.split("/");const [db,mb,ab]=b.data.split("/");
-    return `${ab}${mb}${db}`.localeCompare(`${aa}${ma}${da}`);
-  });
+    
 
   const totalFiltrado=pagsFiltrados.filter(r=>r.valor!=="—").reduce((s,r)=>s+(parseFloat(r.valor.replace(",","."))||0),0);
 
