@@ -39,8 +39,7 @@ function chipColor(p){
 
 // ── STORAGE ───────────────────────────────────────────────────────────────────
 // ── FIRESTORE ─────────────────────────────────────────────────────────────────
-const COLECOES = { pac: "pacientes", reg: "pagamentos", tit: "titulares" };
-
+const COLECOES = { pac: "pacientes", reg: "pagamentos", tit: "titulares", evol: "evolucoes" };
 async function load(chave){
   try{
     const snap = await getDocs(collection(db, COLECOES[chave]));
@@ -255,12 +254,38 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional,dadosInicia
 }
 
 // ── MODAL FICHA ───────────────────────────────────────────────────────────────
-function ModalFicha({p,titulares,onClose}){
+function ModalFicha({p,titulares,evolucoes,setEvolucoes,onClose}){
   const Row=({l,v})=>v?<div style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid #eef4ec",fontFamily:"sans-serif"}}><span style={{fontSize:11,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",width:110,flexShrink:0}}>{l}</span><span style={{fontSize:14,color:"#1a3a2a"}}>{v}</span></div>:null;
   const tits=titulares.filter(t=>t.pacienteId===p.id);
+  const atendimentosPac=evolucoes.filter(ev=>ev.pacienteId===p.id).sort((a,b)=>(b.dataOrdenacao||"").localeCompare(a.dataOrdenacao||""));
+
+  const hoje=new Date();
+  const dataHoje=`${String(hoje.getDate()).padStart(2,"0")}/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`;
+  const [novaData,setNovaData]=useState(dataHoje);
+  const [novoTexto,setNovoTexto]=useState("");
+  const [salvandoEvol,setSalvandoEvol]=useState(false);
+
+  async function salvarAtendimento(){
+    if(!novoTexto.trim())return;
+    setSalvandoEvol(true);
+    const [dd,mm,yyyy]=novaData.split("/");
+    const dataOrdenacao = (dd&&mm&&yyyy) ? `${yyyy}-${mm}-${dd}` : "";
+    const dados={pacienteId:p.id,data:novaData,texto:novoTexto.trim(),dataOrdenacao};
+    const novoId=await addItem("evol",dados);
+    setEvolucoes([...evolucoes,{id:novoId,...dados}]);
+    setNovoTexto("");
+    setNovaData(dataHoje);
+    setSalvandoEvol(false);
+  }
+
+  async function excluirAtendimento(id){
+    await deleteItem("evol",id);
+    setEvolucoes(evolucoes.filter(ev=>ev.id!==id));
+  }
+
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
-      <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:460,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+      <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
           <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>{p.nome}</h3>
           <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
@@ -275,6 +300,44 @@ function ModalFicha({p,titulares,onClose}){
           <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Titulares do pagamento</div>
           {tits.map(t=><div key={t.id}><Row l="Nome" v={t.nome}/><Row l="CPF" v={t.cpf}/>{t.parentesco&&<Row l="Parentesco" v={t.parentesco}/>}</div>)}
         </>}
+
+        <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"18px 0 10px",borderTop:"2px solid #eef4ec",paddingTop:14}}>Histórico de atendimentos</div>
+
+        <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+          <input
+            value={novaData}
+            onChange={e=>setNovaData(fData(e.target.value))}
+            type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10}
+            style={{width:110,padding:"8px 10px",borderRadius:7,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif"}}
+          />
+        </div>
+        <textarea
+          value={novoTexto}
+          onChange={e=>setNovoTexto(e.target.value)}
+          placeholder="Escreva aqui as anotações desta sessão..."
+          rows={4}
+          style={{width:"100%",padding:"10px 12px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",boxSizing:"border-box",resize:"vertical",marginBottom:8}}
+        />
+        <button
+          onClick={salvarAtendimento}
+          disabled={salvandoEvol||!novoTexto.trim()}
+          style={{padding:"9px 18px",background:novoTexto.trim()?"#2a7a4a":"#cfe0d6",color:"#fff",border:"none",borderRadius:8,cursor:novoTexto.trim()?"pointer":"default",fontSize:13,fontFamily:"sans-serif",fontWeight:600,marginBottom:18}}
+        >{salvandoEvol?"Salvando...":"Adicionar atendimento"}</button>
+
+        {atendimentosPac.length===0
+          ?<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"16px 0",fontSize:13}}>Nenhum atendimento registrado ainda.</div>
+          :<div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {atendimentosPac.map(ev=>(
+              <div key={ev.id} style={{background:"#f7faf8",borderRadius:8,padding:"10px 12px",border:"1px solid #e0ede5"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <span style={{fontSize:12,fontWeight:700,color:"#2a7a4a",fontFamily:"sans-serif"}}>{ev.data}</span>
+                  <button onClick={()=>excluirAtendimento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:12}}>excluir</button>
+                </div>
+                <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",whiteSpace:"pre-wrap",lineHeight:1.5}}>{ev.texto}</div>
+              </div>
+            ))}
+          </div>
+        }
       </div>
     </div>
   );
@@ -507,8 +570,7 @@ function IconAba({nome,color="currentColor",size=17}){
   return <svg width={size} height={size} viewBox="0 0 24 24">{paths[nome]}</svg>;
 }
 // ── PAINEL ────────────────────────────────────────────────────────────────────
-function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,onCadastro,onLogout}){
-  const [aba,setAba]=useState("dashboard");
+function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,evolucoes,setEvolucoes,onCadastro,onLogout}){  const [aba,setAba]=useState("dashboard");
   const [filtroProf,setFiltroProf]=useState("todos");
   const [buscaPac,setBuscaPac]=useState("");
 const [editandoPac,setEditandoPac]=useState(null);
@@ -640,8 +702,7 @@ const ABAS=[
   return(
     <div style={ROOT}>
       <Toast t={toast}/>
-      {detalhe&&<ModalFicha p={detalhe} titulares={titulares} onClose={()=>setDetalhe(null)}/>}
-      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
+{detalhe&&<ModalFicha p={detalhe} titulares={titulares} evolucoes={evolucoes} setEvolucoes={setEvolucoes} onClose={()=>setDetalhe(null)}/>}      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
 
@@ -1056,6 +1117,7 @@ export default function App(){
   const [pacientes,setPacientes]=useState([]);
   const [registros,setRegistros]=useState([]);
   const [titulares,setTitulares]=useState([]);
+  const [evolucoes,setEvolucoes]=useState([]);
   const [pronto,setPronto]=useState(false);
   const [salvandoCad,setSalvandoCad]=useState(false);
   const [cadastroOk,setCadastroOk]=useState(false);
@@ -1077,8 +1139,8 @@ export default function App(){
   useEffect(()=>{
     if(tela==="painel"&&!pronto){
       (async()=>{
-        const [p,r,t]=await Promise.all([load("pac"),load("reg"),load("tit")]);
-        setPacientes(p);setRegistros(r);setTitulares(t);setPronto(true);
+        const [p,r,t,e]=await Promise.all([load("pac"),load("reg"),load("tit"),load("evol")]);
+        setPacientes(p);setRegistros(r);setTitulares(t);setEvolucoes(e);setPronto(true);
       })();
     }
   },[tela]);
@@ -1135,5 +1197,5 @@ export default function App(){
     return <FormPaciente onSalvo={handleSalvarCadastro} onVoltar={()=>setTela("painel")} titulo="Espaço Ciriani" salvando={salvandoCad}/>;
   }
 
-  return <Painel pacientes={pacientes} setPacientes={setPacientes} registros={registros} setRegistros={setRegistros} titulares={titulares} setTitulares={setTitulares} onCadastro={()=>{setCadastroOk(false);setTela("cadastro");}} onLogout={handleLogout}/>;
+  return <Painel pacientes={pacientes} setPacientes={setPacientes} registros={registros} setRegistros={setRegistros} titulares={titulares} setTitulares={setTitulares} evolucoes={evolucoes} setEvolucoes={setEvolucoes} onCadastro={()=>{setCadastroOk(false);setTela("cadastro");}} onLogout={handleLogout}/>;
 }
