@@ -182,8 +182,8 @@ function SeletorProfissional({ onEscolher }) {
   );
 }
 // ── FORM PACIENTE ─────────────────────────────────────────────────────────────
-function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional}){
-  const [f,setF]=useState({...VAZIO_PAC,profissional:profissional||""});
+function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional,dadosIniciais}){
+  const [f,setF]=useState(dadosIniciais ? {...VAZIO_PAC,...dadosIniciais} : {...VAZIO_PAC,profissional:profissional||""});
   const [erros,setErros]=useState({});
   const [buscando,setBuscando]=useState(false);
   const up=(c,v)=>{setF(p=>({...p,[c]:v}));setErros(e=>({...e,[c]:false}));};
@@ -510,9 +510,20 @@ function IconAba({nome,color="currentColor",size=17}){
 function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,onCadastro,onLogout}){
   const [aba,setAba]=useState("dashboard");
   const [filtroProf,setFiltroProf]=useState("todos");
+  const [buscaPac,setBuscaPac]=useState("");
+const [editandoPac,setEditandoPac]=useState(null);
 const pacientesFiltrados = filtroProf==="todos" ? pacientes : pacientes.filter(p=>p.profissional===filtroProf);
 const nomesFiltrados = new Set(pacientesFiltrados.map(p=>p.nome));
 const registrosFiltrados = filtroProf==="todos" ? registros : registros.filter(r=>nomesFiltrados.has(r.nome));
+const pacientesAtivos = pacientesFiltrados.filter(p=>!p.inativo);
+const pacientesInativos = pacientesFiltrados.filter(p=>p.inativo);
+const buscaLower = buscaPac.trim().toLowerCase();
+const pacientesBuscados = buscaLower
+  ? pacientesAtivos.filter(p=>p.nome.toLowerCase().includes(buscaLower))
+  : pacientesAtivos;
+const pacientesInativosBuscados = buscaLower
+  ? pacientesInativos.filter(p=>p.nome.toLowerCase().includes(buscaLower))
+  : pacientesInativos;
   const [nome,setNome]=useState("");const [pacSel,setPacSel]=useState(null);
   const [pagamento,setPagamento]=useState("");const [valor,setValor]=useState("");
   const [data,setData]=useState(HOJE());
@@ -569,6 +580,32 @@ const registrosFiltrados = filtroProf==="todos" ? registros : registros.filter(r
     const a=[...pacientes,{id:novoId,...dados}].sort((a,b)=>a.nome.localeCompare(b.nome));
     setPacientes(a);setModalCad(false);showT("Paciente cadastrado!");setSalvandoPac(false);
   }
+
+  async function salvarEdicaoPac(dadosEditados){
+    const atualizado={...editandoPac,...dadosEditados};
+    await updateItem("pac",atualizado.id,dadosEditados);
+    setPacientes(pacientes.map(p=>p.id===atualizado.id?atualizado:p));
+    setEditandoPac(null);
+    showT("Cadastro atualizado.");
+  }
+
+  async function alterarProfissional(p,novoProf){
+    await updateItem("pac",p.id,{profissional:novoProf});
+    setPacientes(pacientes.map(x=>x.id===p.id?{...x,profissional:novoProf}:x));
+    showT("Profissional alterado.");
+  }
+
+  async function inativarPac(p){
+    await updateItem("pac",p.id,{inativo:true});
+    setPacientes(pacientes.map(x=>x.id===p.id?{...x,inativo:true}:x));
+    showT("Paciente inativado.");
+  }
+
+  async function reativarPac(p){
+    await updateItem("pac",p.id,{inativo:false});
+    setPacientes(pacientes.map(x=>x.id===p.id?{...x,inativo:false}:x));
+    showT("Paciente reativado.");
+  }
 const isMobile = window.innerWidth < 768;
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
  const ROOT={
@@ -594,7 +631,8 @@ const isMobile = window.innerWidth < 768;
 const ABAS=[
 {k:"dashboard",l:"Dashboard",icon:"dashboard"},
 {k:"pagamentos",l:`Pagamentos (${registrosFiltrados.length})`,icon:"pagamentos"},
-{k:"pacientes",l:`Pacientes (${pacientesFiltrados.length})`,icon:"pacientes"},
+{k:"pacientes",l:`Pacientes (${pacientesAtivos.length})`,icon:"pacientes"},
+{k:"inativados",l:`Inativados (${pacientesInativos.length})`,icon:"pacientes"},
 {k:"titulares",l:`Titulares (${titulares.length})`,icon:"titulares"},
 {k:"relatorio",l:"Relatório",icon:"relatorio"},
 ];
@@ -607,6 +645,9 @@ const ABAS=[
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
 
+{editandoPac&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
+        <div style={{width:"100%",maxWidth:540}}><FormPaciente dadosIniciais={editandoPac} onSalvo={salvarEdicaoPac} onVoltar={()=>setEditandoPac(null)} titulo="Editar paciente" salvando={false} profissional={editandoPac.profissional}/></div>
+      </div>}
       <header style={{
   display:"flex",
   flexDirection: isMobile ? "column" : "row",
@@ -908,24 +949,81 @@ top: isMobile ? 0 : 20,
         {registros.length===0&&<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15}}>Nenhum pagamento registrado ainda.</div>}
       </>}
 
-      {aba==="pacientes"&&<section style={CARD2}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-          <h2 style={{margin:0,fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Pacientes cadastrados</h2>
-          <button onClick={()=>setModalCad(true)} style={{padding:"8px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>+ Cadastrar manual</button>
-        </div>
-        {pacientesFiltrados.length===0
-          ?<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15,lineHeight:1.8}}>Nenhum paciente ainda.</div>
-          :<div style={{display:"flex",flexDirection:"column",gap:10}}>
-{pacientesFiltrados.map(p=><div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#f7faf8",borderRadius:10,border:"1px solid #e0ede5"}}>              <div style={{flex:1}}>
-                <div style={{fontWeight:700,fontSize:15,color:"#1a3a2a"}}>{p.nome}</div>
-                <div style={{fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif",marginTop:2}}>CPF: {p.cpf}{p.tel1&&` · ${p.tel1}`}{p.cidade&&` · ${p.cidade}`}</div>
-              </div>
-              <button onClick={()=>setDetalhe(p)} style={{padding:"6px 14px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",color:"#1a4a2a",marginRight:4}}>Ver ficha</button>
-              <button onClick={async()=>{await deleteItem("pac",p.id);const a=pacientes.filter(x=>x.id!==p.id);setPacientes(a);showT("Removido.");}} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}}>✕</button>
-            </div>)}
+      {/* ════════════════════════════════════════════════════════════════════
+   PARTE E — Substitui TODO o bloco {aba==="pacientes"&&<section...>}
+   pelo bloco abaixo, que já inclui busca + ações + nova aba Inativados.
+   ════════════════════════════════════════════════════════════════════ */}
+
+{aba==="pacientes"&&<section style={CARD2}>
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
+    <h2 style={{margin:0,fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Pacientes cadastrados</h2>
+    <button onClick={()=>setModalCad(true)} style={{padding:"8px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>+ Cadastrar manual</button>
+  </div>
+
+  <input
+    placeholder="Buscar por nome..."
+    value={buscaPac}
+    onChange={e=>setBuscaPac(e.target.value)}
+    style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",marginBottom:16,boxSizing:"border-box"}}
+  />
+
+  {pacientesBuscados.length===0
+    ?<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15,lineHeight:1.8}}>Nenhum paciente encontrado.</div>
+    :<div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {pacientesBuscados.map(p=>(
+        <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#f7faf8",borderRadius:10,border:"1px solid #e0ede5",flexWrap:"wrap"}}>
+          <div style={{flex:1,minWidth:160}}>
+            <div style={{fontWeight:700,fontSize:15,color:"#1a3a2a"}}>{p.nome}</div>
+            <div style={{fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif",marginTop:2}}>CPF: {p.cpf}{p.tel1&&` · ${p.tel1}`}{p.cidade&&` · ${p.cidade}`}</div>
           </div>
-        }
-      </section>}
+
+          <select
+            value={p.profissional||""}
+            onChange={e=>alterarProfissional(p,e.target.value)}
+            style={{padding:"6px 8px",borderRadius:6,border:"1px solid #c8ddd0",fontSize:12,fontFamily:"sans-serif",color:"#1a3a2a"}}
+          >
+            <option value="">Sem profissional</option>
+            {PROFISSIONAIS.map(pr=><option key={pr.id} value={pr.id}>{pr.nome}</option>)}
+          </select>
+
+          <button onClick={()=>setDetalhe(p)} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a"}}>Ver ficha</button>
+          <button onClick={()=>setEditandoPac(p)} style={{padding:"6px 12px",background:"#eaf0fb",border:"1px solid #b8cdf0",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a3a6a"}}>Editar</button>
+          <button onClick={()=>inativarPac(p)} style={{padding:"6px 12px",background:"#fbf0e3",border:"1px solid #e8cfa3",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#8a5a1a"}}>Inativar</button>
+          <button onClick={async()=>{await deleteItem("pac",p.id);const a=pacientes.filter(x=>x.id!==p.id);setPacientes(a);showT("Removido.");}} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
+        </div>
+      ))}
+    </div>
+  }
+</section>}
+
+{aba==="inativados"&&<section style={CARD2}>
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
+    <h2 style={{margin:0,fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Pacientes inativados</h2>
+  </div>
+
+  <input
+    placeholder="Buscar por nome..."
+    value={buscaPac}
+    onChange={e=>setBuscaPac(e.target.value)}
+    style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",marginBottom:16,boxSizing:"border-box"}}
+  />
+
+  {pacientesInativosBuscados.length===0
+    ?<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15,lineHeight:1.8}}>Nenhum paciente inativado.</div>
+    :<div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {pacientesInativosBuscados.map(p=>(
+        <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#f5f5f3",borderRadius:10,border:"1px solid #e5e3df",flexWrap:"wrap",opacity:0.8}}>
+          <div style={{flex:1,minWidth:160}}>
+            <div style={{fontWeight:700,fontSize:15,color:"#5a5a5a"}}>{p.nome}</div>
+            <div style={{fontSize:13,color:"#8a8a8a",fontFamily:"sans-serif",marginTop:2}}>CPF: {p.cpf}{p.tel1&&` · ${p.tel1}`}</div>
+          </div>
+          <button onClick={()=>setDetalhe(p)} style={{padding:"6px 12px",background:"#fff",border:"1px solid #d8d8d4",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#5a5a5a"}}>Ver ficha</button>
+          <button onClick={()=>reativarPac(p)} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a",fontWeight:600}}>Reativar</button>
+        </div>
+      ))}
+    </div>
+  }
+</section>}
 
       {aba==="titulares"&&(
   <AbaTitulares
