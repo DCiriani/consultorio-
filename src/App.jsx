@@ -205,7 +205,7 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
     </div>
   );
 }
-/");
+
     if(filtroAno!=="todos"&&a!==filtroAno)return false;
     if(filtroMes!=="todos"&&m!==filtroMes)return false;
     return true;
