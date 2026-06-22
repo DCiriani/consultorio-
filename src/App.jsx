@@ -536,7 +536,6 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   }
 
   async function excluirReg(id){await deleteItem("reg",id);const a=registros.filter(x=>x.id!==id);setRegistros(a);}
-  const [editandoReg,setEditandoReg]=useState(null);
 
   async function salvarEdicaoReg(id,dados){
     await updateItem("reg",id,dados);
