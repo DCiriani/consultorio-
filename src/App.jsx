@@ -237,13 +237,7 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
           </>}
         </>}
 
-        {abaModal==="pagamentos"&&<>
-          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-            <select value={filtroAno} onChange={e=>setFiltroAno(e.target.value)} style={{...sel(false),width:"auto",fontSize:13,padding:"6px 10px"}}>
-              <option value="todos">Todos os anos</option>
-              {anos.map(a=><option key={a} value={a}>{a}</option>)}
-            </select>
-            <select value={fil
+        
 // ── MODAL FICHA ───────────────────────────────────────────────────────────────
 function ModalFicha({p,titulares,registros,onClose}){
   const [abaModal,setAbaModal]=useState("dados");
