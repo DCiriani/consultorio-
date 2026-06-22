@@ -362,7 +362,7 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,onClose}){
             ? <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:24,fontSize:14}}>Nenhum pagamento encontrado.</div>
             : <>
               <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
-                {pagsFiltrados.map(r=>(
+               {pagsFiltrados.map(r=>(
                   <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"#f7faf8",borderRadius:7,fontFamily:"sans-serif",fontSize:13}}>
                     <span style={{color:"#4a6a5a",minWidth:70}}>{r.data}</span>
                     <span style={{...{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600},...chipColor(r.pagamento)}}>{r.pagamento}</span>
@@ -376,19 +376,66 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,onClose}){
               </div>
             </>
           }
-          <div style={{textAlign:"right",fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1a4a2a",borderTop:"1px solid #eef4ec",paddingTop:10}}>
-                Total: R$ {totalFiltrado.toFixed(2).replace(".",",")}
-              </div>
-            </>
-          }
         </>}
-        
-        ← AQUI NO MEIO, cole o bloco da aba de atendimentos
-        
-      </div>
-    </div>
-  );
-}
+
+        {abaModal==="atendimentos"&&<>
+          <div style={{marginBottom:14}}>
+            <input
+              value={novaDataEv}
+              onChange={e=>setNovaDataEv(fData(e.target.value))}
+              type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10}
+              style={{width:110,padding:"8px 10px",borderRadius:7,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif",marginBottom:8}}
+            />
+            <textarea
+              value={novoTextoEv}
+              onChange={e=>setNovoTextoEv(e.target.value)}
+              placeholder="Escreva aqui as anotações desta sessão..."
+              rows={4}
+              style={{width:"100%",padding:"10px 12px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",boxSizing:"border-box",resize:"vertical",marginBottom:8,display:"block"}}
+            />
+            <button
+              onClick={salvarAtendimento}
+              disabled={salvandoEv||!novoTextoEv.trim()}
+              style={{padding:"9px 18px",background:novoTextoEv.trim()?"#2a7a4a":"#cfe0d6",color:"#fff",border:"none",borderRadius:8,cursor:novoTextoEv.trim()?"pointer":"default",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}
+            >{salvandoEv?"Salvando...":"Adicionar atendimento"}</button>
+          </div>
+
+          {atendimentosPac.length===0
+            ? <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"16px 0",fontSize:13}}>Nenhum atendimento registrado ainda.</div>
+            : <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {atendimentosPac.map(ev=>(
+                editandoEvId===ev.id ? (
+                  <div key={ev.id} style={{background:"#fff7e8",borderRadius:8,padding:"10px 12px",border:"1.5px solid #e8cfa3"}}>
+                    <input
+                      value={dataEdit}
+                      onChange={e=>setDataEdit(fData(e.target.value))}
+                      type="text" inputMode="numeric" maxLength={10}
+                      style={{width:110,padding:"7px 9px",borderRadius:6,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif",marginBottom:8}}
+                    />
+                    <textarea
+                      value={textoEdit}
+                      onChange={e=>setTextoEdit(e.target.value)}
+                      rows={4}
+                      style={{width:"100%",padding:"9px 11px",borderRadius:7,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif",boxSizing:"border-box",resize:"vertical",marginBottom:8,display:"block"}}
+                    />
+                    <button onClick={salvarEdicaoAtendimento} style={{padding:"7px 14px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:7,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",fontWeight:600,marginRight:8}}>Salvar</button>
+                    <button onClick={()=>setEditandoEvId(null)} style={{padding:"7px 14px",background:"#fff",color:"#5a7a6a",border:"1px solid #c8ddd0",borderRadius:7,cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>Cancelar</button>
+                  </div>
+                ) : (
+                  <div key={ev.id} style={{background:"#f7faf8",borderRadius:8,padding:"10px 12px",border:"1px solid #e0ede5"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                      <span style={{fontSize:12,fontWeight:700,color:"#2a7a4a",fontFamily:"sans-serif"}}>{ev.data}</span>
+                      <div style={{display:"flex",gap:10}}>
+                        <button onClick={()=>iniciarEdicao(ev)} style={{background:"none",border:"none",color:"#1a3a6a",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>editar</button>
+                        <button onClick={()=>excluirAtendimento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>excluir</button>
+                      </div>
+                    </div>
+                    <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",whiteSpace:"pre-wrap",lineHeight:1.5}}>{ev.texto}</div>
+                  </div>
+                )
+              ))}
+            </div>
+          }
         </>}
       </div>
     </div>
