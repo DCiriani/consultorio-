@@ -254,6 +254,53 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional,dadosInicia
 }
 
 // ── MODAL FICHA ───────────────────────────────────────────────────────────────
+function ItemAtendimento({ev,onSalvar,onExcluir}){
+  const [editando,setEditando]=useState(false);
+  const [texto,setTexto]=useState(ev.texto);
+  const [data,setData]=useState(ev.data);
+
+  function salvar(){
+    if(!texto.trim())return;
+    onSalvar(ev.id,texto.trim(),data);
+    setEditando(false);
+  }
+
+  if(editando){
+    return (
+      <div style={{background:"#fff7e8",borderRadius:8,padding:"10px 12px",border:"1.5px solid #e8cfa3"}}>
+        <input
+          value={data}
+          onChange={e=>setData(fData(e.target.value))}
+          type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10}
+          style={{width:110,padding:"7px 9px",borderRadius:6,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif",marginBottom:8}}
+        />
+        <textarea
+          value={texto}
+          onChange={e=>setTexto(e.target.value)}
+          rows={4}
+          style={{width:"100%",padding:"9px 11px",borderRadius:7,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif",boxSizing:"border-box",resize:"vertical",marginBottom:8,display:"block"}}
+        />
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={salvar} style={{padding:"7px 14px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:7,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",fontWeight:600}}>Salvar</button>
+          <button onClick={()=>{setEditando(false);setTexto(ev.texto);setData(ev.data);}} style={{padding:"7px 14px",background:"#fff",color:"#5a7a6a",border:"1px solid #c8ddd0",borderRadius:7,cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>Cancelar</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{background:"#f7faf8",borderRadius:8,padding:"10px 12px",border:"1px solid #e0ede5"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+        <span style={{fontSize:12,fontWeight:700,color:"#2a7a4a",fontFamily:"sans-serif"}}>{ev.data}</span>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={()=>setEditando(true)} style={{background:"none",border:"none",color:"#1a3a6a",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>editar</button>
+          <button onClick={()=>onExcluir(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>excluir</button>
+        </div>
+      </div>
+      <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",whiteSpace:"pre-wrap",lineHeight:1.5}}>{ev.texto}</div>
+    </div>
+  );
+}
 function ModalFicha({p,titulares,evolucoes,setEvolucoes,onClose}){
   const Row=({l,v})=>v?<div style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid #eef4ec",fontFamily:"sans-serif"}}><span style={{fontSize:11,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",width:110,flexShrink:0}}>{l}</span><span style={{fontSize:14,color:"#1a3a2a"}}>{v}</span></div>:null;
   const tits=titulares.filter(t=>t.pacienteId===p.id);
@@ -281,6 +328,13 @@ function ModalFicha({p,titulares,evolucoes,setEvolucoes,onClose}){
   async function excluirAtendimento(id){
     await deleteItem("evol",id);
     setEvolucoes(evolucoes.filter(ev=>ev.id!==id));
+  }
+
+  async function editarAtendimento(id,novoTexto,novaDataEv){
+    const [dd,mm,yyyy]=novaDataEv.split("/");
+    const dataOrdenacao = (dd&&mm&&yyyy) ? `${yyyy}-${mm}-${dd}` : "";
+    await updateItem("evol",id,{texto:novoTexto,data:novaDataEv,dataOrdenacao});
+    setEvolucoes(evolucoes.map(ev=>ev.id===id?{...ev,texto:novoTexto,data:novaDataEv,dataOrdenacao}:ev));
   }
 
   return(
@@ -328,13 +382,7 @@ function ModalFicha({p,titulares,evolucoes,setEvolucoes,onClose}){
           ?<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"16px 0",fontSize:13}}>Nenhum atendimento registrado ainda.</div>
           :<div style={{display:"flex",flexDirection:"column",gap:10}}>
             {atendimentosPac.map(ev=>(
-              <div key={ev.id} style={{background:"#f7faf8",borderRadius:8,padding:"10px 12px",border:"1px solid #e0ede5"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                  <span style={{fontSize:12,fontWeight:700,color:"#2a7a4a",fontFamily:"sans-serif"}}>{ev.data}</span>
-                  <button onClick={()=>excluirAtendimento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:12}}>excluir</button>
-                </div>
-                <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",whiteSpace:"pre-wrap",lineHeight:1.5}}>{ev.texto}</div>
-              </div>
+              <ItemAtendimento key={ev.id} ev={ev} onSalvar={editarAtendimento} onExcluir={excluirAtendimento}/>
             ))}
           </div>
         }
