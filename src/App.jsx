@@ -803,7 +803,7 @@ top: isMobile ? 0 : 20,
                 {FORMAS.map(f=><option key={f}>{f}</option>)}
               </select>
             </div>
-            <div><label style={LBS}>Data</label><input style={INS} value={data} onChange={e=>setData(e.target.value)}/></div>
+            <div><label style={LBS}>Data</label><input style={INS} type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10} value={data} onChange={e=>setData(fData(e.target.value))}/></div>
             <div><label style={LBS}>Valor (R$)</label><input style={INS} placeholder="ex: 200,00" value={valor} onChange={e=>setValor(e.target.value)}/></div>
           </div>
           <button onClick={registrar} disabled={salvandoPag} style={{width:"100%",padding:12,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:10,fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",opacity:salvandoPag?0.7:1}}>
