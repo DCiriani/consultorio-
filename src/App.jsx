@@ -331,8 +331,6 @@ function ModalFicha({p,titulares,registros,onClose}){
     </div>
   );
 }
-
-// ── ABA TITULARES ─────────────────────────────────────────────────────────────
 function AbaTitulares({titulares,setTitulares,pacientes,showT}){
   const [f,setF]=useState({pacienteId:"",nome:"",cpf:"",parentesco:""});
   const [erros,setErros]=useState({});
