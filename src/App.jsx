@@ -27,7 +27,7 @@ const FORMAS = ["Pix","Cartão de Débito","Cartão de Crédito","Dinheiro"];
 const PARENTESCOS = ["Mãe","Pai","Filho(a)","Cônjuge / Parceiro(a)","Irmão / Irmã","Avô / Avó","Tio(a)","Primo(a)","Amigo(a)","Outro"];
 const OBRIG_PAC = ["nome","cpf","nascimento","tel1","emergNome","emergParentesco","emergTel","cep","logradouro","numero","bairro","cidade","estado"];
 const OBRIG_TIT = ["nome","cpf"];
-const VAZIO_PAC = {nome:"",cpf:"",nascimento:"",tel1:"",emergNome:"",emergParentesco:"",emergTel:"",cep:"",logradouro:"",numero:"",complemento:"",bairro:"",cidade:"",estado:""};
+const VAZIO_PAC = {nome:"",cpf:"",nascimento:"",tel1:"",emergNome:"",emergParentesco:"",emergTel:"",cep:"",logradouro:"",numero:"",complemento:"",bairro:"",cidade:"",estado:"",profissional:""};
 
 function chipColor(p){
   if(p==="Pix")return{background:"#d4edda",color:"#155724"};
@@ -134,10 +134,56 @@ const sel = (err) => ({...inp(err),cursor:"pointer"});
 const CARD = {background:"#fff",borderRadius:12,padding:18,marginBottom:14,border:"1px solid #deeade"};
 const G2 = {display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 14px"};
 const SEC = {margin:"0 0 12px",fontSize:13,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif"};
+{/* ════════════════════════════════════════════════════════════════════
+   PARTE 1 — Componente de seleção de profissional
+   Cole isto ANTES da função FormPaciente (que começa na linha 138).
+   ════════════════════════════════════════════════════════════════════ */}
 
+const PROFISSIONAIS = [
+  { id: "diego", nome: "Diego Ciriani", titulo: "Psicólogo" },
+  { id: "rhania", nome: "Rhania Mulia", titulo: "Psicóloga" },
+];
+
+function SeletorProfissional({ onEscolher }) {
+  return (
+    <div style={{fontFamily:"Georgia,serif",maxWidth:420,margin:"0 auto",padding:"60px 20px",minHeight:"100vh",background:"#f4f6f0",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+      <div style={{textAlign:"center",marginBottom:32}}>
+        <div style={{fontSize:40,marginBottom:10}}>🧠</div>
+        <h1 style={{margin:"0 0 6px",fontSize:22,fontWeight:700,color:"#1a3a2a"}}>Espaço Ciriani</h1>
+        <p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Com qual profissional você será atendido(a)?</p>
+      </div>
+
+      {PROFISSIONAIS.map(p=>(
+        <button
+          key={p.id}
+          onClick={()=>onEscolher(p.id)}
+          style={{
+            display:"block",
+            width:"100%",
+            textAlign:"left",
+            background:"#fff",
+            border:"1.5px solid #c8ddd0",
+            borderRadius:12,
+            padding:"18px 20px",
+            marginBottom:14,
+            cursor:"pointer",
+            fontFamily:"sans-serif"
+          }}
+        >
+          <div style={{fontSize:12,fontWeight:700,color:"#2a7a4a",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:4}}>
+            {p.titulo}
+          </div>
+          <div style={{fontSize:17,fontWeight:700,color:"#1a3a2a"}}>
+            {p.nome}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+}
 // ── FORM PACIENTE ─────────────────────────────────────────────────────────────
-function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
-  const [f,setF]=useState(VAZIO_PAC);
+function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional}){
+  const [f,setF]=useState({...VAZIO_PAC,profissional:profissional||""});
   const [erros,setErros]=useState({});
   const [buscando,setBuscando]=useState(false);
   const up=(c,v)=>{setF(p=>({...p,[c]:v}));setErros(e=>({...e,[c]:false}));};
@@ -158,7 +204,8 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando}){
       <div style={{textAlign:"center",marginBottom:22}}>
         <div style={{fontSize:36}}>🧠</div>
         <h1 style={{margin:"6px 0 2px",fontSize:20,fontWeight:700,color:"#1a3a2a"}}>{titulo||"Ficha de cadastro"}</h1>
-        <p style={{margin:0,fontSize:12,color:"#5a7a6a",fontFamily:"sans-serif"}}>Todos os campos com <span style={{color:"#c0392b"}}>*</span> são obrigatórios</p>
+        {profissional&&<p style={{margin:"2px 0 0",fontSize:13,fontWeight:600,color:"#2a7a4a",fontFamily:"sans-serif"}}>{PROFISSIONAIS.find(p=>p.id===profissional)?.titulo} {PROFISSIONAIS.find(p=>p.id===profissional)?.nome}</p>}
+        <p style={{margin:"6px 0 0",fontSize:12,color:"#5a7a6a",fontFamily:"sans-serif"}}>Todos os campos com <span style={{color:"#c0392b"}}>*</span> são obrigatórios</p>
       </div>
 
       <div style={CARD}>
@@ -887,6 +934,7 @@ export default function App(){
   const [pronto,setPronto]=useState(false);
   const [salvandoCad,setSalvandoCad]=useState(false);
   const [cadastroOk,setCadastroOk]=useState(false);
+  const [profEscolhido,setProfEscolhido]=useState(null);
 
   // Verifica autenticação Firebase ao carregar
   useEffect(()=>{
@@ -942,7 +990,8 @@ export default function App(){
         </div>
       </div>
     );
-    return <FormPaciente onSalvo={handleSalvarCadastro} onVoltar={null} titulo="Espaço Ciriani" salvando={salvandoCad}/>;
+    if(!profEscolhido) return <SeletorProfissional onEscolher={setProfEscolhido}/>;
+    return <FormPaciente onSalvo={handleSalvarCadastro} onVoltar={()=>setProfEscolhido(null)} titulo="Espaço Ciriani" salvando={salvandoCad} profissional={profEscolhido}/>;
   }
 
   if(!pronto) return <div style={{display:"flex",justifyContent:"center",alignItems:"center",minHeight:"100vh",background:"#f4f6f0",fontFamily:"sans-serif",color:"#4a6a5a",fontSize:16}}>Carregando...</div>;
