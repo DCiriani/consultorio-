@@ -284,6 +284,7 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,onClose}){
   }
 
   async function excluirAtendimento(id){
+    if(!window.confirm("Tem certeza que deseja excluir esta anotação de atendimento? Essa ação não pode ser desfeita."))return;
     await deleteItem("evol",id);
     setEvolucoes(evolucoes.filter(ev=>ev.id!==id));
   }
@@ -734,7 +735,13 @@ const pacientesInativosBuscados = buscaLower
     nomeRef.current?.focus();showT("Pagamento registrado!");setSalvandoPag(false);
   }
 
-  async function excluirReg(id){await deleteItem("reg",id);const a=registros.filter(x=>x.id!==id);setRegistros(a);}
+  async function excluirReg(id,nome){
+    if(!window.confirm(`Tem certeza que deseja excluir este pagamento de "${nome}"? Essa ação não pode ser desfeita.`))return;
+    await deleteItem("reg",id);
+    const a=registros.filter(x=>x.id!==id);
+    setRegistros(a);
+    showT("Pagamento excluído.");
+  }
 
   async function salvarNovoPac(dados){
     setSalvandoPac(true);
@@ -1102,7 +1109,7 @@ top: isMobile ? 0 : 20,
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec"}}><span style={{...{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600},...chipColor(r.pagamento)}}>{r.pagamento}</span></td>
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.valor!=="—"?`R$ ${r.valor}`:"—"}</td>
-                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec"}}><button onClick={()=>excluirReg(r.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}}>✕</button></td>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec"}}><button onClick={()=>excluirReg(r.id,r.nome)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}}>✕</button></td>
               </tr>)}</tbody>
             </table>
           </div>
@@ -1150,7 +1157,7 @@ top: isMobile ? 0 : 20,
           <button onClick={()=>setDetalhe(p)} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a"}}>Ver ficha</button>
           <button onClick={()=>setEditandoPac(p)} style={{padding:"6px 12px",background:"#eaf0fb",border:"1px solid #b8cdf0",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a3a6a"}}>Editar</button>
           <button onClick={()=>inativarPac(p)} style={{padding:"6px 12px",background:"#fbf0e3",border:"1px solid #e8cfa3",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#8a5a1a"}}>Inativar</button>
-          <button onClick={async()=>{await deleteItem("pac",p.id);const a=pacientes.filter(x=>x.id!==p.id);setPacientes(a);showT("Removido.");}} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
+          <button onClick={async()=>{if(!window.confirm(`Tem certeza que deseja excluir o paciente "${p.nome}"? Essa ação não pode ser desfeita.`))return;await deleteItem("pac",p.id);const a=pacientes.filter(x=>x.id!==p.id);setPacientes(a);showT("Paciente excluído.");}} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
         </div>
       ))}
     </div>
