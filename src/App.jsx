@@ -264,7 +264,51 @@ function ModalFicha({p,titulares,registros,onClose}){
   const nomesMeses=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
   const pagsFiltrados=pagsPaciente.filter(r=>{
-    const [,m,a]=r.data.split("troMes} onChange={e=>setFiltroMes(e.target.value)} style={{...sel(false),width:"auto",fontSize:13,padding:"6px 10px"}}>
+    const [,m,a]=r.data.split("/");
+    if(filtroAno!=="todos"&&a!==filtroAno)return false;
+    if(filtroMes!=="todos"&&m!==filtroMes)return false;
+    return true;
+  }).sort((a,b)=>{
+    const [da,ma,aa]=a.data.split("/");const [db,mb,ab]=b.data.split("/");
+    return `${ab}${mb}${db}`.localeCompare(`${aa}${ma}${da}`);
+  });
+
+  const totalFiltrado=pagsFiltrados.filter(r=>r.valor!=="—").reduce((s,r)=>s+(parseFloat(r.valor.replace(",","."))||0),0);
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+      <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>{p.nome}</h3>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
+        </div>
+
+        <div style={{display:"flex",gap:6,marginBottom:18}}>
+          {[["dados","📋 Dados"],["pagamentos",`💳 Pagamentos (${pagsPaciente.length})`]].map(([v,l])=>(
+            <button key={v} onClick={()=>setAbaModal(v)} style={{padding:"7px 14px",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:abaModal===v?"#2a7a4a":"#f4f6f0",color:abaModal===v?"#fff":"#4a6a5a",border:"none",fontWeight:abaModal===v?700:400}}>{l}</button>
+          ))}
+        </div>
+
+        {abaModal==="dados"&&<>
+          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",marginBottom:8}}>Dados pessoais</div>
+          <Row l="CPF" v={p.cpf}/><Row l="Nascimento" v={p.nascimento}/><Row l="Telefone" v={p.tel1}/>
+          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Contato de emergência</div>
+          <Row l="Nome" v={p.emergNome}/><Row l="Parentesco" v={p.emergParentesco}/><Row l="Telefone" v={p.emergTel}/>
+          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Endereço</div>
+          <Row l="CEP" v={p.cep}/><Row l="Logradouro" v={[p.logradouro,p.numero,p.complemento].filter(Boolean).join(", ")}/><Row l="Bairro" v={p.bairro}/><Row l="Cidade/UF" v={[p.cidade,p.estado].filter(Boolean).join(" - ")}/>
+          {tits.length>0&&<>
+            <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Titulares do pagamento</div>
+            {tits.map(t=><div key={t.id}><Row l="Nome" v={t.nome}/><Row l="CPF" v={t.cpf}/>{t.parentesco&&<Row l="Parentesco" v={t.parentesco}/>}</div>)}
+          </>}
+        </>}
+
+        {abaModal==="pagamentos"&&<>
+          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+            <select value={filtroAno} onChange={e=>setFiltroAno(e.target.value)} style={{...sel(false),width:"auto",fontSize:13,padding:"6px 10px"}}>
+              <option value="todos">Todos os anos</option>
+              {anos.map(a=><option key={a} value={a}>{a}</option>)}
+            </select>
+            <select value={filtroMes} onChange={e=>setFiltroMes(e.target.value)} style={{...sel(false),width:"auto",fontSize:13,padding:"6px 10px"}}>
               <option value="todos">Todos os meses</option>
               {meses.map((m,i)=><option key={m} value={m}>{nomesMeses[i]}</option>)}
             </select>
