@@ -253,27 +253,88 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional,dadosInicia
     </div>
   );
 }
-
 // ── MODAL FICHA ───────────────────────────────────────────────────────────────
-function ModalFicha({p,titulares,onClose}){
+function ModalFicha({p,titulares,registros,onClose}){
+  const [abaModal,setAbaModal]=useState("dados");
+  const [filtroAno,setFiltroAno]=useState("todos");
+  const [filtroMes,setFiltroMes]=useState("todos");
   const Row=({l,v})=>v?<div style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid #eef4ec",fontFamily:"sans-serif"}}><span style={{fontSize:11,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",width:110,flexShrink:0}}>{l}</span><span style={{fontSize:14,color:"#1a3a2a"}}>{v}</span></div>:null;
   const tits=titulares.filter(t=>t.pacienteId===p.id);
+
+  const pagsPaciente=registros.filter(r=>r.nome===p.nome);
+  const anos=[...new Set(pagsPaciente.map(r=>r.data.split("/")[2]))].sort().reverse();
+  const meses=["01","02","03","04","05","06","07","08","09","10","11","12"];
+  const nomesMeses=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+  const pagsFiltrados=pagsPaciente.filter(r=>{
+    const [,m,a]=r.data.split("/");
+    if(filtroAno!=="todos"&&a!==filtroAno)return false;
+    if(filtroMes!=="todos"&&m!==filtroMes)return false;
+    return true;
+  }).sort((a,b)=>{
+    const [da,ma,aa]=a.data.split("/");const [db,mb,ab]=b.data.split("/");
+    return `${ab}${mb}${db}`.localeCompare(`${aa}${ma}${da}`);
+  });
+
+  const totalFiltrado=pagsFiltrados.filter(r=>r.valor!=="—").reduce((s,r)=>s+(parseFloat(r.valor.replace(",","."))||0),0);
+
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
-      <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:460,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+      <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>{p.nome}</h3>
           <button onClick={onClose} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
         </div>
-        <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",marginBottom:8}}>Dados pessoais</div>
-        <Row l="CPF" v={p.cpf}/><Row l="Nascimento" v={p.nascimento}/><Row l="Telefone" v={p.tel1}/>
-        <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Contato de emergência</div>
-        <Row l="Nome" v={p.emergNome}/><Row l="Parentesco" v={p.emergParentesco}/><Row l="Telefone" v={p.emergTel}/>
-        <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Endereço</div>
-        <Row l="CEP" v={p.cep}/><Row l="Logradouro" v={[p.logradouro,p.numero,p.complemento].filter(Boolean).join(", ")}/><Row l="Bairro" v={p.bairro}/><Row l="Cidade/UF" v={[p.cidade,p.estado].filter(Boolean).join(" - ")}/>
-        {tits.length>0&&<>
-          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Titulares do pagamento</div>
-          {tits.map(t=><div key={t.id}><Row l="Nome" v={t.nome}/><Row l="CPF" v={t.cpf}/>{t.parentesco&&<Row l="Parentesco" v={t.parentesco}/>}</div>)}
+
+        <div style={{display:"flex",gap:6,marginBottom:18}}>
+          {[["dados","📋 Dados"],["pagamentos",`💳 Pagamentos (${pagsPaciente.length})`]].map(([v,l])=>(
+            <button key={v} onClick={()=>setAbaModal(v)} style={{padding:"7px 14px",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:abaModal===v?"#2a7a4a":"#f4f6f0",color:abaModal===v?"#fff":"#4a6a5a",border:"none",fontWeight:abaModal===v?700:400}}>{l}</button>
+          ))}
+        </div>
+
+        {abaModal==="dados"&&<>
+          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",marginBottom:8}}>Dados pessoais</div>
+          <Row l="CPF" v={p.cpf}/><Row l="Nascimento" v={p.nascimento}/><Row l="Telefone" v={p.tel1}/>
+          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Contato de emergência</div>
+          <Row l="Nome" v={p.emergNome}/><Row l="Parentesco" v={p.emergParentesco}/><Row l="Telefone" v={p.emergTel}/>
+          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Endereço</div>
+          <Row l="CEP" v={p.cep}/><Row l="Logradouro" v={[p.logradouro,p.numero,p.complemento].filter(Boolean).join(", ")}/><Row l="Bairro" v={p.bairro}/><Row l="Cidade/UF" v={[p.cidade,p.estado].filter(Boolean).join(" - ")}/>
+          {tits.length>0&&<>
+            <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Titulares do pagamento</div>
+            {tits.map(t=><div key={t.id}><Row l="Nome" v={t.nome}/><Row l="CPF" v={t.cpf}/>{t.parentesco&&<Row l="Parentesco" v={t.parentesco}/>}</div>)}
+          </>}
+        </>}
+
+        {abaModal==="pagamentos"&&<>
+          <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+            <select value={filtroAno} onChange={e=>setFiltroAno(e.target.value)} style={{...sel(false),width:"auto",fontSize:13,padding:"6px 10px"}}>
+              <option value="todos">Todos os anos</option>
+              {anos.map(a=><option key={a} value={a}>{a}</option>)}
+            </select>
+            <select value={filtroMes} onChange={e=>setFiltroMes(e.target.value)} style={{...sel(false),width:"auto",fontSize:13,padding:"6px 10px"}}>
+              <option value="todos">Todos os meses</option>
+              {meses.map((m,i)=><option key={m} value={m}>{nomesMeses[i]}</option>)}
+            </select>
+          </div>
+
+          {pagsFiltrados.length===0
+            ? <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:24,fontSize:14}}>Nenhum pagamento encontrado.</div>
+            : <>
+              <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
+                {pagsFiltrados.map(r=>(
+                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:"#f7faf8",borderRadius:7,fontFamily:"sans-serif",fontSize:13}}>
+                    <span style={{color:"#4a6a5a",minWidth:70}}>{r.data}</span>
+                    <span style={{...{padding:"2px 8px",borderRadius:20,fontSize:11,fontWeight:600},...chipColor(r.pagamento)}}>{r.pagamento}</span>
+                    <span style={{fontWeight:700,marginLeft:"auto"}}>{r.valor!=="—"?`R$ ${r.valor}`:"—"}</span>
+                    {r.nfEmitida&&<span title="NF emitida" style={{fontSize:14}}>✅</span>}
+                  </div>
+                ))}
+              </div>
+              <div style={{textAlign:"right",fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1a4a2a",borderTop:"1px solid #eef4ec",paddingTop:10}}>
+                Total: R$ {totalFiltrado.toFixed(2).replace(".",",")}
+              </div>
+            </>
+          }
         </>}
       </div>
     </div>
@@ -640,8 +701,7 @@ const ABAS=[
   return(
     <div style={ROOT}>
       <Toast t={toast}/>
-      {detalhe&&<ModalFicha p={detalhe} titulares={titulares} onClose={()=>setDetalhe(null)}/>}
-      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
+{detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} onClose={()=>setDetalhe(null)}/>}      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
 
