@@ -1217,6 +1217,7 @@ export default function App(){
   const [pacientes,setPacientes]=useState([]);
   const [registros,setRegistros]=useState([]);
   const [evolucoes,setEvolucoes]=useState([]);
+  const [titulares,setTitulares]=useState([]);
   const [pronto,setPronto]=useState(false);
   const [salvandoCad,setSalvandoCad]=useState(false);
   const [cadastroOk,setCadastroOk]=useState(false);
