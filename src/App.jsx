@@ -674,6 +674,7 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   const [aba,setAba]=useState("dashboard");
   const [filtroProf,setFiltroProf]=useState("todos");
   const [buscaPac,setBuscaPac]=useState("");
+  const [editandoReg,setEditandoReg]=useState(null);
 const [editandoPac,setEditandoPac]=useState(null);
 const pacientesFiltrados = filtroProf==="todos" ? pacientes : pacientes.filter(p=>p.profissional===filtroProf);
 const nomesFiltrados = new Set(pacientesFiltrados.map(p=>p.nome));
@@ -811,6 +812,32 @@ const ABAS=[
       <Toast t={toast}/>
 {detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} evolucoes={evolucoes} setEvolucoes={setEvolucoes} onClose={()=>setDetalhe(null)}/>}      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
+      </div>}
+      {editandoReg&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setEditandoReg(null)}>
+        <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:420,boxShadow:"0 8px 40px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+            <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>Editar pagamento</h3>
+            <button onClick={()=>setEditandoReg(null)} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
+          </div>
+          <div style={{marginBottom:12,fontFamily:"sans-serif",fontSize:14,color:"#1a3a2a",fontWeight:600}}>{editandoReg.nome}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px",marginBottom:18}}>
+            <div>
+              <label style={LBS}>Data</label>
+              <input style={INS} type="text" inputMode="numeric" maxLength={10} value={editandoReg.data} onChange={e=>setEditandoReg({...editandoReg,data:fData(e.target.value)})}/>
+            </div>
+            <div>
+              <label style={LBS}>Valor (R$)</label>
+              <input style={INS} value={editandoReg.valor==="—"?"":editandoReg.valor} onChange={e=>setEditandoReg({...editandoReg,valor:e.target.value||"—"})} placeholder="ex: 200,00"/>
+            </div>
+            <div style={{gridColumn:"1/-1"}}>
+              <label style={LBS}>Forma de pagamento</label>
+              <select style={{...INS,cursor:"pointer"}} value={editandoReg.pagamento} onChange={e=>setEditandoReg({...editandoReg,pagamento:e.target.value})}>
+                {FORMAS.map(f=><option key={f}>{f}</option>)}
+              </select>
+            </div>
+          </div>
+          <button onClick={async()=>{await updateItem("reg",editandoReg.id,{data:editandoReg.data,pagamento:editandoReg.pagamento,valor:editandoReg.valor});setRegistros(registros.map(r=>r.id===editandoReg.id?editandoReg:r));setEditandoReg(null);showT("Pagamento atualizado!");}} style={{width:"100%",padding:13,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:9,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif"}}>✓ Salvar alterações</button>
+        </div>
       </div>}
 
 {editandoPac&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
@@ -1109,7 +1136,10 @@ top: isMobile ? 0 : 20,
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.nome}</td>
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec"}}><span style={{...{padding:"3px 8px",borderRadius:20,fontSize:11,fontWeight:600},...chipColor(r.pagamento)}}>{r.pagamento}</span></td>
                 <td style={{padding:"9px 12px",fontSize:13,borderBottom:"1px solid #eef4ec",fontWeight:600}}>{r.valor!=="—"?`R$ ${r.valor}`:"—"}</td>
-                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec"}}><button onClick={()=>excluirReg(r.id,r.nome)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}}>✕</button></td>
+                <td style={{padding:"9px 12px",borderBottom:"1px solid #eef4ec",whiteSpace:"nowrap"}}>
+                  <button onClick={()=>setEditandoReg({...r})} style={{background:"none",border:"none",color:"#2a7a4a",cursor:"pointer",fontSize:14,marginRight:8}} title="Editar">✎</button>
+                  <button onClick={()=>excluirReg(r.id,r.nome)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}} title="Excluir">✕</button>
+                </td>
               </tr>)}</tbody>
             </table>
           </div>
@@ -1117,11 +1147,7 @@ top: isMobile ? 0 : 20,
         {registros.length===0&&<div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15}}>Nenhum pagamento registrado ainda.</div>}
       </>}
 
-      {/* ════════════════════════════════════════════════════════════════════
-   PARTE E — Substitui TODO o bloco {aba==="pacientes"&&<section...>}
-   pelo bloco abaixo, que já inclui busca + ações + nova aba Inativados.
-   ════════════════════════════════════════════════════════════════════ */}
-
+      
 {aba==="pacientes"&&<section style={CARD2}>
   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
     <h2 style={{margin:0,fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Pacientes cadastrados</h2>
