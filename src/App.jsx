@@ -705,6 +705,7 @@ const [agendaData,setAgendaData]=useState(new Date());
 const [modalEvento,setModalEvento]=useState(false);
 const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:""});
 const [sugestoesEvento,setSugestoesEvento]=useState([]);
+const [editandoEvento,setEditandoEvento]=useState(null);
   const nomeRef=useRef(null);
 
   function showT(msg,tipo="ok"){setToast({msg,tipo});setTimeout(()=>setToast(null),2500);}
@@ -799,6 +800,24 @@ const [sugestoesEvento,setSugestoesEvento]=useState([]);
     await deleteItem("age",id);
     setAgenda(agenda.filter(ev=>ev.id!==id));
     showT("Evento removido.");
+  }
+
+  async function salvarEdicaoEvento(){
+    if(editandoEvento.tipo==="sessao"&&!editandoEvento.pacienteNome){showT("Selecione o paciente.","erro");return;}
+    if(editandoEvento.tipo==="pessoal"&&!editandoEvento.descricao.trim()){showT("Descreva o compromisso.","erro");return;}
+    await updateItem("age",editandoEvento.id,{
+      tipo:editandoEvento.tipo,
+      pacienteNome:editandoEvento.pacienteNome,
+      profissional:editandoEvento.profissional,
+      descricao:editandoEvento.descricao,
+      horario:editandoEvento.horario,
+      horarioFim:editandoEvento.horarioFim,
+      data:editandoEvento.data,
+      modalidade:editandoEvento.modalidade
+    });
+    setAgenda(agenda.map(ev=>ev.id===editandoEvento.id?editandoEvento:ev));
+    setEditandoEvento(null);
+    showT("Evento atualizado!");
   }
 const isMobile = window.innerWidth < 768;
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
@@ -1027,6 +1046,7 @@ top: isMobile ? 0 : 20,
                           {evDoHorario.tipo==="sessao" ? "Sessão" : "Compromisso pessoal"} · {PROFISSIONAIS.find(p=>p.id===evDoHorario.profissional)?.nome}
                         </div>
                       </div>
+                      <button onClick={()=>setEditandoEvento({...evDoHorario})} style={{background:"none",border:"none",color:"#1a3a6a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",marginRight:8}}>editar</button>
                       <button onClick={()=>excluirEvento(evDoHorario.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
                     </div>
                   : <div onClick={()=>{setNovoEvento({...novoEvento,data:dataStr,horario:hr});setModalEvento(true);}} style={{flex:1,cursor:"pointer",borderRadius:8,margin:"4px 0"}} onMouseOver={e=>e.currentTarget.style.background="#f4f6f0"} onMouseOut={e=>e.currentTarget.style.background="transparent"}/>
@@ -1097,7 +1117,7 @@ top: isMobile ? 0 : 20,
                     const top=(inicioMin/60)*ALTURA_HORA;
                     const altura=Math.max(((fimMin-inicioMin)/60)*ALTURA_HORA,24);
                     return (
-                      <div key={ev.id} onClick={()=>excluirEvento(ev.id)} title="Clique para excluir" style={{
+                      <div key={ev.id} onClick={()=>setEditandoEvento({...ev})} title="Clique para editar" style={{
                         position:"absolute", top, left:3, right:3, height:altura,
                         background: ev.tipo==="sessao" ? "#3D7A63" : "#B9762F",
                         borderRadius:6, padding:"3px 6px", overflow:"hidden", cursor:"pointer",
@@ -1222,6 +1242,54 @@ top: isMobile ? 0 : 20,
     </div>
 
     <button onClick={salvarEvento} style={{width:"100%",padding:13,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:9,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif"}}>✓ Adicionar à agenda</button>
+  </div>
+</div>}
+{editandoEvento&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setEditandoEvento(null)}>
+  <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:440,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+      <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>Editar evento</h3>
+      <button onClick={()=>setEditandoEvento(null)} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
+    </div>
+
+    <div style={{display:"flex",gap:8,marginBottom:16}}>
+      <button onClick={()=>setEditandoEvento({...editandoEvento,tipo:"sessao"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: editandoEvento.tipo==="sessao" ? "none" : "1.5px solid #c8ddd0",background: editandoEvento.tipo==="sessao" ? "#2a7a4a" : "#fff",color: editandoEvento.tipo==="sessao" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Sessão</button>
+      <button onClick={()=>setEditandoEvento({...editandoEvento,tipo:"pessoal"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: editandoEvento.tipo==="pessoal" ? "none" : "1.5px solid #c8ddd0",background: editandoEvento.tipo==="pessoal" ? "#B9762F" : "#fff",color: editandoEvento.tipo==="pessoal" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Compromisso pessoal</button>
+    </div>
+
+    {editandoEvento.tipo==="sessao"
+      ? <div style={{marginBottom:14}}>
+          <label style={LBS}>Paciente</label>
+          <input style={INS} placeholder="Nome do paciente" value={editandoEvento.pacienteNome} onChange={e=>setEditandoEvento({...editandoEvento,pacienteNome:e.target.value})}/>
+        </div>
+      : <div style={{marginBottom:14}}>
+          <label style={LBS}>Descrição</label>
+          <input style={INS} placeholder="Ex: Academia, Médico, Gravação" value={editandoEvento.descricao} onChange={e=>setEditandoEvento({...editandoEvento,descricao:e.target.value})}/>
+        </div>
+    }
+
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px",marginBottom:14}}>
+      <div style={{gridColumn:"1/-1"}}>
+        <label style={LBS}>Data</label>
+        <input style={INS} type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10} value={editandoEvento.data} onChange={e=>setEditandoEvento({...editandoEvento,data:fData(e.target.value)})}/>
+      </div>
+      <div>
+        <label style={LBS}>Horário início</label>
+        <input style={INS} type="time" value={editandoEvento.horario} onChange={e=>setEditandoEvento({...editandoEvento,horario:e.target.value})}/>
+      </div>
+      <div>
+        <label style={LBS}>Horário término</label>
+        <input style={INS} type="time" value={editandoEvento.horarioFim} onChange={e=>setEditandoEvento({...editandoEvento,horarioFim:e.target.value})}/>
+      </div>
+    </div>
+
+    <div style={{marginBottom:18}}>
+      <label style={LBS}>Profissional</label>
+      <select style={{...INS,cursor:"pointer"}} value={editandoEvento.profissional} onChange={e=>setEditandoEvento({...editandoEvento,profissional:e.target.value})}>
+        {PROFISSIONAIS.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}
+      </select>
+    </div>
+
+    <button onClick={salvarEdicaoEvento} style={{width:"100%",padding:13,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:9,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif"}}>✓ Salvar alterações</button>
   </div>
 </div>}
 {aba==="dashboard"&&<>
