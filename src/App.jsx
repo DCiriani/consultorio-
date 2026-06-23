@@ -662,6 +662,7 @@ function IconAba({nome,color="currentColor",size=17}){
   const st={fill:"none",stroke:color,strokeWidth:1.8,strokeLinecap:"round",strokeLinejoin:"round"};
   const paths={
     dashboard:<><rect x="3" y="3" width="7" height="9" rx="1.5" {...st}/><rect x="14" y="3" width="7" height="5" rx="1.5" {...st}/><rect x="14" y="12" width="7" height="9" rx="1.5" {...st}/><rect x="3" y="16" width="7" height="5" rx="1.5" {...st}/></>,
+    agenda:<><rect x="3" y="4" width="18" height="17" rx="2" {...st}/><line x1="3" y1="9" x2="21" y2="9" {...st}/><line x1="8" y1="2" x2="8" y2="6" {...st}/><line x1="16" y1="2" x2="16" y2="6" {...st}/></>,
     pagamentos:<><rect x="2.5" y="5.5" width="19" height="13" rx="2.2" {...st}/><line x1="2.5" y1="9.5" x2="21.5" y2="9.5" {...st}/></>,
     pacientes:<><circle cx="12" cy="8" r="3.5" {...st}/><path d="M5 20c0-3.5 3-6.5 7-6.5s7 3 7 6.5" {...st}/></>,
     titulares:<><path d="M6 2.5h9l3 3v16H6z" {...st}/><line x1="9" y1="9" x2="15" y2="9" {...st}/><line x1="9" y1="13" x2="15" y2="13" {...st}/><line x1="9" y1="17" x2="13" y2="17" {...st}/></>,
@@ -799,6 +800,7 @@ const isMobile = window.innerWidth < 768;
   const LBS={display:"block",fontSize:12,fontWeight:600,color:"#4a6a5a",marginBottom:5,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"};
   const INS={width:"100%",padding:"10px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"};
 const ABAS=[
+{k:"agenda",l:"Agenda",icon:"agenda"},
 {k:"dashboard",l:"Dashboard",icon:"dashboard"},
 {k:"pagamentos",l:`Pagamentos (${registrosFiltrados.length})`,icon:"pagamentos"},
 {k:"pacientes",l:`Pacientes (${pacientesAtivos.length})`,icon:"pacientes"},
