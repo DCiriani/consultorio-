@@ -39,7 +39,7 @@ function chipColor(p){
 
 // ── STORAGE ───────────────────────────────────────────────────────────────────
 // ── FIRESTORE ─────────────────────────────────────────────────────────────────
-const COLECOES = { pac: "pacientes", reg: "pagamentos", tit: "titulares", evol: "evolucoes" };
+const COLECOES = { pac: "pacientes", reg: "pagamentos", tit: "titulares", evol: "evolucoes", age: "agenda" };
 
 async function load(chave){
   try{
@@ -670,7 +670,7 @@ function IconAba({nome,color="currentColor",size=17}){
   return <svg width={size} height={size} viewBox="0 0 24 24">{paths[nome]}</svg>;
 }
 // ── PAINEL ────────────────────────────────────────────────────────────────────
-function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,evolucoes,setEvolucoes,onCadastro,onLogout}){
+function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,evolucoes,setEvolucoes,agenda,setAgenda,onCadastro,onLogout}){
   const [aba,setAba]=useState("dashboard");
   const [filtroProf,setFiltroProf]=useState("todos");
   const [buscaPac,setBuscaPac]=useState("");
@@ -1250,6 +1250,7 @@ export default function App(){
   const [pacientes,setPacientes]=useState([]);
   const [registros,setRegistros]=useState([]);
   const [evolucoes,setEvolucoes]=useState([]);
+  const [agenda,setAgenda]=useState([]);
   const [titulares,setTitulares]=useState([]);
   const [pronto,setPronto]=useState(false);
   const [salvandoCad,setSalvandoCad]=useState(false);
@@ -1272,7 +1273,7 @@ export default function App(){
   useEffect(()=>{
     if(tela==="painel"&&!pronto){
       (async()=>{
-        const [p,r,t,e]=await Promise.all([load("pac"),load("reg"),load("tit"),load("evol")]);
+        setPacientes(p);setRegistros(r);setTitulares(t);setEvolucoes(e);setAgenda(ag);setPronto(true);
         setPacientes(p);setRegistros(r);setTitulares(t);setEvolucoes(e);setPronto(true);
       })();
     }
@@ -1329,5 +1330,5 @@ export default function App(){
     return <FormPaciente onSalvo={handleSalvarCadastro} onVoltar={()=>setTela("painel")} titulo="Espaço Ciriani" salvando={salvandoCad}/>;
   }
 
-  return <Painel pacientes={pacientes} setPacientes={setPacientes} registros={registros} setRegistros={setRegistros} titulares={titulares} setTitulares={setTitulares} evolucoes={evolucoes} setEvolucoes={setEvolucoes} onCadastro={()=>{setCadastroOk(false);setTela("cadastro");}} onLogout={handleLogout}/>;
+  return <Painel pacientes={pacientes} setPacientes={setPacientes} registros={registros} setRegistros={setRegistros} titulares={titulares} setTitulares={setTitulares} evolucoes={evolucoes} setEvolucoes={setEvolucoes} agenda={agenda} setAgenda={setAgenda} onCadastro={()=>{setCadastroOk(false);setTela("cadastro");}} onLogout={handleLogout}/>;
 }
