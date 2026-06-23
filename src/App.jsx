@@ -1093,7 +1093,7 @@ top: isMobile ? 0 : 20,
               <div key={hr} style={{display:"flex",alignItems:"stretch",borderBottom:"1px solid #eef4ec",minHeight:52}}>
                 <div style={{width:54,flexShrink:0,fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#5a7a6a",paddingTop:10,textAlign:"right",paddingRight:10}}>{hr}</div>
                 {evDoHorario
-                  ? <div style={{flex:1,display:"flex",alignItems:"center",gap:14,padding:"8px 12px",margin:"4px 0",background: evDoHorario.tipo==="sessao" ? "#f7faf8" : "#fff7e8",borderRadius:8,border:`1px solid ${evDoHorario.tipo==="sessao" ? "#e0ede5" : "#e8cfa3"}`}}>
+                  ? <div style={{flex:1,display:"flex",alignItems:"center",gap:14,padding:"8px 12px",margin:"4px 0",background: evDoHorario.tipo!=="sessao" ? "#f2f2f0" : evDoHorario.profissional==="rhania" ? "#F3EFFA" : "#f7faf8",borderRadius:8,border:`1px solid ${evDoHorario.tipo!=="sessao" ? "#d8d8d4" : evDoHorario.profissional==="rhania" ? "#D4C5F0" : "#e0ede5"}`}}>
                       <div style={{flex:1}}>
                         <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:14,color:"#1a3a2a"}}>
                           {evDoHorario.tipo==="sessao" ? evDoHorario.pacienteNome : evDoHorario.descricao}
@@ -1175,7 +1175,7 @@ top: isMobile ? 0 : 20,
                     return (
                       <div key={ev.id} onClick={()=>setEditandoEvento({...ev})} title="Clique para editar" style={{
                         position:"absolute", top, left:3, right:3, height:altura,
-                        background: ev.tipo==="sessao" ? "#3D7A63" : "#B9762F",
+                        background: ev.tipo!=="sessao" ? "#8A8A85" : ev.profissional==="rhania" ? "#9B7EDE" : "#3D7A63",
                         borderRadius:6, padding:"3px 6px", overflow:"hidden", cursor:"pointer",
                         boxShadow:"0 1px 3px rgba(0,0,0,0.15)"
                       }}>
