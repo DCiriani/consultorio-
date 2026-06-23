@@ -703,8 +703,7 @@ const pacientesInativosBuscados = buscaLower
   const [agendaVisao,setAgendaVisao]=useState("dia");
 const [agendaData,setAgendaData]=useState(new Date());
 const [modalEvento,setModalEvento]=useState(false);
-const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:"",modalidade:"presencial"});const [sugestoesEvento,setSugestoesEvento]=useState([]);
-const [editandoEvento,setEditandoEvento]=useState(null);
+const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:"",modalidade:"presencial",recorrencia:"avulsa"});const [editandoEvento,setEditandoEvento]=useState(null);
   const nomeRef=useRef(null);
 
   function showT(msg,tipo="ok"){setToast({msg,tipo});setTimeout(()=>setToast(null),2500);}
@@ -783,14 +782,51 @@ const [editandoEvento,setEditandoEvento]=useState(null);
     showT("Paciente reativado.");
   }
 
-  async function salvarEvento(){
+async function salvarEvento(){
     if(novoEvento.tipo==="sessao"&&!novoEvento.pacienteNome){showT("Selecione o paciente.","erro");return;}
     if(novoEvento.tipo==="pessoal"&&!novoEvento.descricao.trim()){showT("Descreva o compromisso.","erro");return;}
-    const dados={...novoEvento};
-    const novoId=await addItem("age",dados);
-    setAgenda([...agenda,{id:novoId,...dados}]);
+
+    const [dd,mm,yyyy]=novoEvento.data.split("/");
+    if(!dd||!mm||!yyyy){showT("Data inválida.","erro");return;}
+    const dataBase=new Date(Number(yyyy),Number(mm)-1,Number(dd));
+
+    const recorrencia = novoEvento.tipo==="sessao" ? novoEvento.recorrencia : "avulsa";
+    const intervaloDias = recorrencia==="semanal" ? 7 : recorrencia==="quinzenal" ? 14 : null;
+    const grupoRecorrencia = intervaloDias ? `grp_${Date.now()}` : null;
+
+    const datasParaCriar = [];
+    if(intervaloDias){
+      for(let i=0;i<52;i++){
+        const d=new Date(dataBase);
+        d.setDate(d.getDate()+i*intervaloDias);
+        datasParaCriar.push(`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`);
+      }
+    }else{
+      datasParaCriar.push(novoEvento.data);
+    }
+
+    const novosEventos=[];
+    for(const dataEv of datasParaCriar){
+      const dados={
+        tipo:novoEvento.tipo,
+        pacienteNome:novoEvento.pacienteNome,
+        profissional:novoEvento.profissional,
+        descricao:novoEvento.descricao,
+        horario:novoEvento.horario,
+        horarioFim:novoEvento.horarioFim,
+        data:dataEv,
+        modalidade:novoEvento.modalidade,
+        recorrencia,
+        grupoRecorrencia
+      };
+      const novoId=await addItem("age",dados);
+      novosEventos.push({id:novoId,...dados});
+    }
+
+    setAgenda([...agenda,...novosEventos]);
     setModalEvento(false);
-setNovoEvento({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:novoEvento.data,modalidade:"presencial"});    showT("Evento adicionado à agenda!");
+    setNovoEvento({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:novoEvento.data,modalidade:"presencial",recorrencia:"avulsa"});
+    showT(intervaloDias ? `${novosEventos.length} sessões agendadas!` : "Evento adicionado à agenda!");
   }
 
   async function excluirEvento(id){
@@ -1223,6 +1259,15 @@ top: isMobile ? 0 : 20,
         <button onClick={()=>setNovoEvento({...novoEvento,modalidade:"presencial"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: novoEvento.modalidade==="presencial" ? "none" : "1.5px solid #c8ddd0",background: novoEvento.modalidade==="presencial" ? "#1C3D2E" : "#fff",color: novoEvento.modalidade==="presencial" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Presencial</button>
         <button onClick={()=>setNovoEvento({...novoEvento,modalidade:"online"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: novoEvento.modalidade==="online" ? "none" : "1.5px solid #c8ddd0",background: novoEvento.modalidade==="online" ? "#1C3D2E" : "#fff",color: novoEvento.modalidade==="online" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Online</button>
       </div>
+    </div>}
+
+    {novoEvento.tipo==="sessao"&&<div style={{marginBottom:14}}>
+      <label style={LBS}>Recorrência</label>
+      <select style={{...INS,cursor:"pointer"}} value={novoEvento.recorrencia} onChange={e=>setNovoEvento({...novoEvento,recorrencia:e.target.value})}>
+        <option value="avulsa">Sessão avulsa</option>
+        <option value="semanal">Semanal (toda semana, mesmo dia e horário)</option>
+        <option value="quinzenal">Quinzenal (a cada 2 semanas)</option>
+      </select>
     </div>}
 
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px",marginBottom:14}}>
