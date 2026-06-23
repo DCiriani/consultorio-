@@ -1047,33 +1047,74 @@ top: isMobile ? 0 : 20,
         d.setDate(d.getDate()+i);
         dias.push(d);
       }
+      const horarios=[];
+      for(let h=7;h<=21;h++) horarios.push(h);
+      const ALTURA_HORA=56;
+
+      function minutosDesde7h(horarioStr){
+        const [h,m]=horarioStr.split(":").map(Number);
+        return (h-7)*60+m;
+      }
+
       return (
-        <div style={{display:"flex",flexDirection:"column",gap:14}}>
-          {dias.map((d,i)=>{
-            const dataStr=d.toLocaleDateString("pt-BR");
-            const eventosDoDia=agenda.filter(ev=>ev.data===dataStr).sort((a,b)=>a.horario.localeCompare(b.horario));
-            return (
-              <div key={i}>
-                <div style={{fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#1a4a2a",marginBottom:6,textTransform:"capitalize"}}>
-                  {d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})}
+        <div style={{overflowX:"auto"}}>
+          <div style={{display:"grid",gridTemplateColumns:"50px repeat(7,minmax(110px,1fr))",minWidth:850}}>
+            <div/>
+            {dias.map((d,i)=>{
+              const ehHoje=d.toLocaleDateString("pt-BR")===new Date().toLocaleDateString("pt-BR");
+              return (
+                <div key={i} style={{textAlign:"center",paddingBottom:8,borderBottom:"2px solid #deeade"}}>
+                  <div style={{fontFamily:"sans-serif",fontSize:11,fontWeight:700,color:"#5a7a6a",textTransform:"uppercase"}}>
+                    {d.toLocaleDateString("pt-BR",{weekday:"short"}).replace(".","")}
+                  </div>
+                  <div style={{fontFamily:"sans-serif",fontSize:16,fontWeight:700,color: ehHoje ? "#fff" : "#1a3a2a",display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",background: ehHoje ? "#2a7a4a" : "transparent",marginTop:2}}>
+                    {d.getDate()}
+                  </div>
                 </div>
-                {eventosDoDia.length===0
-                  ? <div style={{fontFamily:"sans-serif",fontSize:13,color:"#c0c8c4",paddingLeft:8,marginBottom:6}}>Sem eventos</div>
-                  : <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:6}}>
-                    {eventosDoDia.map(ev=>(
-                      <div key={ev.id} style={{display:"flex",alignItems:"center",gap:12,padding:"8px 12px",background: ev.tipo==="sessao" ? "#f7faf8" : "#fff7e8",borderRadius:8,border:`1px solid ${ev.tipo==="sessao" ? "#e0ede5" : "#e8cfa3"}`}}>
-                        <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:13,color:"#1a3a2a",minWidth:44}}>{ev.horario}</div>
-                        <div style={{flex:1,fontFamily:"sans-serif",fontSize:13,color:"#1a3a2a"}}>
+              );
+            })}
+
+            <div style={{position:"relative"}}>
+              {horarios.map(h=>(
+                <div key={h} style={{height:ALTURA_HORA,fontFamily:"sans-serif",fontSize:11,color:"#5a7a6a",textAlign:"right",paddingRight:6,borderTop:"1px solid #eef4ec",boxSizing:"border-box"}}>
+                  {String(h).padStart(2,"0")}:00
+                </div>
+              ))}
+            </div>
+
+            {dias.map((d,i)=>{
+              const dataStr=d.toLocaleDateString("pt-BR");
+              const eventosDoDia=agenda.filter(ev=>ev.data===dataStr);
+              return (
+                <div key={i} style={{position:"relative",borderLeft:"1px solid #eef4ec"}}>
+                  {horarios.map(h=>(
+                    <div key={h} style={{height:ALTURA_HORA,borderTop:"1px solid #eef4ec",boxSizing:"border-box"}}/>
+                  ))}
+                  {eventosDoDia.map(ev=>{
+                    const inicioMin=minutosDesde7h(ev.horario);
+                    const fimMin=ev.horarioFim ? minutosDesde7h(ev.horarioFim) : inicioMin+60;
+                    const top=(inicioMin/60)*ALTURA_HORA;
+                    const altura=Math.max(((fimMin-inicioMin)/60)*ALTURA_HORA,24);
+                    return (
+                      <div key={ev.id} onClick={()=>excluirEvento(ev.id)} title="Clique para excluir" style={{
+                        position:"absolute", top, left:3, right:3, height:altura,
+                        background: ev.tipo==="sessao" ? "#3D7A63" : "#B9762F",
+                        borderRadius:6, padding:"3px 6px", overflow:"hidden", cursor:"pointer",
+                        boxShadow:"0 1px 3px rgba(0,0,0,0.15)"
+                      }}>
+                        <div style={{fontFamily:"sans-serif",fontSize:11,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                           {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
                         </div>
-                        <button onClick={()=>excluirEvento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}}>✕</button>
+                        <div style={{fontFamily:"sans-serif",fontSize:10,color:"rgba(255,255,255,0.85)"}}>
+                          {ev.horario}{ev.horarioFim?` – ${ev.horarioFim}`:""}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                }
-              </div>
-            );
-          })}
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       );
     })()}
