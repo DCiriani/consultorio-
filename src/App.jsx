@@ -831,9 +831,32 @@ async function salvarEvento(){
   }
 
   async function excluirEvento(id){
-    if(!window.confirm("Tem certeza que deseja excluir este evento da agenda?"))return;
+    const ev=agenda.find(e=>e.id===id);
+    if(!ev)return;
+
+    if(ev.grupoRecorrencia){
+      const apagarTodas=window.confirm("Este evento faz parte de uma recorrência.\n\nClique OK para excluir esta E TODAS as sessões futuras desta recorrência.\nClique Cancelar para excluir SOMENTE esta sessão.");
+      if(apagarTodas){
+        const [dd,mm,yyyy]=ev.data.split("/");
+        const dataEv=new Date(Number(yyyy),Number(mm)-1,Number(dd));
+        const futuras=agenda.filter(e=>{
+          if(e.grupoRecorrencia!==ev.grupoRecorrencia)return false;
+          const [d2,m2,y2]=e.data.split("/");
+          const dataE=new Date(Number(y2),Number(m2)-1,Number(d2));
+          return dataE>=dataEv;
+        });
+        for(const f of futuras) await deleteItem("age",f.id);
+        const idsRemovidos=new Set(futuras.map(f=>f.id));
+        setAgenda(agenda.filter(e=>!idsRemovidos.has(e.id)));
+        showT(`${futuras.length} sessões removidas.`);
+        return;
+      }
+    }else{
+      if(!window.confirm("Tem certeza que deseja excluir este evento da agenda?"))return;
+    }
+
     await deleteItem("age",id);
-    setAgenda(agenda.filter(ev=>ev.id!==id));
+    setAgenda(agenda.filter(e=>e.id!==id));
     showT("Evento removido.");
   }
 
