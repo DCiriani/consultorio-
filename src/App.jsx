@@ -1185,7 +1185,7 @@ top: isMobile ? 0 : 20,
                           {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
                         </div>
                         <div style={{fontFamily:"sans-serif",fontSize:10,color:"rgba(255,255,255,0.85)"}}>
-                          {ev.horario}{ev.horarioFim?` – ${ev.horarioFim}`:""}
+                          {ev.horario}{ev.horarioFim?` – ${ev.horarioFim}`:""}{ev.tipo==="sessao"&&ev.modalidade?` · ${ev.modalidade==="online"?"Online":"Presencial"}`:""}
                         </div>
                       </div>
                     );
