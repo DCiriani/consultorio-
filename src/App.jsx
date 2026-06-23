@@ -1167,7 +1167,7 @@ top: isMobile ? 0 : 20,
               return (
                 <div key={i} style={{position:"relative",borderLeft:"1px solid #eef4ec"}}>
                   {horarios.map(h=>(
-                    <div key={h} style={{height:ALTURA_HORA,borderTop:"1px solid #eef4ec",boxSizing:"border-box"}}/>
+                    <div key={h} onClick={()=>{setNovoEvento({...novoEvento,data:dataStr,horario:`${String(h).padStart(2,"0")}:00`,horarioFim:`${String(h+1).padStart(2,"0")}:00`});setModalEvento(true);}} style={{height:ALTURA_HORA,borderTop:"1px solid #eef4ec",boxSizing:"border-box",cursor:"pointer"}} onMouseOver={e=>e.currentTarget.style.background="#f4f6f0"} onMouseOut={e=>e.currentTarget.style.background="transparent"}/>
                   ))}
                   {eventosDoDia.map(ev=>{
                     const inicioMin=minutosDesde7h(ev.horario);
