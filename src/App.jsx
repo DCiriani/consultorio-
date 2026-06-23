@@ -704,6 +704,7 @@ const pacientesInativosBuscados = buscaLower
 const [agendaData,setAgendaData]=useState(new Date());
 const [modalEvento,setModalEvento]=useState(false);
 const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:"",modalidade:"presencial",recorrencia:"avulsa"});const [editandoEvento,setEditandoEvento]=useState(null);
+const [sugestoesEvento,setSugestoesEvento]=useState([]);
   const nomeRef=useRef(null);
 
   function showT(msg,tipo="ok"){setToast({msg,tipo});setTimeout(()=>setToast(null),2500);}
