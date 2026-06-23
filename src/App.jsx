@@ -1273,8 +1273,8 @@ export default function App(){
   useEffect(()=>{
     if(tela==="painel"&&!pronto){
       (async()=>{
+        const [p,r,t,e,ag]=await Promise.all([load("pac"),load("reg"),load("tit"),load("evol"),load("age")]);
         setPacientes(p);setRegistros(r);setTitulares(t);setEvolucoes(e);setAgenda(ag);setPronto(true);
-        setPacientes(p);setRegistros(r);setTitulares(t);setEvolucoes(e);setPronto(true);
       })();
     }
   },[tela]);
