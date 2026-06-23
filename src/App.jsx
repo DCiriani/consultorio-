@@ -700,6 +700,10 @@ const pacientesInativosBuscados = buscaLower
   const [salvandoPag,setSalvandoPag]=useState(false);
   const [salvandoPac,setSalvandoPac]=useState(false);
   const [tabPag,setTabPag]=useState("recentes");
+  const [agendaVisao,setAgendaVisao]=useState("dia");
+const [agendaData,setAgendaData]=useState(new Date());
+const [modalEvento,setModalEvento]=useState(false);
+const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",data:""});
   const nomeRef=useRef(null);
 
   function showT(msg,tipo="ok"){setToast({msg,tipo});setTimeout(()=>setToast(null),2500);}
@@ -776,6 +780,24 @@ const pacientesInativosBuscados = buscaLower
     await updateItem("pac",p.id,{inativo:false});
     setPacientes(pacientes.map(x=>x.id===p.id?{...x,inativo:false}:x));
     showT("Paciente reativado.");
+  }
+
+  async function salvarEvento(){
+    if(novoEvento.tipo==="sessao"&&!novoEvento.pacienteNome){showT("Selecione o paciente.","erro");return;}
+    if(novoEvento.tipo==="pessoal"&&!novoEvento.descricao.trim()){showT("Descreva o compromisso.","erro");return;}
+    const dados={...novoEvento};
+    const novoId=await addItem("age",dados);
+    setAgenda([...agenda,{id:novoId,...dados}]);
+    setModalEvento(false);
+    setNovoEvento({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",data:novoEvento.data});
+    showT("Evento adicionado à agenda!");
+  }
+
+  async function excluirEvento(id){
+    if(!window.confirm("Tem certeza que deseja excluir este evento da agenda?"))return;
+    await deleteItem("age",id);
+    setAgenda(agenda.filter(ev=>ev.id!==id));
+    showT("Evento removido.");
   }
 const isMobile = window.innerWidth < 768;
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
@@ -950,6 +972,93 @@ top: isMobile ? 0 : 20,
   minWidth:0,
   overflowX:"hidden"
 }}>
+{aba==="agenda"&&<>
+  <section style={CARD2}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18,flexWrap:"wrap",gap:10}}>
+      <h2 style={{margin:0,fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Agenda</h2>
+      <button onClick={()=>{setNovoEvento({...novoEvento,data:agendaData.toLocaleDateString("pt-BR")});setModalEvento(true);}} style={{padding:"8px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>+ Novo evento</button>
+    </div>
+
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:10}}>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <button onClick={()=>setAgendaData(new Date(agendaData.getTime()-86400000))} style={{padding:"7px 12px",background:"#fff",border:"1.5px solid #c8ddd0",borderRadius:7,cursor:"pointer",fontSize:14,fontFamily:"sans-serif"}}>←</button>
+        <div style={{fontFamily:"sans-serif",fontSize:15,fontWeight:700,color:"#1a3a2a",minWidth:160,textAlign:"center"}}>
+          {agendaData.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"})}
+        </div>
+        <button onClick={()=>setAgendaData(new Date(agendaData.getTime()+86400000))} style={{padding:"7px 12px",background:"#fff",border:"1.5px solid #c8ddd0",borderRadius:7,cursor:"pointer",fontSize:14,fontFamily:"sans-serif"}}>→</button>
+        <button onClick={()=>setAgendaData(new Date())} style={{padding:"7px 12px",background:"#e8f4ec",border:"1.5px solid #b0d8bc",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",color:"#1a4a2a"}}>Hoje</button>
+      </div>
+    </div>
+
+    {(() => {
+      const dataStr=agendaData.toLocaleDateString("pt-BR");
+      const eventosDoDia=agenda.filter(ev=>ev.data===dataStr).sort((a,b)=>a.horario.localeCompare(b.horario));
+      return eventosDoDia.length===0
+        ? <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15}}>Nenhum evento neste dia.</div>
+        : <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {eventosDoDia.map(ev=>(
+            <div key={ev.id} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background: ev.tipo==="sessao" ? "#f7faf8" : "#fff7e8",borderRadius:10,border:`1px solid ${ev.tipo==="sessao" ? "#e0ede5" : "#e8cfa3"}`}}>
+              <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:14,color:"#1a3a2a",minWidth:50}}>{ev.horario}</div>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:14,color:"#1a3a2a"}}>
+                  {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
+                </div>
+                <div style={{fontFamily:"sans-serif",fontSize:12,color:"#5a7a6a",marginTop:2}}>
+                  {ev.tipo==="sessao" ? "Sessão" : "Compromisso pessoal"} · {PROFISSIONAIS.find(p=>p.id===ev.profissional)?.nome}
+                </div>
+              </div>
+              <button onClick={()=>excluirEvento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
+            </div>
+          ))}
+        </div>;
+    })()}
+  </section>
+</>}
+
+{modalEvento&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setModalEvento(false)}>
+  <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:440,boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"90vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+      <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>Novo evento</h3>
+      <button onClick={()=>setModalEvento(false)} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
+    </div>
+
+    <div style={{display:"flex",gap:8,marginBottom:16}}>
+      <button onClick={()=>setNovoEvento({...novoEvento,tipo:"sessao"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: novoEvento.tipo==="sessao" ? "none" : "1.5px solid #c8ddd0",background: novoEvento.tipo==="sessao" ? "#2a7a4a" : "#fff",color: novoEvento.tipo==="sessao" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Sessão</button>
+      <button onClick={()=>setNovoEvento({...novoEvento,tipo:"pessoal"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: novoEvento.tipo==="pessoal" ? "none" : "1.5px solid #c8ddd0",background: novoEvento.tipo==="pessoal" ? "#B9762F" : "#fff",color: novoEvento.tipo==="pessoal" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Compromisso pessoal</button>
+    </div>
+
+    {novoEvento.tipo==="sessao"
+      ? <div style={{marginBottom:14}}>
+          <label style={LBS}>Paciente</label>
+          <input style={INS} placeholder="Nome do paciente" value={novoEvento.pacienteNome} onChange={e=>setNovoEvento({...novoEvento,pacienteNome:e.target.value})}/>
+        </div>
+      : <div style={{marginBottom:14}}>
+          <label style={LBS}>Descrição</label>
+          <input style={INS} placeholder="Ex: Academia, Médico, Gravação" value={novoEvento.descricao} onChange={e=>setNovoEvento({...novoEvento,descricao:e.target.value})}/>
+        </div>
+    }
+
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px",marginBottom:14}}>
+      <div>
+        <label style={LBS}>Data</label>
+        <input style={INS} type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10} value={novoEvento.data} onChange={e=>setNovoEvento({...novoEvento,data:fData(e.target.value)})}/>
+      </div>
+      <div>
+        <label style={LBS}>Horário</label>
+        <input style={INS} type="time" value={novoEvento.horario} onChange={e=>setNovoEvento({...novoEvento,horario:e.target.value})}/>
+      </div>
+    </div>
+
+    <div style={{marginBottom:18}}>
+      <label style={LBS}>Profissional</label>
+      <select style={{...INS,cursor:"pointer"}} value={novoEvento.profissional} onChange={e=>setNovoEvento({...novoEvento,profissional:e.target.value})}>
+        {PROFISSIONAIS.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}
+      </select>
+    </div>
+
+    <button onClick={salvarEvento} style={{width:"100%",padding:13,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:9,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif"}}>✓ Adicionar à agenda</button>
+  </div>
+</div>}
 {aba==="dashboard"&&<>
   <section style={CARD2}>
   <h2 style={{
