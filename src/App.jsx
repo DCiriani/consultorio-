@@ -703,7 +703,7 @@ const pacientesInativosBuscados = buscaLower
   const [agendaVisao,setAgendaVisao]=useState("dia");
 const [agendaData,setAgendaData]=useState(new Date());
 const [modalEvento,setModalEvento]=useState(false);
-const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",data:""});
+const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:""});
   const nomeRef=useRef(null);
 
   function showT(msg,tipo="ok"){setToast({msg,tipo});setTimeout(()=>setToast(null),2500);}
@@ -1145,13 +1145,17 @@ top: isMobile ? 0 : 20,
     }
 
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px",marginBottom:14}}>
-      <div>
+      <div style={{gridColumn:"1/-1"}}>
         <label style={LBS}>Data</label>
         <input style={INS} type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10} value={novoEvento.data} onChange={e=>setNovoEvento({...novoEvento,data:fData(e.target.value)})}/>
       </div>
       <div>
-        <label style={LBS}>Horário</label>
+        <label style={LBS}>Horário início</label>
         <input style={INS} type="time" value={novoEvento.horario} onChange={e=>setNovoEvento({...novoEvento,horario:e.target.value})}/>
+      </div>
+      <div>
+        <label style={LBS}>Horário término</label>
+        <input style={INS} type="time" value={novoEvento.horarioFim} onChange={e=>setNovoEvento({...novoEvento,horarioFim:e.target.value})}/>
       </div>
     </div>
 
