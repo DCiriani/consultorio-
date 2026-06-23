@@ -789,7 +789,7 @@ const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profiss
     const novoId=await addItem("age",dados);
     setAgenda([...agenda,{id:novoId,...dados}]);
     setModalEvento(false);
-    setNovoEvento({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",data:novoEvento.data});
+    setNovoEvento({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:novoEvento.data});
     showT("Evento adicionado à agenda!");
   }
 
