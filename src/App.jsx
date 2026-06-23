@@ -1006,25 +1006,35 @@ top: isMobile ? 0 : 20,
 
     {agendaVisao==="dia" && (() => {
       const dataStr=agendaData.toLocaleDateString("pt-BR");
-      const eventosDoDia=agenda.filter(ev=>ev.data===dataStr).sort((a,b)=>a.horario.localeCompare(b.horario));
-      return eventosDoDia.length===0
-        ? <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:40,fontSize:15}}>Nenhum evento neste dia.</div>
-        : <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {eventosDoDia.map(ev=>(
-            <div key={ev.id} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background: ev.tipo==="sessao" ? "#f7faf8" : "#fff7e8",borderRadius:10,border:`1px solid ${ev.tipo==="sessao" ? "#e0ede5" : "#e8cfa3"}`}}>
-              <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:14,color:"#1a3a2a",minWidth:50}}>{ev.horario}</div>
-              <div style={{flex:1}}>
-                <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:14,color:"#1a3a2a"}}>
-                  {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
-                </div>
-                <div style={{fontFamily:"sans-serif",fontSize:12,color:"#5a7a6a",marginTop:2}}>
-                  {ev.tipo==="sessao" ? "Sessão" : "Compromisso pessoal"} · {PROFISSIONAIS.find(p=>p.id===ev.profissional)?.nome}
-                </div>
+      const eventosDoDia=agenda.filter(ev=>ev.data===dataStr);
+      const horarios=[];
+      for(let h=7;h<=21;h++) horarios.push(`${String(h).padStart(2,"0")}:00`);
+      return (
+        <div style={{display:"flex",flexDirection:"column"}}>
+          {horarios.map(hr=>{
+            const evDoHorario=eventosDoDia.find(ev=>ev.horario===hr);
+            return (
+              <div key={hr} style={{display:"flex",alignItems:"stretch",borderBottom:"1px solid #eef4ec",minHeight:52}}>
+                <div style={{width:54,flexShrink:0,fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#5a7a6a",paddingTop:10,textAlign:"right",paddingRight:10}}>{hr}</div>
+                {evDoHorario
+                  ? <div style={{flex:1,display:"flex",alignItems:"center",gap:14,padding:"8px 12px",margin:"4px 0",background: evDoHorario.tipo==="sessao" ? "#f7faf8" : "#fff7e8",borderRadius:8,border:`1px solid ${evDoHorario.tipo==="sessao" ? "#e0ede5" : "#e8cfa3"}`}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:14,color:"#1a3a2a"}}>
+                          {evDoHorario.tipo==="sessao" ? evDoHorario.pacienteNome : evDoHorario.descricao}
+                        </div>
+                        <div style={{fontFamily:"sans-serif",fontSize:12,color:"#5a7a6a",marginTop:2}}>
+                          {evDoHorario.tipo==="sessao" ? "Sessão" : "Compromisso pessoal"} · {PROFISSIONAIS.find(p=>p.id===evDoHorario.profissional)?.nome}
+                        </div>
+                      </div>
+                      <button onClick={()=>excluirEvento(evDoHorario.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
+                    </div>
+                  : <div onClick={()=>{setNovoEvento({...novoEvento,data:dataStr,horario:hr});setModalEvento(true);}} style={{flex:1,cursor:"pointer",borderRadius:8,margin:"4px 0"}} onMouseOver={e=>e.currentTarget.style.background="#f4f6f0"} onMouseOut={e=>e.currentTarget.style.background="transparent"}/>
+                }
               </div>
-              <button onClick={()=>excluirEvento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
-            </div>
-          ))}
-        </div>;
+            );
+          })}
+        </div>
+      );
     })()}
 
     {agendaVisao==="semana" && (() => {
