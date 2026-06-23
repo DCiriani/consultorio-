@@ -979,18 +979,32 @@ top: isMobile ? 0 : 20,
       <button onClick={()=>{setNovoEvento({...novoEvento,data:agendaData.toLocaleDateString("pt-BR")});setModalEvento(true);}} style={{padding:"8px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>+ Novo evento</button>
     </div>
 
+    <div style={{display:"flex",gap:6,marginBottom:18}}>
+      {[["dia","Dia"],["semana","Semana"],["mes","Mês"]].map(([v,l])=>(
+        <button key={v} onClick={()=>setAgendaVisao(v)} style={{padding:"7px 14px",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:agendaVisao===v?"#2a7a4a":"#fff",color:agendaVisao===v?"#fff":"#4a6a5a",border:agendaVisao===v?"none":"1.5px solid #c8ddd0",fontWeight:agendaVisao===v?700:400}}>{l}</button>
+      ))}
+    </div>
+
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:10}}>
       <div style={{display:"flex",gap:8,alignItems:"center"}}>
-        <button onClick={()=>setAgendaData(new Date(agendaData.getTime()-86400000))} style={{padding:"7px 12px",background:"#fff",border:"1.5px solid #c8ddd0",borderRadius:7,cursor:"pointer",fontSize:14,fontFamily:"sans-serif"}}>←</button>
+        <button onClick={()=>{
+          const dias = agendaVisao==="dia" ? 1 : agendaVisao==="semana" ? 7 : 30;
+          setAgendaData(new Date(agendaData.getTime()-dias*86400000));
+        }} style={{padding:"7px 12px",background:"#fff",border:"1.5px solid #c8ddd0",borderRadius:7,cursor:"pointer",fontSize:14,fontFamily:"sans-serif"}}>←</button>
         <div style={{fontFamily:"sans-serif",fontSize:15,fontWeight:700,color:"#1a3a2a",minWidth:160,textAlign:"center"}}>
-          {agendaData.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"})}
+          {agendaVisao==="dia" && agendaData.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"})}
+          {agendaVisao==="semana" && "Semana de "+agendaData.toLocaleDateString("pt-BR",{day:"2-digit",month:"long"})}
+          {agendaVisao==="mes" && agendaData.toLocaleDateString("pt-BR",{month:"long",year:"numeric"})}
         </div>
-        <button onClick={()=>setAgendaData(new Date(agendaData.getTime()+86400000))} style={{padding:"7px 12px",background:"#fff",border:"1.5px solid #c8ddd0",borderRadius:7,cursor:"pointer",fontSize:14,fontFamily:"sans-serif"}}>→</button>
+        <button onClick={()=>{
+          const dias = agendaVisao==="dia" ? 1 : agendaVisao==="semana" ? 7 : 30;
+          setAgendaData(new Date(agendaData.getTime()+dias*86400000));
+        }} style={{padding:"7px 12px",background:"#fff",border:"1.5px solid #c8ddd0",borderRadius:7,cursor:"pointer",fontSize:14,fontFamily:"sans-serif"}}>→</button>
         <button onClick={()=>setAgendaData(new Date())} style={{padding:"7px 12px",background:"#e8f4ec",border:"1.5px solid #b0d8bc",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",color:"#1a4a2a"}}>Hoje</button>
       </div>
     </div>
 
-    {(() => {
+    {agendaVisao==="dia" && (() => {
       const dataStr=agendaData.toLocaleDateString("pt-BR");
       const eventosDoDia=agenda.filter(ev=>ev.data===dataStr).sort((a,b)=>a.horario.localeCompare(b.horario));
       return eventosDoDia.length===0
@@ -1011,6 +1025,88 @@ top: isMobile ? 0 : 20,
             </div>
           ))}
         </div>;
+    })()}
+
+    {agendaVisao==="semana" && (() => {
+      const inicioSemana = new Date(agendaData);
+      const diaSemana = inicioSemana.getDay();
+      inicioSemana.setDate(inicioSemana.getDate()-diaSemana);
+      const dias=[];
+      for(let i=0;i<7;i++){
+        const d=new Date(inicioSemana);
+        d.setDate(d.getDate()+i);
+        dias.push(d);
+      }
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          {dias.map((d,i)=>{
+            const dataStr=d.toLocaleDateString("pt-BR");
+            const eventosDoDia=agenda.filter(ev=>ev.data===dataStr).sort((a,b)=>a.horario.localeCompare(b.horario));
+            return (
+              <div key={i}>
+                <div style={{fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#1a4a2a",marginBottom:6,textTransform:"capitalize"}}>
+                  {d.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"2-digit"})}
+                </div>
+                {eventosDoDia.length===0
+                  ? <div style={{fontFamily:"sans-serif",fontSize:13,color:"#c0c8c4",paddingLeft:8,marginBottom:6}}>Sem eventos</div>
+                  : <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:6}}>
+                    {eventosDoDia.map(ev=>(
+                      <div key={ev.id} style={{display:"flex",alignItems:"center",gap:12,padding:"8px 12px",background: ev.tipo==="sessao" ? "#f7faf8" : "#fff7e8",borderRadius:8,border:`1px solid ${ev.tipo==="sessao" ? "#e0ede5" : "#e8cfa3"}`}}>
+                        <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:13,color:"#1a3a2a",minWidth:44}}>{ev.horario}</div>
+                        <div style={{flex:1,fontFamily:"sans-serif",fontSize:13,color:"#1a3a2a"}}>
+                          {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
+                        </div>
+                        <button onClick={()=>excluirEvento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:14}}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                }
+              </div>
+            );
+          })}
+        </div>
+      );
+    })()}
+
+    {agendaVisao==="mes" && (() => {
+      const ano=agendaData.getFullYear();
+      const mes=agendaData.getMonth();
+      const primeiroDia=new Date(ano,mes,1);
+      const ultimoDia=new Date(ano,mes+1,0);
+      const diaSemanaInicio=primeiroDia.getDay();
+      const totalDias=ultimoDia.getDate();
+      const celulas=[];
+      for(let i=0;i<diaSemanaInicio;i++) celulas.push(null);
+      for(let d=1;d<=totalDias;d++) celulas.push(new Date(ano,mes,d));
+
+      return (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6}}>
+          {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(d=>(
+            <div key={d} style={{fontFamily:"sans-serif",fontSize:11,fontWeight:700,color:"#5a7a6a",textAlign:"center",paddingBottom:4}}>{d}</div>
+          ))}
+          {celulas.map((d,i)=>{
+            if(!d) return <div key={i}/>;
+            const dataStr=d.toLocaleDateString("pt-BR");
+            const eventosDoDia=agenda.filter(ev=>ev.data===dataStr);
+            const ehHoje=dataStr===new Date().toLocaleDateString("pt-BR");
+            return (
+              <div key={i} onClick={()=>{setAgendaData(d);setAgendaVisao("dia");}} style={{
+                minHeight:64, padding:"6px 6px", borderRadius:8, cursor:"pointer",
+                background: ehHoje ? "#e8f4ec" : "#f7faf8",
+                border: ehHoje ? "1.5px solid #2a7a4a" : "1px solid #e0ede5"
+              }}>
+                <div style={{fontFamily:"sans-serif",fontSize:12,fontWeight:700,color: ehHoje ? "#1a4a2a" : "#1a3a2a",marginBottom:3}}>{d.getDate()}</div>
+                {eventosDoDia.slice(0,2).map(ev=>(
+                  <div key={ev.id} style={{fontFamily:"sans-serif",fontSize:10,color:"#fff",background: ev.tipo==="sessao" ? "#2a7a4a" : "#B9762F",borderRadius:4,padding:"1px 4px",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                    {ev.horario} {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
+                  </div>
+                ))}
+                {eventosDoDia.length>2 && <div style={{fontFamily:"sans-serif",fontSize:10,color:"#5a7a6a"}}>+{eventosDoDia.length-2} mais</div>}
+              </div>
+            );
+          })}
+        </div>
+      );
     })()}
   </section>
 </>}
