@@ -806,23 +806,21 @@ async function salvarEvento(){
       datasParaCriar.push(novoEvento.data);
     }
 
-    const novosEventos=[];
-    for(const dataEv of datasParaCriar){
-      const dados={
-        tipo:novoEvento.tipo,
-        pacienteNome:novoEvento.pacienteNome,
-        profissional:novoEvento.profissional,
-        descricao:novoEvento.descricao,
-        horario:novoEvento.horario,
-        horarioFim:novoEvento.horarioFim,
-        data:dataEv,
-        modalidade:novoEvento.modalidade,
-        recorrencia,
-        grupoRecorrencia
-      };
-      const novoId=await addItem("age",dados);
-      novosEventos.push({id:novoId,...dados});
-    }
+    const eventosBase = datasParaCriar.map(dataEv=>({
+      tipo:novoEvento.tipo,
+      pacienteNome:novoEvento.pacienteNome,
+      profissional:novoEvento.profissional,
+      descricao:novoEvento.descricao,
+      horario:novoEvento.horario,
+      horarioFim:novoEvento.horarioFim,
+      data:dataEv,
+      modalidade:novoEvento.modalidade,
+      recorrencia,
+      grupoRecorrencia
+    }));
+
+    const ids = await Promise.all(eventosBase.map(dados=>addItem("age",dados)));
+    const novosEventos = eventosBase.map((dados,i)=>({id:ids[i],...dados}));
 
     setAgenda([...agenda,...novosEventos]);
     setModalEvento(false);
@@ -845,7 +843,7 @@ async function salvarEvento(){
           const dataE=new Date(Number(y2),Number(m2)-1,Number(d2));
           return dataE>=dataEv;
         });
-        for(const f of futuras) await deleteItem("age",f.id);
+        await Promise.all(futuras.map(f=>deleteItem("age",f.id)));
         const idsRemovidos=new Set(futuras.map(f=>f.id));
         setAgenda(agenda.filter(e=>!idsRemovidos.has(e.id)));
         showT(`${futuras.length} sessões removidas.`);
