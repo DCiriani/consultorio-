@@ -704,6 +704,7 @@ const pacientesInativosBuscados = buscaLower
 const [agendaData,setAgendaData]=useState(new Date());
 const [modalEvento,setModalEvento]=useState(false);
 const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:""});
+const [sugestoesEvento,setSugestoesEvento]=useState([]);
   const nomeRef=useRef(null);
 
   function showT(msg,tipo="ok"){setToast({msg,tipo});setTimeout(()=>setToast(null),2500);}
@@ -1177,7 +1178,20 @@ top: isMobile ? 0 : 20,
     {novoEvento.tipo==="sessao"
       ? <div style={{marginBottom:14}}>
           <label style={LBS}>Paciente</label>
-          <input style={INS} placeholder="Nome do paciente" value={novoEvento.pacienteNome} onChange={e=>setNovoEvento({...novoEvento,pacienteNome:e.target.value})}/>
+          <div style={{position:"relative"}}>
+            <input style={INS} placeholder="Digite o nome para buscar..." autoComplete="off" value={novoEvento.pacienteNome} onChange={e=>{
+              const v=e.target.value;
+              setNovoEvento({...novoEvento,pacienteNome:v});
+              if(v.trim().length<2){setSugestoesEvento([]);return;}
+              const q=v.toLowerCase();
+              setSugestoesEvento(pacientes.filter(p=>p.nome.toLowerCase().includes(q)).slice(0,6));
+            }} onBlur={()=>setTimeout(()=>setSugestoesEvento([]),150)}/>
+            {sugestoesEvento.length>0&&<ul style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",border:"1.5px solid #c8ddd0",borderRadius:8,zIndex:100,listStyle:"none",margin:0,padding:"4px 0",boxShadow:"0 8px 24px rgba(0,40,20,0.12)",maxHeight:180,overflowY:"auto"}}>
+              {sugestoesEvento.map((p,i)=><li key={i} style={{padding:"9px 14px",cursor:"pointer",fontFamily:"sans-serif",fontSize:14}} onMouseDown={()=>{setNovoEvento({...novoEvento,pacienteNome:p.nome});setSugestoesEvento([]);}}>
+                <span style={{fontWeight:600}}>{p.nome}</span><span style={{color:"#888",fontSize:12,marginLeft:8}}>{p.cpf}</span>
+              </li>)}
+            </ul>}
+          </div>
         </div>
       : <div style={{marginBottom:14}}>
           <label style={LBS}>Descrição</label>
