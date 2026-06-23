@@ -703,8 +703,7 @@ const pacientesInativosBuscados = buscaLower
   const [agendaVisao,setAgendaVisao]=useState("dia");
 const [agendaData,setAgendaData]=useState(new Date());
 const [modalEvento,setModalEvento]=useState(false);
-const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:""});
-const [sugestoesEvento,setSugestoesEvento]=useState([]);
+const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:"",modalidade:"presencial"});const [sugestoesEvento,setSugestoesEvento]=useState([]);
 const [editandoEvento,setEditandoEvento]=useState(null);
   const nomeRef=useRef(null);
 
@@ -791,8 +790,7 @@ const [editandoEvento,setEditandoEvento]=useState(null);
     const novoId=await addItem("age",dados);
     setAgenda([...agenda,{id:novoId,...dados}]);
     setModalEvento(false);
-    setNovoEvento({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:novoEvento.data});
-    showT("Evento adicionado à agenda!");
+setNovoEvento({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:novoEvento.data,modalidade:"presencial"});    showT("Evento adicionado à agenda!");
   }
 
   async function excluirEvento(id){
@@ -1043,7 +1041,7 @@ top: isMobile ? 0 : 20,
                           {evDoHorario.tipo==="sessao" ? evDoHorario.pacienteNome : evDoHorario.descricao}
                         </div>
                         <div style={{fontFamily:"sans-serif",fontSize:12,color:"#5a7a6a",marginTop:2}}>
-                          {evDoHorario.tipo==="sessao" ? "Sessão" : "Compromisso pessoal"} · {PROFISSIONAIS.find(p=>p.id===evDoHorario.profissional)?.nome}
+                          {evDoHorario.tipo==="sessao" ? `Sessão ${evDoHorario.modalidade==="online"?"· Online":"· Presencial"}` : "Compromisso pessoal"} · {PROFISSIONAIS.find(p=>p.id===evDoHorario.profissional)?.nome}
                         </div>
                       </div>
                       <button onClick={()=>setEditandoEvento({...evDoHorario})} style={{background:"none",border:"none",color:"#1a3a6a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",marginRight:8}}>editar</button>
@@ -1219,6 +1217,14 @@ top: isMobile ? 0 : 20,
         </div>
     }
 
+    {novoEvento.tipo==="sessao"&&<div style={{marginBottom:14}}>
+      <label style={LBS}>Modalidade</label>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>setNovoEvento({...novoEvento,modalidade:"presencial"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: novoEvento.modalidade==="presencial" ? "none" : "1.5px solid #c8ddd0",background: novoEvento.modalidade==="presencial" ? "#1C3D2E" : "#fff",color: novoEvento.modalidade==="presencial" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Presencial</button>
+        <button onClick={()=>setNovoEvento({...novoEvento,modalidade:"online"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: novoEvento.modalidade==="online" ? "none" : "1.5px solid #c8ddd0",background: novoEvento.modalidade==="online" ? "#1C3D2E" : "#fff",color: novoEvento.modalidade==="online" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Online</button>
+      </div>
+    </div>}
+
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px",marginBottom:14}}>
       <div style={{gridColumn:"1/-1"}}>
         <label style={LBS}>Data</label>
@@ -1266,6 +1272,14 @@ top: isMobile ? 0 : 20,
           <input style={INS} placeholder="Ex: Academia, Médico, Gravação" value={editandoEvento.descricao} onChange={e=>setEditandoEvento({...editandoEvento,descricao:e.target.value})}/>
         </div>
     }
+
+    {editandoEvento.tipo==="sessao"&&<div style={{marginBottom:14}}>
+      <label style={LBS}>Modalidade</label>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={()=>setEditandoEvento({...editandoEvento,modalidade:"presencial"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: editandoEvento.modalidade==="presencial" ? "none" : "1.5px solid #c8ddd0",background: editandoEvento.modalidade==="presencial" ? "#1C3D2E" : "#fff",color: editandoEvento.modalidade==="presencial" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Presencial</button>
+        <button onClick={()=>setEditandoEvento({...editandoEvento,modalidade:"online"})} style={{flex:1,padding:"9px 0",borderRadius:8,border: editandoEvento.modalidade==="online" ? "none" : "1.5px solid #c8ddd0",background: editandoEvento.modalidade==="online" ? "#1C3D2E" : "#fff",color: editandoEvento.modalidade==="online" ? "#fff" : "#4a6a5a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Online</button>
+      </div>
+    </div>}
 
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px",marginBottom:14}}>
       <div style={{gridColumn:"1/-1"}}>
