@@ -1625,7 +1625,7 @@ const ABAS_SECUNDARIAS=[
   {/* CARDS DE MÉTRICA */}
   <div style={{
     display:"grid",
-    gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",
+    gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(auto-fit, minmax(200px, 1fr))",
     gap:14,
     marginBottom:24
   }}>
@@ -1656,7 +1656,7 @@ const ABAS_SECUNDARIAS=[
   {/* GRÁFICOS: ATENDIMENTOS NA SEMANA + POR MODALIDADE */}
   <div style={{
     display:"grid",
-    gridTemplateColumns: isMobile ? "1fr" : "1.3fr 1fr",
+    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(380px, 1fr))",
     gap:16,
     marginBottom:16
   }}>
@@ -1678,20 +1678,20 @@ const ABAS_SECUNDARIAS=[
       {dadosDonut.length===0 ? (
         <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"40px 0",fontSize:13}}>Sem dados suficientes ainda.</div>
       ) : (
-        <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <ResponsiveContainer width="55%" height={180}>
+        <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+          <ResponsiveContainer width="100%" minWidth={180} height={180} style={{flex:"1 1 220px"}}>
             <PieChart>
               <Pie data={dadosDonut} dataKey="qtd" nameKey="nome" innerRadius={48} outerRadius={75} paddingAngle={2}>
                 {dadosDonut.map((d,i)=><Cell key={i} fill={d.cor}/>)}
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <div style={{display:"flex",flexDirection:"column",gap:10,flex:"1 1 140px",minWidth:140}}>
             {dadosDonut.map((d,i)=>(
               <div key={i} style={{display:"flex",alignItems:"center",gap:8,fontFamily:"sans-serif",fontSize:13}}>
-                <span style={{width:10,height:10,borderRadius:"50%",background:d.cor,flexShrink:0}}/>
-                <span style={{color:"#1C3D2E",fontWeight:600}}>{d.nome}</span>
-                <span style={{color:"#6B7A72"}}>{d.pct}%</span>
+                <span style={{width:10,height:10,minWidth:10,borderRadius:"50%",background:d.cor,flexShrink:0,display:"inline-block"}}/>
+                <span style={{color:"#1C3D2E",fontWeight:600,whiteSpace:"nowrap"}}>{d.nome}</span>
+                <span style={{color:"#6B7A72",whiteSpace:"nowrap"}}>{d.pct}%</span>
               </div>
             ))}
           </div>
@@ -1717,7 +1717,7 @@ const ABAS_SECUNDARIAS=[
   {/* PRÓXIMOS ATENDIMENTOS + PAGAMENTOS PENDENTES */}
   <div style={{
     display:"grid",
-    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+    gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(320px, 1fr))",
     gap:16
   }}>
     <div style={{background:"#fff", borderRadius:14, border:"1px solid #E3E0D8", padding:18}}>
