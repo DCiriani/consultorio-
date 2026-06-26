@@ -1054,8 +1054,8 @@ const isMobile = window.innerWidth < 768;
   const LBS={display:"block",fontSize:12,fontWeight:600,color:"#4a6a5a",marginBottom:5,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"};
   const INS={width:"100%",padding:"10px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"};
 const ABAS=[
-{k:"agenda",l:"Agenda",icon:"agenda"},
 {k:"dashboard",l:"Dashboard",icon:"dashboard"},
+{k:"agenda",l:"Agenda",icon:"agenda"},
 {k:"pagamentos",l:`Pagamentos (${registrosFiltrados.length})`,icon:"pagamentos"},
 {k:"pacientes",l:`Pacientes (${pacientesAtivos.length})`,icon:"pacientes"},
 {k:"inativados",l:`Inativados (${pacientesInativos.length})`,icon:"pacientes"},
