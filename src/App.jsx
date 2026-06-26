@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
+import { PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, setDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
@@ -26,6 +27,38 @@ const fData = r => { const d = r.replace(/\D/g,"").slice(0,8); return d.replace(
 const fCEP = r => { const d=r.replace(/\D/g,"").slice(0,8); return d.replace(/(\d{5})(\d{0,3})/,"$1-$2").replace(/-$/,""); };
 const HOJE = () => new Date().toLocaleDateString("pt-BR");
 const FORMAS = ["Pix","Cartão de Débito","Cartão de Crédito","Dinheiro"];
+
+// ── HELPERS DO DASHBOARD ─────────────────────────────────────────────────────
+const DIAS_SEMANA_CURTO = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+
+function parseDataBR(str){
+  // "23/06/2026" -> Date local, ou null se inválido
+  if(!str) return null;
+  const [d,m,a] = str.split("/").map(Number);
+  if(!d||!m||!a) return null;
+  return new Date(a,m-1,d);
+}
+
+function valorParaNumero(valor){
+  if(!valor || valor==="—") return 0;
+  const n = parseFloat(String(valor).replace(/\./g,"").replace(",","."));
+  return isNaN(n) ? 0 : n;
+}
+
+function inicioDaSemana(data){
+  // Retorna a segunda-feira da semana de "data"
+  const d = new Date(data);
+  const diaSemana = d.getDay(); // 0=domingo
+  const diff = diaSemana===0 ? -6 : 1-diaSemana;
+  d.setDate(d.getDate()+diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function formatBRL(n){
+  return `R$ ${n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+}
+
 const PARENTESCOS = ["Mãe","Pai","Filho(a)","Cônjuge / Parceiro(a)","Irmão / Irmã","Avô / Avó","Tio(a)","Primo(a)","Amigo(a)","Outro"];
 const OBRIG_PAC = ["nome","cpf","nascimento","tel1","emergNome","emergParentesco","emergTel","cep","logradouro","numero","bairro","cidade","estado"];
 const OBRIG_TIT = ["nome","cpf"];
@@ -672,6 +705,17 @@ function IconAba({nome,color="currentColor",size=17}){
   };
   return <svg width={size} height={size} viewBox="0 0 24 24">{paths[nome]}</svg>;
 }
+function IconDash({nome,color="currentColor",size=20}){
+  const st={fill:"none",stroke:color,strokeWidth:1.8,strokeLinecap:"round",strokeLinejoin:"round"};
+  const paths={
+    pacientes:<><circle cx="9" cy="8" r="3" {...st}/><path d="M3 19c0-3 2.7-5.5 6-5.5s6 2.5 6 5.5" {...st}/><circle cx="17" cy="9" r="2.4" {...st}/><path d="M14.5 13.2c2.4.3 4.5 2.3 4.8 5" {...st}/></>,
+    agenda:<><rect x="3" y="4" width="18" height="17" rx="2" {...st}/><line x1="3" y1="9" x2="21" y2="9" {...st}/><line x1="8" y1="2" x2="8" y2="6" {...st}/><line x1="16" y1="2" x2="16" y2="6" {...st}/></>,
+    cifrao:<><circle cx="12" cy="12" r="9.5" {...st}/><path d="M14.5 9.2c0-1.1-1.1-2-2.5-2s-2.5.9-2.5 2c0 1.1 1.1 1.6 2.5 2c1.4.4 2.5 1 2.5 2c0 1.1-1.1 2-2.5 2s-2.5-.9-2.5-2" {...st}/><line x1="12" y1="5.5" x2="12" y2="18.5" {...st}/></>,
+    carteira:<><rect x="2.5" y="6" width="19" height="13" rx="2.2" {...st}/><path d="M6.5 6V4.5a2 2 0 012-2h7a2 2 0 012 2V6" {...st}/><circle cx="16" cy="12.5" r="1.3" fill={color} stroke="none"/></>,
+    sino:<><path d="M12 3.5c-3 0-4.5 2.3-4.5 5.2v3.1c0 .9-.4 1.7-1.1 2.4l-.6.6h12.4l-.6-.6a3.3 3.3 0 01-1.1-2.4V8.7c0-2.9-1.5-5.2-4.5-5.2z" {...st}/><path d="M9.8 18.3a2.3 2.3 0 004.4 0" {...st}/></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24">{paths[nome]}</svg>;
+}
 // ── PAINEL ────────────────────────────────────────────────────────────────────
 function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitulares,evolucoes,setEvolucoes,agenda,setAgenda,onCadastro,onLogout}){
   const [aba,setAba]=useState("dashboard");
@@ -691,6 +735,79 @@ const pacientesBuscados = buscaLower
 const pacientesInativosBuscados = buscaLower
   ? pacientesInativos.filter(p=>p.nome.toLowerCase().includes(buscaLower))
   : pacientesInativos;
+const agendaFiltrada = filtroProf==="todos" ? agenda : agenda.filter(ev=>ev.profissional===filtroProf);
+
+// ── CÁLCULOS DO DASHBOARD ───────────────────────────────────────────────────
+const hojeDate = new Date();
+const inicioSemanaAtual = inicioDaSemana(hojeDate);
+const fimSemanaAtual = new Date(inicioSemanaAtual); fimSemanaAtual.setDate(fimSemanaAtual.getDate()+6); fimSemanaAtual.setHours(23,59,59,999);
+
+const eventosEstaSemana = agendaFiltrada.filter(ev=>{
+  const d = parseDataBR(ev.data);
+  return d && d>=inicioSemanaAtual && d<=fimSemanaAtual && ev.tipo==="sessao";
+});
+
+const registrosComData = registrosFiltrados.map(r=>({...r, _data: parseDataBR(r.data), _valorNum: valorParaNumero(r.valor)}));
+const receitaSemana = registrosComData
+  .filter(r=>r._data && r._data>=inicioSemanaAtual && r._data<=fimSemanaAtual)
+  .reduce((t,r)=>t+r._valorNum,0);
+
+const inicioMes = new Date(hojeDate.getFullYear(), hojeDate.getMonth(), 1);
+const fimMes = new Date(hojeDate.getFullYear(), hojeDate.getMonth()+1, 0, 23,59,59,999);
+const receitaMes = registrosComData
+  .filter(r=>r._data && r._data>=inicioMes && r._data<=fimMes)
+  .reduce((t,r)=>t+r._valorNum,0);
+
+// Atendimentos agendados na semana, por dia (Seg a Sex, como no modelo)
+const diasUteisSemana = [1,2,3,4,5].map(offset=>{
+  const d = new Date(inicioSemanaAtual); d.setDate(d.getDate()+offset-1);
+  return d;
+});
+const atendimentosPorDiaSemana = diasUteisSemana.map(d=>{
+  const dStr = `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  const qtd = agendaFiltrada.filter(ev=>ev.data===dStr && ev.tipo==="sessao").length;
+  return { dia: DIAS_SEMANA_CURTO[d.getDay()], qtd };
+});
+
+// Atendimentos por modalidade (donut)
+const sessoesTotais = agendaFiltrada.filter(ev=>ev.tipo==="sessao");
+const contagemModalidade = sessoesTotais.reduce((acc,ev)=>{
+  const k = ev.modalidade==="online" ? "Online" : ev.modalidade==="presencial" ? "Presencial" : "Outro";
+  acc[k] = (acc[k]||0)+1;
+  return acc;
+},{});
+const totalSessoesModalidade = Object.values(contagemModalidade).reduce((a,b)=>a+b,0) || 1;
+const CORES_DONUT = { Presencial:"#3D7A63", Online:"#4A90D9", Outro:"#9B7FC4" };
+const dadosDonut = Object.entries(contagemModalidade).map(([nome,qtd])=>({
+  nome, qtd, pct: Math.round((qtd/totalSessoesModalidade)*100), cor: CORES_DONUT[nome]||"#9B7FC4"
+}));
+
+// Receita dos últimos 7 dias (barras)
+const ultimos7Dias = Array.from({length:7},(_,i)=>{
+  const d = new Date(hojeDate); d.setDate(d.getDate()-(6-i));
+  return d;
+});
+const receitaUltimos7Dias = ultimos7Dias.map(d=>{
+  const dStr = `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+  const total = registrosComData.filter(r=>r.data===dStr).reduce((t,r)=>t+r._valorNum,0);
+  return { dia: DIAS_SEMANA_CURTO[d.getDay()], total };
+});
+
+// Próximos atendimentos (a partir de hoje, ordenados)
+const hojeStr = `${String(hojeDate.getDate()).padStart(2,"0")}/${String(hojeDate.getMonth()+1).padStart(2,"0")}/${hojeDate.getFullYear()}`;
+const proximosAtendimentos = agendaFiltrada
+  .filter(ev=>ev.tipo==="sessao")
+  .map(ev=>({...ev, _data: parseDataBR(ev.data)}))
+  .filter(ev=>ev._data && (ev.data===hojeStr || ev._data>hojeDate))
+  .sort((a,b)=> a._data - b._data || (a.horario||"").localeCompare(b.horario||""))
+  .slice(0,3);
+
+// Pagamentos pendentes (NF não emitida), mais recentes primeiro
+const pagamentosPendentesDash = registrosComData
+  .filter(r=>!r.nfEmitida)
+  .sort((a,b)=> (b._data||0) - (a._data||0))
+  .slice(0,3);
+
   const [nome,setNome]=useState("");const [pacSel,setPacSel]=useState(null);
   const [pagamento,setPagamento]=useState("");const [valor,setValor]=useState("");
   const [data,setData]=useState(HOJE());
@@ -1021,7 +1138,7 @@ const ABAS=[
   width: isMobile ? "100%" : "auto"
 }}>
           <button onClick={onCadastro} style={{padding:"9px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>📋 Formulário</button>
-          <button onClick={ativarNotificacoes} style={{padding:"9px 16px",background:"#fff",color:"#1C3D2E",border:"1.5px solid #c8ddd0",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>🔔 Notificações</button>
+          <button onClick={ativarNotificacoes} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",background:"#fff",color:"#1C3D2E",border:"1.5px solid #c8ddd0",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}><IconDash nome="sino" color="#1C3D2E" size={16}/> Notificações</button>
           <button onClick={onLogout} style={{padding:"9px 16px",background:"#fff",color:"#c0392b",border:"1.5px solid #f5c6cb",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Sair</button>
         </div>
 </header>
@@ -1076,6 +1193,27 @@ top: isMobile ? 0 : 20,
     </button>
   );
 })}
+  {!isMobile && (
+    <div style={{
+      marginTop:18,
+      paddingTop:14,
+      borderTop:"1px solid rgba(255,255,255,0.12)",
+      display:"flex",
+      alignItems:"center",
+      gap:10,
+    }}>
+      <div style={{
+        width:36,height:36,borderRadius:"50%",flexShrink:0,
+        background:"#3D7A63",color:"#fff",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontWeight:700,fontSize:13,fontFamily:"sans-serif",
+      }}>DC</div>
+      <div style={{minWidth:0}}>
+        <div style={{fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Diego Ciriani</div>
+        <div style={{fontFamily:"sans-serif",fontSize:11,color:"#7FA08E"}}>Administrador</div>
+      </div>
+    </div>
+  )}
   </div>
 
   <div style={{
@@ -1421,109 +1559,144 @@ top: isMobile ? 0 : 20,
     Dashboard
   </h2>
 
+  {/* CARDS DE MÉTRICA */}
   <div style={{
     display:"grid",
-    gridTemplateColumns:"1fr 1fr",
-    gap:12,
+    gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)",
+    gap:14,
     marginBottom:24
   }}>
     {[
-      { label:"Pacientes",    value: pacientesFiltrados.length, accent:"#3D7A63" },
-      { label:"Pagamentos",   value: registrosFiltrados.length, accent:"#3D7A63" },
-      { label:"NF pendentes", value: String(registrosFiltrados.filter(r=>!r.nfEmitida).length).padStart(2,"0"), accent:"#B9762F" },
-      { label:"Receita",      value: `R$ ${registrosFiltrados.filter(r=>r.valor&&r.valor!=="—").reduce((t,r)=>t+parseFloat(String(r.valor).replace(",",".")),0).toLocaleString("pt-BR",{minimumFractionDigits:2})}`, accent:"#3D7A63" },
-    ].map((m,i)=>{
-      const len=String(m.value).length;
-      const fontSize = len<=2?28:len<=4?24:len<=7?19:16;
-      return (
-        <div key={i} style={{
-          background:"#fff", borderRadius:14, border:"1px solid #E3E0D8",
-          padding:"18px 18px 16px", minHeight:88,
-          display:"flex", flexDirection:"column",
-          position:"relative", boxSizing:"border-box"
+      { label:"Total de Pacientes", sub:"Ativos", value: String(pacientesAtivos.length), icon:"pacientes", bg:"#E7F2EC", fg:"#3D7A63" },
+      { label:"Atendimentos esta semana", sub:"Agendados", value: String(eventosEstaSemana.length), icon:"agenda", bg:"#E6EFFA", fg:"#4A90D9" },
+      { label:"Receita da semana", sub:"Total", value: formatBRL(receitaSemana), icon:"cifrao", bg:"#EAF6EE", fg:"#3D9B6A" },
+      { label:"Receita do mês", sub:"Total", value: formatBRL(receitaMes), icon:"carteira", bg:"#F0EAF8", fg:"#9B7FC4" },
+    ].map((m,i)=>(
+      <div key={i} style={{
+        background:"#fff", borderRadius:14, border:"1px solid #E3E0D8",
+        padding:"20px 18px", display:"flex", flexDirection:"column", alignItems:"center",
+        textAlign:"center", gap:10, boxSizing:"border-box"
+      }}>
+        <div style={{
+          width:48, height:48, borderRadius:"50%", background:m.bg, color:m.fg,
+          display:"flex", alignItems:"center", justifyContent:"center"
         }}>
-          <div style={{position:"absolute",top:0,left:0,bottom:0,width:4,background:m.accent,borderRadius:"14px 0 0 14px"}}/>
-          <span style={{
-            display:"inline-block", width:"fit-content",
-            fontFamily:"sans-serif", fontSize:"12px", fontWeight:600,
-            color:"#6B7A72", paddingLeft:8, whiteSpace:"nowrap",
-            lineHeight:"15px", marginBottom:10
-          }}>{m.label}</span>
-          <span style={{
-            display:"block",
-            fontFamily:"sans-serif", fontSize:`${fontSize}px`, fontWeight:800,
-            color: m.accent==="#B9762F" ? "#B9762F" : "#1C3D2E",
-            paddingLeft:8, letterSpacing:"-0.5px", lineHeight:1,
-            whiteSpace:"nowrap"
-          }}>{m.value}</span>
+          <IconDash nome={m.icon} color={m.fg} size={22}/>
         </div>
-      );
-    })}
+        <span style={{fontFamily:"sans-serif",fontSize:13,fontWeight:600,color:"#5a7a6a",lineHeight:1.3}}>{m.label}</span>
+        <span style={{fontFamily:"sans-serif",fontSize: isMobile?22:26,fontWeight:800,color:"#1C3D2E",letterSpacing:"-0.5px"}}>{m.value}</span>
+        <span style={{fontFamily:"sans-serif",fontSize:12,fontWeight:600,color:"#9aa8a0"}}>{m.sub}</span>
+      </div>
+    ))}
   </div>
 
-  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-    <h3 style={{fontFamily:"sans-serif",fontSize:15,fontWeight:700,color:"#1C3D2E",margin:0}}>
-      Pagamentos
-    </h3>
-    <div style={{display:"flex",gap:6}}>
-      <button
-        onClick={()=>setTabPag("recentes")}
-        style={{
-          fontFamily:"sans-serif", fontSize:11, fontWeight:700, padding:"5px 11px",
-          borderRadius:20, border:"none", cursor:"pointer",
-          background: tabPag==="recentes" ? "#1C3D2E" : "#fff",
-          color: tabPag==="recentes" ? "#fff" : "#6B7A72"
-        }}
-      >Recentes</button>
-      <button
-        onClick={()=>setTabPag("pendentes")}
-        style={{
-          fontFamily:"sans-serif", fontSize:11, fontWeight:700, padding:"5px 11px",
-          borderRadius:20, border:"none", cursor:"pointer",
-          background: tabPag==="pendentes" ? "#B9762F" : "#fff",
-          color: tabPag==="pendentes" ? "#fff" : "#6B7A72"
-        }}
-      >Pendentes ({registrosFiltrados.filter(r=>!r.nfEmitida).length})</button>
+  {/* GRÁFICOS: ATENDIMENTOS NA SEMANA + POR MODALIDADE */}
+  <div style={{
+    display:"grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1.3fr 1fr",
+    gap:16,
+    marginBottom:16
+  }}>
+    <div style={{background:"#fff", borderRadius:14, border:"1px solid #E3E0D8", padding:18}}>
+      <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Atendimentos agendados na semana</h3>
+      <ResponsiveContainer width="100%" height={220}>
+        <LineChart data={atendimentosPorDiaSemana} margin={{top:10,right:10,left:-20,bottom:0}}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#E3E0D8" vertical={false}/>
+          <XAxis dataKey="dia" tick={{fontSize:12,fontFamily:"sans-serif",fill:"#6B7A72"}} axisLine={false} tickLine={false}/>
+          <YAxis tick={{fontSize:12,fontFamily:"sans-serif",fill:"#6B7A72"}} axisLine={false} tickLine={false} allowDecimals={false}/>
+          <Tooltip contentStyle={{fontFamily:"sans-serif",fontSize:13,borderRadius:8,border:"1px solid #E3E0D8"}}/>
+          <Line type="monotone" dataKey="qtd" stroke="#3D7A63" strokeWidth={2.5} dot={{r:4,fill:"#3D7A63"}} activeDot={{r:6}}/>
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+
+    <div style={{background:"#fff", borderRadius:14, border:"1px solid #E3E0D8", padding:18}}>
+      <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Atendimentos por modalidade</h3>
+      {dadosDonut.length===0 ? (
+        <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"40px 0",fontSize:13}}>Sem dados suficientes ainda.</div>
+      ) : (
+        <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <ResponsiveContainer width="55%" height={180}>
+            <PieChart>
+              <Pie data={dadosDonut} dataKey="qtd" nameKey="nome" innerRadius={48} outerRadius={75} paddingAngle={2}>
+                {dadosDonut.map((d,i)=><Cell key={i} fill={d.cor}/>)}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {dadosDonut.map((d,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:8,fontFamily:"sans-serif",fontSize:13}}>
+                <span style={{width:10,height:10,borderRadius:"50%",background:d.cor,flexShrink:0}}/>
+                <span style={{color:"#1C3D2E",fontWeight:600}}>{d.nome}</span>
+                <span style={{color:"#6B7A72"}}>{d.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   </div>
 
-  <div style={{display:"flex",flexDirection:"column",gap:8}}>
-    {(tabPag==="pendentes" ? registrosFiltrados.filter(r=>!r.nfEmitida) : registrosFiltrados.slice(0,5)).map(r=>{
-      const initials = r.nome.split(" ").slice(0,2).map(n=>n[0]).join("").toUpperCase();
-      return (
-        <div key={r.id} style={{
-          background:"#fff", borderRadius:12, border:"1px solid #E3E0D8",
-          padding:"14px 16px", display:"flex", alignItems:"center", gap:14
-        }}>
-          <div style={{
-            width:38, height:38, borderRadius:"50%", flexShrink:0,
-            background:"#E7EFE9", color:"#3D7A63",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontWeight:700, fontSize:13, fontFamily:"sans-serif"
-          }}>{initials}</div>
-          <div style={{flex:1,minWidth:0}}>
-            <div style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.nome}</div>
-            <div style={{fontFamily:"sans-serif",fontSize:12,color:"#6B7A72",marginTop:2}}>{r.pagamento}</div>
-          </div>
-          <div style={{textAlign:"right",flexShrink:0}}>
-            <div style={{fontFamily:"sans-serif",fontSize:15,fontWeight:800,color:"#1C3D2E"}}>
-              {r.valor!=="—" ? `R$ ${r.valor}` : "—"}
+  {/* RECEITA ÚLTIMOS 7 DIAS */}
+  <div style={{background:"#fff", borderRadius:14, border:"1px solid #E3E0D8", padding:18, marginBottom:16}}>
+    <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Receita dos últimos 7 dias</h3>
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={receitaUltimos7Dias} margin={{top:10,right:10,left:-10,bottom:0}}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#E3E0D8" vertical={false}/>
+        <XAxis dataKey="dia" tick={{fontSize:12,fontFamily:"sans-serif",fill:"#6B7A72"}} axisLine={false} tickLine={false}/>
+        <YAxis tick={{fontSize:12,fontFamily:"sans-serif",fill:"#6B7A72"}} axisLine={false} tickLine={false}/>
+        <Tooltip formatter={(v)=>formatBRL(v)} contentStyle={{fontFamily:"sans-serif",fontSize:13,borderRadius:8,border:"1px solid #E3E0D8"}}/>
+        <Bar dataKey="total" fill="#3D7A63" radius={[6,6,0,0]}/>
+      </BarChart>
+    </ResponsiveContainer>
+  </div>
+
+  {/* PRÓXIMOS ATENDIMENTOS + PAGAMENTOS PENDENTES */}
+  <div style={{
+    display:"grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+    gap:16
+  }}>
+    <div style={{background:"#fff", borderRadius:14, border:"1px solid #E3E0D8", padding:18}}>
+      <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Próximos atendimentos</h3>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {proximosAtendimentos.length===0 && (
+          <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"20px 0",fontSize:13}}>Nenhum atendimento futuro agendado.</div>
+        )}
+        {proximosAtendimentos.map((ev,i)=>{
+          const initials = (ev.pacienteNome||"?").split(" ").slice(0,2).map(n=>n[0]).join("").toUpperCase();
+          return (
+            <div key={i} style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:34,height:34,borderRadius:"50%",background:"#E7EFE9",color:"#3D7A63",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,fontFamily:"sans-serif",flexShrink:0}}>{initials}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#1C3D2E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{ev.pacienteNome}</div>
+                <div style={{fontFamily:"sans-serif",fontSize:12,color:"#6B7A72"}}>{ev.data} • {ev.horario}</div>
+              </div>
             </div>
-            <div style={{
-              fontFamily:"sans-serif", fontSize:10, fontWeight:700, letterSpacing:"0.4px",
-              color: r.nfEmitida ? "#3D7A63" : "#B9762F", marginTop:3
-            }}>
-              {r.nfEmitida ? "NF EMITIDA" : "NF PENDENTE"}
-            </div>
-          </div>
-        </div>
-      );
-    })}
-    {registros.length===0 && (
-      <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:30,fontSize:14}}>
-        Nenhum pagamento registrado ainda.
+          );
+        })}
       </div>
-    )}
+      <button onClick={()=>setAba("agenda")} style={{marginTop:14,background:"none",border:"none",cursor:"pointer",color:"#3D7A63",fontFamily:"sans-serif",fontSize:13,fontWeight:700,padding:0}}>Ver agenda completa →</button>
+    </div>
+
+    <div style={{background:"#fff", borderRadius:14, border:"1px solid #E3E0D8", padding:18}}>
+      <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Pagamentos pendentes</h3>
+      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+        {pagamentosPendentesDash.length===0 && (
+          <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"20px 0",fontSize:13}}>Nenhuma NF pendente. 🎉</div>
+        )}
+        {pagamentosPendentesDash.map(r=>(
+          <div key={r.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+            <span style={{fontFamily:"sans-serif",fontSize:13,fontWeight:600,color:"#1C3D2E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.nome}</span>
+            <div style={{textAlign:"right",flexShrink:0}}>
+              <div style={{fontFamily:"sans-serif",fontSize:14,fontWeight:800,color:"#1C3D2E"}}>{r.valor!=="—" ? `R$ ${r.valor}` : "—"}</div>
+              <div style={{fontFamily:"sans-serif",fontSize:10,fontWeight:700,color:"#B9762F"}}>NF PENDENTE</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={()=>{setAba("pagamentos");setTabPag("pendentes");}} style={{marginTop:14,background:"none",border:"none",cursor:"pointer",color:"#3D7A63",fontFamily:"sans-serif",fontSize:13,fontWeight:700,padding:0}}>Ver todos pagamentos →</button>
+    </div>
   </div>
   </section>
 </>}
