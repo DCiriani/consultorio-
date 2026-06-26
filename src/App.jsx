@@ -1743,7 +1743,7 @@ const ABAS_SECUNDARIAS=[
     </div>
 
     <div style={{background:"#fff", borderRadius:14, border:"1px solid #E3E0D8", padding:18}}>
-      <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Pagamentos pendentes</h3>
+      <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Pagamentos recentes</h3>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {pagamentosPendentesDash.length===0 && (
           <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"20px 0",fontSize:13}}>Nenhuma NF pendente. 🎉</div>
