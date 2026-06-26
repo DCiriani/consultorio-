@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       .collection('agenda')
       .where('data', '==', hoje)
       .where('profissional', '==', 'diego')
-      .where('tipo', '==', 'sessao')
+      .where('tipo', 'in', ['sessao', 'pessoal'])
       .get()
 
     const atendimentos = snap.docs
@@ -52,11 +52,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, atendimentos: 0, enviado: false, motivo: 'sem atendimentos hoje' })
     }
 
-    const linhas = atendimentos.map((a) => `${a.horario} - ${a.pacienteNome}`).join('\n')
+    const linhas = atendimentos
+      .map((a) => `${a.horario} - ${a.tipo === 'pessoal' ? a.descricao : a.pacienteNome}`)
+      .join('\n')
     const corpo =
       atendimentos.length === 1
-        ? `Você tem 1 atendimento hoje:\n${linhas}`
-        : `Você tem ${atendimentos.length} atendimentos hoje:\n${linhas}`
+        ? `Você tem 1 compromisso hoje:\n${linhas}`
+        : `Você tem ${atendimentos.length} compromissos hoje:\n${linhas}`
 
     const tokensSnap = await db.collection('tokens').get()
     const tokens = tokensSnap.docs.map((d) => d.id)
