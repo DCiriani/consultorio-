@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
+import logoEspacoCiriani from "./assets/logo-espaco-ciriani.png";
 import { PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
@@ -126,7 +127,7 @@ function Login({onLogin}){
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(135deg,#1a4a2a 0%,#2a7a4a 100%)"}}>
       <div style={{background:"#fff",borderRadius:20,padding:"48px 40px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
         <div style={{textAlign:"center",marginBottom:32}}>
-          <div style={{fontSize:48,marginBottom:12}}>🧠</div>
+          <img src={logoEspacoCiriani} alt="Espaço Ciriani" style={{width:56,height:56,marginBottom:12}}/>
           <h1 style={{margin:"0 0 4px",fontSize:22,fontWeight:600,color:"#1a3a2a",fontFamily:"Georgia,serif"}}>Espaço Ciriani</h1>
           <p style={{margin:0,fontSize:13,color:"#8aaa9a",fontFamily:"sans-serif"}}>Acesso restrito</p>
         </div>
@@ -183,7 +184,7 @@ function SeletorProfissional({ onEscolher }) {
   return (
     <div style={{fontFamily:"Georgia,serif",maxWidth:420,margin:"0 auto",padding:"60px 20px",minHeight:"100vh",background:"#f4f6f0",display:"flex",flexDirection:"column",justifyContent:"center"}}>
       <div style={{textAlign:"center",marginBottom:32}}>
-        <div style={{fontSize:40,marginBottom:10}}>🧠</div>
+        <img src={logoEspacoCiriani} alt="Espaço Ciriani" style={{width:48,height:48,marginBottom:10}}/>
         <h1 style={{margin:"0 0 6px",fontSize:22,fontWeight:700,color:"#1a3a2a"}}>Espaço Ciriani</h1>
         <p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Com qual profissional você será atendido(a)?</p>
       </div>
@@ -237,7 +238,7 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional,dadosInicia
     <div style={{fontFamily:"Georgia,serif",maxWidth:560,margin:"0 auto",padding:"20px 16px 60px",background:"#f4f6f0",minHeight:"100vh"}}>
       {onVoltar&&<button onClick={onVoltar} style={{background:"none",border:"none",color:"#2a7a4a",cursor:"pointer",fontFamily:"sans-serif",fontSize:13,marginBottom:16,padding:0}}>← Voltar</button>}
       <div style={{textAlign:"center",marginBottom:22}}>
-        <div style={{fontSize:36}}>🧠</div>
+        <img src={logoEspacoCiriani} alt="Espaço Ciriani" style={{width:42,height:42}}/>
         <h1 style={{margin:"6px 0 2px",fontSize:20,fontWeight:700,color:"#1a3a2a"}}>{titulo||"Ficha de cadastro"}</h1>
         {profissional&&<p style={{margin:"2px 0 0",fontSize:13,fontWeight:600,color:"#2a7a4a",fontFamily:"sans-serif"}}>{PROFISSIONAIS.find(p=>p.id===profissional)?.titulo} {PROFISSIONAIS.find(p=>p.id===profissional)?.nome}</p>}
         <p style={{margin:"6px 0 0",fontSize:12,color:"#5a7a6a",fontFamily:"sans-serif"}}>Todos os campos com <span style={{color:"#c0392b"}}>*</span> são obrigatórios</p>
@@ -713,6 +714,8 @@ function IconDash({nome,color="currentColor",size=20}){
     cifrao:<><circle cx="12" cy="12" r="9.5" {...st}/><path d="M14.5 9.2c0-1.1-1.1-2-2.5-2s-2.5.9-2.5 2c0 1.1 1.1 1.6 2.5 2c1.4.4 2.5 1 2.5 2c0 1.1-1.1 2-2.5 2s-2.5-.9-2.5-2" {...st}/><line x1="12" y1="5.5" x2="12" y2="18.5" {...st}/></>,
     carteira:<><rect x="2.5" y="6" width="19" height="13" rx="2.2" {...st}/><path d="M6.5 6V4.5a2 2 0 012-2h7a2 2 0 012 2V6" {...st}/><circle cx="16" cy="12.5" r="1.3" fill={color} stroke="none"/></>,
     sino:<><path d="M12 3.5c-3 0-4.5 2.3-4.5 5.2v3.1c0 .9-.4 1.7-1.1 2.4l-.6.6h12.4l-.6-.6a3.3 3.3 0 01-1.1-2.4V8.7c0-2.9-1.5-5.2-4.5-5.2z" {...st}/><path d="M9.8 18.3a2.3 2.3 0 004.4 0" {...st}/></>,
+    hamburguer:<><line x1="3.5" y1="6.5" x2="20.5" y2="6.5" {...st}/><line x1="3.5" y1="12" x2="20.5" y2="12" {...st}/><line x1="3.5" y1="17.5" x2="20.5" y2="17.5" {...st}/></>,
+    saida:<><path d="M9 4.5H5.5a2 2 0 00-2 2v11a2 2 0 002 2H9" {...st}/><line x1="21.5" y1="12" x2="10" y2="12" {...st}/><polyline points="16,7 21.5,12 16,17" {...st}/></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24">{paths[nome]}</svg>;
 }
@@ -722,7 +725,8 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   const [filtroProf,setFiltroProf]=useState("todos");
   const [buscaPac,setBuscaPac]=useState("");
   const [editandoReg,setEditandoReg]=useState(null);
-const [editandoPac,setEditandoPac]=useState(null);
+  const [editandoPac,setEditandoPac]=useState(null);
+  const [menuMobileAberto,setMenuMobileAberto]=useState(false);
 const pacientesFiltrados = filtroProf==="todos" ? pacientes : pacientes.filter(p=>p.profissional===filtroProf);
 const nomesFiltrados = new Set(pacientesFiltrados.map(p=>p.nome));
 const registrosFiltrados = filtroProf==="todos" ? registros : registros.filter(r=>nomesFiltrados.has(r.nome));
@@ -1058,6 +1062,17 @@ const ABAS=[
 {k:"titulares",l:`Titulares (${titulares.length})`,icon:"titulares"},
 {k:"relatorio",l:"Relatório",icon:"relatorio"},
 ];
+const ABAS_PRINCIPAIS=[
+{k:"dashboard",l:"Dashboard",icon:"dashboard"},
+{k:"agenda",l:"Agenda",icon:"agenda"},
+{k:"pagamentos",l:"Pagamentos",icon:"pagamentos"},
+{k:"pacientes",l:"Pacientes",icon:"pacientes"},
+{k:"relatorio",l:"Relatório",icon:"relatorio"},
+];
+const ABAS_SECUNDARIAS=[
+{k:"inativados",l:`Inativados (${pacientesInativos.length})`,icon:"pacientes"},
+{k:"titulares",l:`Titulares (${titulares.length})`,icon:"titulares"},
+];
 
   return(
     <div style={ROOT}>
@@ -1095,19 +1110,39 @@ const ABAS=[
 {editandoPac&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
         <div style={{width:"100%",maxWidth:540}}><FormPaciente dadosIniciais={editandoPac} onSalvo={salvarEdicaoPac} onVoltar={()=>setEditandoPac(null)} titulo="Editar paciente" salvando={false} profissional={editandoPac.profissional}/></div>
       </div>}
+      {isMobile ? (
+        <header style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+          <button onClick={()=>setMenuMobileAberto(true)} style={{width:40,height:40,borderRadius:"50%",background:"#fff",border:"1px solid #E3E0D8",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+            <IconDash nome="hamburguer" color="#1C3D2E" size={18}/>
+          </button>
+          <div style={{textAlign:"center",flex:1}}>
+            <img src={logoEspacoCiriani} alt="Espaço Ciriani" style={{width:40,height:40,marginBottom:2}}/>
+            <h1 style={{margin:0,fontSize:18,fontWeight:600,color:"#1a3a2a",fontFamily:"Georgia,serif"}}>Espaço Ciriani</h1>
+            <p style={{margin:0,fontSize:11,color:"#5a7a6a",fontFamily:"sans-serif"}}>Painel administrativo</p>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={ativarNotificacoes} style={{width:40,height:40,borderRadius:"50%",background:"#fff",border:"1px solid #E3E0D8",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+              <IconDash nome="sino" color="#1C3D2E" size={17}/>
+            </button>
+            <button onClick={onLogout} style={{width:40,height:40,borderRadius:"50%",background:"#fff",border:"1px solid #f5c6cb",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+              <IconDash nome="saida" color="#c0392b" size={17}/>
+            </button>
+          </div>
+        </header>
+      ) : (
       <header style={{
   display:"flex",
-  flexDirection: isMobile ? "column" : "row",
-  alignItems: isMobile ? "flex-start" : "center",
+  flexDirection: "row",
+  alignItems: "center",
   gap:16,
   marginBottom:24
 }}>
-        <div style={{fontSize:38}}>🧠</div>
+        <img src={logoEspacoCiriani} alt="Espaço Ciriani" style={{width:38,height:38}}/>
         <div>
           <h1 style={{margin:0,fontSize:22,fontWeight:600,color:"#1a3a2a"}}>Espaço Ciriani</h1>
           <p style={{margin:0,fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif"}}>Painel administrativo</p>
         </div>
-        <div style={{display:"flex",gap:6,marginLeft: isMobile ? 0 : 16,flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:6,marginLeft:16,flexWrap:"wrap"}}>
   {["todos","diego","rhania"].map(id=>{
     const ativo = filtroProf===id;
     const label = id==="todos" ? "Todos" : PROFISSIONAIS.find(p=>p.id===id)?.nome.split(" ")[0];
@@ -1132,20 +1167,20 @@ const ABAS=[
   })}
 </div>
         <div style={{
-  marginLeft: isMobile ? 0 : "auto",
+  marginLeft:"auto",
   display:"flex",
   gap:10,
-  width: isMobile ? "100%" : "auto"
 }}>
           <button onClick={onCadastro} style={{padding:"9px 16px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>📋 Formulário</button>
           <button onClick={ativarNotificacoes} style={{display:"flex",alignItems:"center",gap:7,padding:"9px 16px",background:"#fff",color:"#1C3D2E",border:"1.5px solid #c8ddd0",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}><IconDash nome="sino" color="#1C3D2E" size={16}/> Notificações</button>
           <button onClick={onLogout} style={{padding:"9px 16px",background:"#fff",color:"#c0392b",border:"1.5px solid #f5c6cb",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>Sair</button>
         </div>
 </header>
+      )}
       {/* ABAS */}
 <div style={{
   display:"flex",
-  flexDirection: isMobile ? "column" : "row",
+  flexDirection: "row",
   gap:30,
   alignItems:"flex-start",
   width:"100%",
@@ -1153,16 +1188,17 @@ const ABAS=[
   boxSizing:"border-box"
 }}>
 
+ {!isMobile && (
  <div style={{
-  width: isMobile ? "100%" : 190,
-  maxWidth: isMobile ? "100%" : 190,
+  width:190,
+  maxWidth:190,
   boxSizing:"border-box",
-  background:"#1C3D2E",
-  border:"1px solid #1C3D2E",
+  background:"#E7F2EC",
+  border:"1px solid #D3E5DB",
   borderRadius:12,
   padding:16,
-  position: isMobile ? "relative" : "sticky",
-top: isMobile ? 0 : 20,
+  position:"sticky",
+  top:20,
 }}>
     {ABAS.map(a=>{
   const ativo = aba===a.k;
@@ -1184,20 +1220,19 @@ top: isMobile ? 0 : 20,
         fontWeight: ativo ? 700 : 500,
         fontFamily:"sans-serif",
         background: ativo ? "#3D7A63" : "transparent",
-        color: ativo ? "#fff" : "#5a7a6a",
+        color: ativo ? "#fff" : "#3D5A4C",
         border:"none",
       }}
     >
-      <IconAba nome={a.icon} color={ativo ? "#fff" : "#7FA08E"} size={17} />
+      <IconAba nome={a.icon} color={ativo ? "#fff" : "#5C8A75"} size={17} />
       <span style={{flex:1}}>{a.l}</span>
     </button>
   );
 })}
-  {!isMobile && (
     <div style={{
       marginTop:18,
       paddingTop:14,
-      borderTop:"1px solid rgba(255,255,255,0.12)",
+      borderTop:"1px solid #D3E5DB",
       display:"flex",
       alignItems:"center",
       gap:10,
@@ -1209,18 +1244,19 @@ top: isMobile ? 0 : 20,
         fontWeight:700,fontSize:13,fontFamily:"sans-serif",
       }}>DC</div>
       <div style={{minWidth:0}}>
-        <div style={{fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Diego Ciriani</div>
-        <div style={{fontFamily:"sans-serif",fontSize:11,color:"#7FA08E"}}>Administrador</div>
+        <div style={{fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#1C3D2E",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Diego Ciriani</div>
+        <div style={{fontFamily:"sans-serif",fontSize:11,color:"#5C8A75"}}>Administrador</div>
       </div>
     </div>
-  )}
   </div>
+  )}
 
   <div style={{
   flex:1,
   width:"100%",
   minWidth:0,
-  overflowX:"hidden"
+  overflowX:"hidden",
+  paddingBottom: isMobile ? 76 : 0
 }}>
 {aba==="agenda"&&<>
   <section style={CARD2}>
@@ -1873,6 +1909,68 @@ top: isMobile ? 0 : 20,
 
 </div>
 </div>
+
+{isMobile && (
+  <nav style={{
+    position:"fixed", bottom:0, left:0, right:0, zIndex:500,
+    background:"#fff", borderTop:"1px solid #E3E0D8",
+    display:"flex", justifyContent:"space-around",
+    padding:"8px 4px calc(8px + env(safe-area-inset-bottom))",
+  }}>
+    {ABAS_PRINCIPAIS.map(a=>{
+      const ativo = aba===a.k;
+      return (
+        <button key={a.k} onClick={()=>setAba(a.k)} style={{
+          display:"flex", flexDirection:"column", alignItems:"center", gap:3,
+          background:"none", border:"none", cursor:"pointer",
+          color: ativo ? "#1C3D2E" : "#9aa8a0",
+          flex:1, padding:"4px 2px",
+        }}>
+          <IconAba nome={a.icon} color={ativo ? "#1C3D2E" : "#9aa8a0"} size={20}/>
+          <span style={{fontFamily:"sans-serif",fontSize:10,fontWeight: ativo ? 700 : 500}}>{a.l}</span>
+        </button>
+      );
+    })}
+  </nav>
+)}
+
+{isMobile && menuMobileAberto && (
+  <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000}} onClick={()=>setMenuMobileAberto(false)}>
+    <div style={{
+      position:"absolute", top:0, left:0, bottom:0, width:260,
+      background:"#fff", padding:20, boxSizing:"border-box",
+      display:"flex", flexDirection:"column", gap:6,
+    }} onClick={e=>e.stopPropagation()}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:18}}>
+        <img src={logoEspacoCiriani} alt="Espaço Ciriani" style={{width:34,height:34}}/>
+        <span style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:600,color:"#1C3D2E"}}>Espaço Ciriani</span>
+      </div>
+      {ABAS_SECUNDARIAS.map(a=>{
+        const ativo = aba===a.k;
+        return (
+          <button key={a.k} onClick={()=>{setAba(a.k);setMenuMobileAberto(false);}} style={{
+            display:"flex", alignItems:"center", gap:10, width:"100%", textAlign:"left",
+            padding:"10px 12px", borderRadius:9, cursor:"pointer", fontSize:14,
+            fontWeight: ativo ? 700 : 500, fontFamily:"sans-serif",
+            background: ativo ? "#E7F2EC" : "transparent",
+            color: ativo ? "#1C3D2E" : "#3D5A4C", border:"none",
+          }}>
+            <IconAba nome={a.icon} color={ativo ? "#1C3D2E" : "#5C8A75"} size={17}/>
+            <span style={{flex:1}}>{a.l}</span>
+          </button>
+        );
+      })}
+      <div style={{marginTop:"auto",paddingTop:14,borderTop:"1px solid #E3E0D8",display:"flex",alignItems:"center",gap:10}}>
+        <div style={{width:36,height:36,borderRadius:"50%",flexShrink:0,background:"#3D7A63",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,fontFamily:"sans-serif"}}>DC</div>
+        <div>
+          <div style={{fontFamily:"sans-serif",fontSize:13,fontWeight:700,color:"#1C3D2E"}}>Diego Ciriani</div>
+          <div style={{fontFamily:"sans-serif",fontSize:11,color:"#5C8A75"}}>Administrador</div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 </div>
 
 );
