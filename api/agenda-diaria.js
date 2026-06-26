@@ -78,12 +78,30 @@ export default async function handler(req, res) {
       tokens,
     })
 
+    // Remove do Firestore os tokens que não existem mais (app desinstalado,
+    // navegador trocado, etc). Só apaga em casos de erro definitivo, não por
+    // falhas temporárias (rede, limite de taxa, etc).
+    const codigosParaRemover = [
+      'messaging/registration-token-not-registered',
+      'messaging/invalid-registration-token',
+    ]
+    const tokensParaRemover = []
+    resultado.responses.forEach((r, i) => {
+      if (!r.success && codigosParaRemover.includes(r.error?.code)) {
+        tokensParaRemover.push(tokens[i])
+      }
+    })
+    if (tokensParaRemover.length > 0) {
+      await Promise.all(tokensParaRemover.map((t) => db.collection('tokens').doc(t).delete()))
+    }
+
     return res.status(200).json({
       ok: true,
       atendimentos: atendimentos.length,
       enviado: true,
       sucesso: resultado.successCount,
       falhas: resultado.failureCount,
+      tokensRemovidos: tokensParaRemover.length,
     })
   } catch (error) {
     console.error(error)
