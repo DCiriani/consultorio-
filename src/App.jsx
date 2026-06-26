@@ -1129,7 +1129,34 @@ const ABAS_SECUNDARIAS=[
             </button>
           </div>
         </header>
-      ) : (
+      ) : null}
+      {isMobile && (
+        <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:18,flexWrap:"wrap"}}>
+  {["todos","diego","rhania"].map(id=>{
+    const ativo = filtroProf===id;
+    const label = id==="todos" ? "Todos" : PROFISSIONAIS.find(p=>p.id===id)?.nome.split(" ")[0];
+    return (
+      <button
+        key={id}
+        onClick={()=>setFiltroProf(id)}
+        style={{
+          padding:"7px 14px",
+          borderRadius:20,
+          border:"none",
+          cursor:"pointer",
+          fontSize:12,
+          fontWeight:700,
+          fontFamily:"sans-serif",
+          background: ativo ? "#1C3D2E" : "#fff",
+          color: ativo ? "#fff" : "#5a7a6a",
+          border: ativo ? "none" : "1.5px solid #c8ddd0",
+        }}
+      >{label}</button>
+    );
+  })}
+</div>
+      )}
+      {!isMobile && (
       <header style={{
   display:"flex",
   flexDirection: "row",
