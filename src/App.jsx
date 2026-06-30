@@ -25,6 +25,28 @@ const db = getFirestore(firebaseApp);
 const fCPF = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
 const fTel = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.length<=10?d.replace(/(\d{2})(\d{4})(\d{0,4})/,"($1) $2-$3").replace(/-$/,""):d.replace(/(\d{2})(\d{5})(\d{0,4})/,"($1) $2-$3").replace(/-$/,""); };
 const fData = r => { const d = r.replace(/\D/g,"").slice(0,8); return d.replace(/(\d{2})(\d)/,"$1/$2").replace(/(\d{2})(\d)/,"$1/$2"); };
+function criarReconhecimentoVoz(onResultado, onErro){
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    if(onErro) onErro("Seu navegador não suporta reconhecimento de voz. Use o Chrome.");
+    return null;
+  }
+  const rec = new SpeechRecognition();
+  rec.lang = "pt-BR";
+  rec.continuous = true;
+  rec.interimResults = false;
+  rec.onresult = (e) => {
+    let texto = "";
+    for(let i=e.resultIndex; i<e.results.length; i++){
+      if(e.results[i].isFinal) texto += e.results[i][0].transcript;
+    }
+    if(texto.trim()) onResultado(texto.trim());
+  };
+  rec.onerror = (e) => {
+    if(onErro) onErro(e.error==="not-allowed" ? "Permissão de microfone negada." : "Erro no reconhecimento de voz.");
+  };
+  return rec;
+}
 const fCEP = r => { const d=r.replace(/\D/g,"").slice(0,8); return d.replace(/(\d{5})(\d{0,3})/,"$1-$2").replace(/-$/,""); };
 const HOJE = () => new Date().toLocaleDateString("pt-BR");
 const FORMAS = ["Pix","Cartão de Débito","Cartão de Crédito","Dinheiro"];
@@ -303,6 +325,8 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,onClose}){
   const [novoTextoEv,setNovoTextoEv]=useState("");
   const [salvandoEv,setSalvandoEv]=useState(false);
   const [editandoEvId,setEditandoEvId]=useState(null);
+  const [gravando,setGravando]=useState(false);
+const recRef=useRef(null);
   const [textoEdit,setTextoEdit]=useState("");
   const [dataEdit,setDataEdit]=useState("");
 
@@ -430,6 +454,22 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,onClose}){
               rows={4}
               style={{width:"100%",padding:"10px 12px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",boxSizing:"border-box",resize:"vertical",marginBottom:8,display:"block"}}
             />
+            <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
+              <button onClick={()=>{
+                if(gravando){
+                  recRef.current?.stop();
+                  setGravando(false);
+                }else{
+                  const rec=criarReconhecimentoVoz(
+                    (texto)=>setNovoTextoEv(prev=>prev?(prev+" "+texto):texto),
+                    (erro)=>showT(erro,"erro")
+                  );
+                  if(rec){recRef.current=rec;rec.start();setGravando(true);}
+                }
+              }} style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600,background:gravando?"#c0392b":"#1C3D2E",color:"#fff",display:"flex",alignItems:"center",gap:6}}>
+                {gravando ? "⏹ Parar gravação" : "🎤 Falar"}
+              </button>
+            </div>
             <button
               onClick={salvarAtendimento}
               disabled={salvandoEv||!novoTextoEv.trim()}
