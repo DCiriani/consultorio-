@@ -1,6 +1,8 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
   "crons": [
-    { "path": "/agenda-diaria", "schedule": "30 9 * * 1-5" }
+    { "path": "/api/agenda-diaria", "schedule": "30 9 * * 1-5" }
   ]
 }
