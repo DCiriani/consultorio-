@@ -44,6 +44,77 @@ const C = {
 };
 
 // ---------------------------------------------------------------------------
+//  Referência clínica das faixas — uso do terapeuta (não aparece pro paciente)
+//  Fonte: PHQ-9 (Kroenke, Spitzer & Williams) e GAD-7 (Spitzer et al.),
+//  domínio público. Pontos de corte usuais de triagem em atenção primária.
+// ---------------------------------------------------------------------------
+const REFERENCIA_CLINICA = {
+  "PHQ-9": {
+    nome: "PHQ-9 (depressão)",
+    max: 27,
+    corte: 10,
+    corteTexto:
+      "≥ 10 é o ponto de corte usual pra triagem de episódio depressivo maior (sensibilidade e especificidade em torno de 88%).",
+    itemCriticoTexto:
+      "O item 9 pergunta sobre pensar em morte ou se ferir. Qualquer valor acima de zero nesse item pede avaliação de risco imediata, mesmo que o escore total esteja baixo — ele tem prioridade sobre a faixa geral.",
+    faixas: [
+      { min: 0, max: 4, nome: "mínimo", cor: "#3E6B57",
+        oQueSignifica: "Sem indicação de quadro depressivo relevante no momento.",
+        conduta: "Nenhuma ação específica. Bom valor de linha de base pra comparar depois.",
+        paraOPaciente: "Suas respostas não indicam sinais relevantes de depressão agora." },
+      { min: 5, max: 9, nome: "leve", cor: "#8A9A3E",
+        oQueSignifica: "Sintomas leves, presentes mas de baixo impacto funcional.",
+        conduta: "Observar evolução. Pode não precisar de mudança de conduta, mas vale monitorar a cada aplicação.",
+        paraOPaciente: "Você marcou alguns sinais leves de tristeza ou desânimo. Vamos acompanhar como isso evolui." },
+      { min: 10, max: 14, nome: "moderado", cor: "#B08900",
+        oQueSignifica: "Quadro com relevância clínica. Ponto de corte de triagem já foi ultrapassado.",
+        conduta: "Considerar intensificar a intervenção terapêutica. Reavaliar em 4 semanas.",
+        paraOPaciente: "Suas respostas mostram um nível de tristeza que já pede atenção mais próxima. Vamos trabalhar isso direto na terapia." },
+      { min: 15, max: 19, nome: "moderadamente grave", cor: "#C15B2A",
+        oQueSignifica: "Sintomas com impacto funcional significativo, provável prejuízo no dia a dia.",
+        conduta: "Tratamento ativo indicado. Avaliar necessidade de encaminhamento psiquiátrico complementar.",
+        paraOPaciente: "O que você está sentindo está pesado e afetando seu dia a dia. Isso é tratável, e vamos priorizar isso nas próximas sessões." },
+      { min: 20, max: 27, nome: "grave", cor: "#B3261E",
+        oQueSignifica: "Quadro grave, alto prejuízo funcional.",
+        conduta: "Tratamento intensivo indicado. Avaliação psiquiátrica de prioridade. Reavaliar risco a cada contato.",
+        paraOPaciente: "O nível do que você está sentindo é sério. Não é fraqueza, é um quadro que precisa de cuidado intensivo agora, e vamos cuidar disso juntos." },
+    ],
+  },
+  "GAD-7": {
+    nome: "GAD-7 (ansiedade)",
+    max: 21,
+    corte: 10,
+    corteTexto:
+      "≥ 10 é o ponto de corte usual de triagem. Desenhado pra TAG, mas escore alto também sinaliza pânico, ansiedade social ou TEPT — pede investigação diferencial, não fecha subtipo sozinho.",
+    itemCriticoTexto: null,
+    faixas: [
+      { min: 0, max: 4, nome: "mínimo", cor: "#3E6B57",
+        oQueSignifica: "Sem indicação de ansiedade clinicamente relevante no momento.",
+        conduta: "Nenhuma ação específica.",
+        paraOPaciente: "Suas respostas não indicam sinais relevantes de ansiedade agora." },
+      { min: 5, max: 9, nome: "leve", cor: "#8A9A3E",
+        oQueSignifica: "Sintomas leves de ansiedade, baixo impacto funcional.",
+        conduta: "Observar evolução ao longo das próximas aplicações.",
+        paraOPaciente: "Você marcou alguns sinais leves de ansiedade. É comum e vamos acompanhar." },
+      { min: 10, max: 14, nome: "moderado", cor: "#B08900",
+        oQueSignifica: "Quadro com relevância clínica. Ponto de corte de triagem ultrapassado.",
+        conduta: "Considerar intensificar intervenção. Investigar gatilhos e padrão de preocupação.",
+        paraOPaciente: "O nível de ansiedade que você relatou já pede atenção mais direta, vamos trabalhar isso nas sessões." },
+      { min: 15, max: 21, nome: "grave", cor: "#B3261E",
+        oQueSignifica: "Ansiedade grave, com provável prejuízo funcional relevante.",
+        conduta: "Tratamento ativo indicado. Avaliar necessidade de suporte complementar (psiquiátrico se houver comprometimento importante).",
+        paraOPaciente: "O que você está sentindo é intenso e cansativo. Isso é tratável, e vamos priorizar isso agora." },
+    ],
+  },
+};
+
+function faixaCompleta(instId, escore) {
+  const ref = REFERENCIA_CLINICA[instId];
+  if (!ref) return null;
+  return ref.faixas.find((f) => escore >= f.min && escore <= f.max) || null;
+}
+
+// ---------------------------------------------------------------------------
 //  Helper de escrita do token (roda como TERAPEUTA autenticado)
 // ---------------------------------------------------------------------------
 export async function gerarLinkAvaliacao({
@@ -335,6 +406,8 @@ export function PaginaAvaliacaoPaciente() {
 // ===========================================================================
 export function AbaAvaliacoes({ pacienteId, pacienteNome }) {
   const [avaliacoes, setAvaliacoes] = useState([]);
+  const [itemAberto, setItemAberto] = useState(null);
+  const [refAberta, setRefAberta] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [link, setLink] = useState("");
   const [gerando, setGerando] = useState(false);
@@ -550,34 +623,203 @@ export function AbaAvaliacoes({ pacienteId, pacienteNome }) {
                 const data = a.criadoEm?.toDate
                   ? a.criadoEm.toDate().toLocaleDateString("pt-BR")
                   : "—";
+                const f = faixaCompleta(a.instrumento, a.escore);
+                const aberto = itemAberto === a.id;
                 return (
-                  <div
-                    key={a.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      background: a.itemCritico ? "#FBEBE9" : "#F5F3EE",
-                      border: `1px solid ${a.itemCritico ? "#E7B4AE" : "#E3DFD6"}`,
-                    }}
-                  >
-                    <div>
-                      <b>{a.instrumento}</b>{" "}
-                      <span style={{ color: "#6B6B6B", fontSize: 13 }}>· {data}</span>
-                      {a.itemCritico && (
-                        <span style={{ color: "#B3261E", fontSize: 13 }}> · ⚠️ item de risco</span>
-                      )}
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontWeight: 700 }}>{a.escore}</div>
-                      <div style={{ fontSize: 12, color: "#6B6B6B" }}>{a.faixa}</div>
-                    </div>
+                  <div key={a.id}>
+                    <button
+                      type="button"
+                      onClick={() => setItemAberto(aberto ? null : a.id)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 12px",
+                        borderRadius: aberto ? "8px 8px 0 0" : 8,
+                        background: a.itemCritico ? "#FBEBE9" : "#F5F3EE",
+                        border: `1px solid ${a.itemCritico ? "#E7B4AE" : "#E3DFD6"}`,
+                        borderBottom: aberto ? "none" : undefined,
+                      }}
+                    >
+                      <div>
+                        <b>{a.instrumento}</b>{" "}
+                        <span style={{ color: "#6B6B6B", fontSize: 13 }}>· {data}</span>
+                        {a.itemCritico && (
+                          <span style={{ color: "#B3261E", fontSize: 13 }}> · ⚠️ item de risco</span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontWeight: 700 }}>{a.escore}</div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: f ? f.cor : "#6B6B6B",
+                              textTransform: "capitalize",
+                            }}
+                          >
+                            {a.faixa}
+                          </div>
+                        </div>
+                        <span style={{ color: "#6B6B6B", fontSize: 13 }}>
+                          {aberto ? "▲" : "▼"}
+                        </span>
+                      </div>
+                    </button>
+
+                    {aberto && f && (
+                      <div
+                        style={{
+                          padding: "14px 14px 4px",
+                          borderRadius: "0 0 8px 8px",
+                          border: `1px solid ${a.itemCritico ? "#E7B4AE" : "#E3DFD6"}`,
+                          borderTop: "none",
+                          background: "#fff",
+                        }}
+                      >
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#6B6B6B", marginBottom: 2 }}>
+                            O QUE SIGNIFICA
+                          </div>
+                          <div style={{ fontSize: 14 }}>{f.oQueSignifica}</div>
+                        </div>
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#6B6B6B", marginBottom: 2 }}>
+                            CONDUTA SUGERIDA
+                          </div>
+                          <div style={{ fontSize: 14 }}>{f.conduta}</div>
+                        </div>
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#6B6B6B", marginBottom: 2 }}>
+                            SE O PACIENTE PERGUNTAR
+                          </div>
+                          <div style={{ fontSize: 14, fontStyle: "italic" }}>"{f.paraOPaciente}"</div>
+                        </div>
+                        {a.itemCritico && (
+                          <div
+                            style={{
+                              fontSize: 13,
+                              color: "#8A1C15",
+                              background: "#FBEBE9",
+                              border: "1px solid #E7B4AE",
+                              borderRadius: 6,
+                              padding: "8px 10px",
+                              marginBottom: 10,
+                            }}
+                          >
+                            {REFERENCIA_CLINICA[a.instrumento]?.itemCriticoTexto}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
+          </div>
+
+          {/* Painel de referência completo — sempre disponível, colapsável */}
+          <div style={box}>
+            <button
+              type="button"
+              onClick={() => setRefAberta(!refAberta)}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                fontWeight: 700,
+                fontSize: 15,
+                padding: 0,
+              }}
+            >
+              <span>📖 Tabela de referência — o que cada faixa significa</span>
+              <span style={{ color: "#6B6B6B" }}>{refAberta ? "▲" : "▼"}</span>
+            </button>
+
+            {refAberta && (
+              <div style={{ marginTop: 14 }}>
+                {Object.entries(REFERENCIA_CLINICA).map(([id, ref]) => (
+                  <div key={id} style={{ marginBottom: 20 }}>
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>{ref.nome}</div>
+                    <div style={{ fontSize: 13, color: "#6B6B6B", marginBottom: 10 }}>
+                      Escore de 0 a {ref.max}. {ref.corteTexto}
+                    </div>
+                    <div style={{ display: "grid", gap: 6 }}>
+                      {ref.faixas.map((f) => (
+                        <div
+                          key={f.nome}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "110px 1fr",
+                            gap: 10,
+                            padding: "8px 10px",
+                            borderRadius: 6,
+                            background: "#F5F3EE",
+                            alignItems: "start",
+                          }}
+                        >
+                          <div>
+                            <div
+                              style={{
+                                display: "inline-block",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: "#fff",
+                                background: f.cor,
+                                borderRadius: 4,
+                                padding: "2px 8px",
+                                textTransform: "capitalize",
+                                marginBottom: 2,
+                              }}
+                            >
+                              {f.nome}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#6B6B6B" }}>
+                              {f.min}–{f.max} pts
+                            </div>
+                          </div>
+                          <div style={{ fontSize: 13 }}>
+                            <div style={{ marginBottom: 3 }}>{f.oQueSignifica}</div>
+                            <div style={{ color: "#6B6B6B" }}>
+                              <b>Conduta:</b> {f.conduta}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {ref.itemCriticoTexto && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          fontSize: 13,
+                          color: "#8A1C15",
+                          background: "#FBEBE9",
+                          border: "1px solid #E7B4AE",
+                          borderRadius: 6,
+                          padding: "8px 10px",
+                        }}
+                      >
+                        ⚠️ {ref.itemCriticoTexto}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div style={{ fontSize: 12, color: "#6B6B6B", marginTop: 4 }}>
+                  Fonte: PHQ-9 (Kroenke, Spitzer & Williams) e GAD-7 (Spitzer et al.), instrumentos de domínio
+                  público. Faixas de gravidade e pontos de corte de triagem usuais em atenção primária. São
+                  instrumentos de rastreio e monitoramento, não de diagnóstico — a leitura clínica final é sua.
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
