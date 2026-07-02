@@ -106,6 +106,33 @@ const REFERENCIA_CLINICA = {
         paraOPaciente: "O que você está sentindo é intenso e cansativo. Isso é tratável, e vamos priorizar isso agora." },
     ],
   },
+  "CDE": {
+    nome: "CDE (dependência emocional)",
+    max: 138,
+    corte: 71,
+    corteTexto:
+      "Escore de 23 a 138 (soma dos 23 itens, escala 1 a 6). Não há ponto de corte diagnóstico universal; as faixas seguem os percentis da amostra original colombiana (Lemos & Londoño, 2006). A partir de ~71 (P75) o padrão de dependência já está acima da média da amostra.",
+    itemCriticoTexto:
+      "O item 9 fala em ameaçar se machucar pra reter o parceiro. Qualquer resposta acima do mínimo pede avaliação de risco de autoagressão, independente do escore total. O item 20 (colocar a vida em risco pelo outro) também merece atenção na leitura.",
+    faixas: [
+      { min: 23, max: 46, nome: "baixo", cor: "#3E6B57",
+        oQueSignifica: "Padrão de dependência abaixo do esperado. Vínculo com autonomia preservada.",
+        conduta: "Sem indicação específica. Bom marcador de vínculo saudável pra usar como contraste.",
+        paraOPaciente: "Suas respostas indicam que você mantém sua individualidade dentro do relacionamento. Isso é saudável." },
+      { min: 47, max: 70, nome: "médio", cor: "#8A9A3E",
+        oQueSignifica: "Nível de dependência dentro da média. Traços presentes, mas sem padrão claramente disfuncional.",
+        conduta: "Observar. Explorar em sessão os itens de maior pontuação pra entender onde o vínculo aperta.",
+        paraOPaciente: "Você tem alguns traços de dependência que são comuns em relacionamentos. Vale a pena a gente olhar quais mais aparecem em você." },
+      { min: 71, max: 88, nome: "elevado", cor: "#C15B2A",
+        oQueSignifica: "Padrão de dependência acima da média. Ansiedade de separação e medo da solidão provavelmente organizam o vínculo.",
+        conduta: "Trabalhar diretamente. Mapear ansiedade de separação, medo da solidão e modificação de planes. Conectar com autoestima.",
+        paraOPaciente: "Suas respostas mostram que o medo de perder o relacionamento tem um peso grande em como você se sente. É exatamente o tipo de coisa que dá pra trabalhar na terapia." },
+      { min: 89, max: 138, nome: "muito elevado", cor: "#B3261E",
+        oQueSignifica: "Dependência emocional marcada. Alto risco de relações desequilibradas, submissão e sofrimento na separação.",
+        conduta: "Foco terapêutico prioritário. Investigar história de vínculo, autoestima e possíveis expressões-limite (itens 9 e 20). Atenção a risco de autoagressão.",
+        paraOPaciente: "O quanto você depende emocionalmente do relacionamento está num nível que te faz sofrer bastante. Não é sua culpa e tem tratamento, vamos trabalhar isso com prioridade." },
+    ],
+  },
 };
 
 function faixaCompleta(instId, escore) {
@@ -339,7 +366,14 @@ export function PaginaAvaliacaoPaciente() {
                 <div style={{ fontSize: 15, marginBottom: 10, lineHeight: 1.45 }}>
                   {idx + 1}. {texto}
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: inst.escala.length > 4 ? "column" : "row",
+                    flexWrap: "wrap",
+                    gap: 8,
+                  }}
+                >
                   {inst.escala.map((op) => {
                     const sel = val === op.valor;
                     return (
@@ -348,8 +382,8 @@ export function PaginaAvaliacaoPaciente() {
                         type="button"
                         onClick={() => marcar(inst.id, idx, op.valor)}
                         style={{
-                          flex: "1 1 auto",
-                          minWidth: 130,
+                          flex: inst.escala.length > 4 ? "0 0 auto" : "1 1 auto",
+                          minWidth: inst.escala.length > 4 ? "auto" : 130,
                           textAlign: "left",
                           cursor: "pointer",
                           borderRadius: 10,
@@ -474,8 +508,8 @@ export function AbaAvaliacoes({ pacienteId, pacienteNome }) {
     padding: 16,
     marginBottom: 16,
   };
-  const maxEscore = { "PHQ-9": 27, "GAD-7": 21 };
-  const corte = { "PHQ-9": 10, "GAD-7": 10 };
+  const maxEscore = { "PHQ-9": 27, "GAD-7": 21, "CDE": 138 };
+  const corte = { "PHQ-9": 10, "GAD-7": 10, "CDE": 71 };
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", color: "#2B2B2B" }}>
@@ -497,8 +531,13 @@ export function AbaAvaliacoes({ pacienteId, pacienteNome }) {
       <div style={box}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Enviar nova avaliação</div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-          {["PHQ-9", "GAD-7"].map((id) => {
+          {["PHQ-9", "GAD-7", "CDE"].map((id) => {
             const on = selecionados.includes(id);
+            const rotulos = {
+              "PHQ-9": "PHQ-9 (depressão)",
+              "GAD-7": "GAD-7 (ansiedade)",
+              "CDE": "CDE (dependência emocional)",
+            };
             return (
               <button
                 key={id}
@@ -514,7 +553,7 @@ export function AbaAvaliacoes({ pacienteId, pacienteNome }) {
                   fontSize: 14,
                 }}
               >
-                {id === "PHQ-9" ? "PHQ-9 (depressão)" : "GAD-7 (ansiedade)"}
+                {rotulos[id]}
               </button>
             );
           })}
