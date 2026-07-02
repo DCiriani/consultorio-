@@ -2,24 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import logoEspacoCiriani from "./assets/logo-espaco-ciriani.png";
 import { PieChart, Pie, Cell, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { initializeApp } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, setDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, setDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 import { getToken } from "firebase/messaging";
 import { getMessagingIfSupported } from "./firebase-messaging";
-
-// ── FIREBASE AUTH ────────────────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyDZvF5sKBaGwt9rGJc2awfgQV6qPeeqpBM",
-  authDomain: "consultorio-diego.firebaseapp.com",
-  projectId: "consultorio-diego",
-  storageBucket: "consultorio-diego.firebasestorage.app",
-  messagingSenderId: "891539781587",
-  appId: "1:891539781587:web:da680d4fdd59e8aac1a126"
-};
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
+import { auth, db } from "./firebase";
+import { PaginaAvaliacaoPaciente, AbaAvaliacoes } from "./AvaliacoesModulo";
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const fCPF = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
@@ -389,10 +377,12 @@ const recRef=useRef(null);
         </div>
 
         <div style={{display:"flex",gap:6,marginBottom:18}}>
-          {[["dados","📋 Dados"],["pagamentos",`💳 Pagamentos (${pagsPaciente.length})`],["atendimentos",`📝 Atendimentos (${atendimentosPac.length})`]].map(([v,l])=>(
+          {[["dados","📋 Dados"],["pagamentos",`💳 Pagamentos (${pagsPaciente.length})`],["atendimentos",`📝 Atendimentos (${atendimentosPac.length})`],["avaliacoes","🧪 Avaliações"]].map(([v,l])=>(
             <button key={v} onClick={()=>setAbaModal(v)} style={{padding:"7px 14px",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:abaModal===v?"#2a7a4a":"#f4f6f0",color:abaModal===v?"#fff":"#4a6a5a",border:"none",fontWeight:abaModal===v?700:400}}>{l}</button>
           ))}
         </div>
+
+        {abaModal==="avaliacoes"&&<AbaAvaliacoes pacienteId={p.id} pacienteNome={p.nome}/>}
 
         {abaModal==="dados"&&<>
           <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",marginBottom:8}}>Dados pessoais</div>
@@ -2094,6 +2084,11 @@ export default function App(){
       alert("Erro ao salvar cadastro. Tente novamente.");
     }
     setSalvandoCad(false);
+  }
+
+  // Rota pública - página do paciente, sem login e sem carregar dados do painel
+  if(window.location.pathname==="/avaliacao"){
+    return <PaginaAvaliacaoPaciente/>;
   }
 
   if(tela==="login") return <Login onLogin={handleLogin}/>;
