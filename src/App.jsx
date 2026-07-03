@@ -2077,7 +2077,15 @@ export default function App(){
   async function handleSalvarCadastro(dados){
     setSalvandoCad(true);
     try{
-      await addItem("pac",dados);
+      const resp = await fetch("/api/cadastro-paciente", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados),
+      });
+      const json = await resp.json();
+      if(!resp.ok || !json.ok){
+        throw new Error(json.erro || "Erro ao salvar cadastro.");
+      }
       setCadastroOk(true);
     }catch(e){
       console.error(e);
