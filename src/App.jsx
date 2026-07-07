@@ -599,6 +599,11 @@ function AbaRelatorio({registros,setRegistros,pacientes,titulares}){
   const [sugestoes,setSugestoes]=useState([]);
   const [pacSel,setPacSel]=useState(null);
   const [filtroNF,setFiltroNF]=useState("todos");
+  const [tipoFiltroData,setTipoFiltroData]=useState("nenhum");
+  const [mesFiltro,setMesFiltro]=useState("todos");
+  const [anoFiltro,setAnoFiltro]=useState("todos");
+  const [dataInicio,setDataInicio]=useState("");
+  const [dataFim,setDataFim]=useState("");
 
   useEffect(()=>{
     if(busca.trim().length<2){setSugestoes([]);return;}
@@ -615,65 +620,107 @@ function AbaRelatorio({registros,setRegistros,pacientes,titulares}){
     await updateItem("reg",reg.id,{nfEmitida:atualizado.nfEmitida});
   }
 
+  const anosDisponiveis=[...new Set(registros.map(r=>r.data.split("/")[2]))].sort().reverse();
+  const meses=["01","02","03","04","05","06","07","08","09","10","11","12"];
+  const nomesMeses=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+  function dataDentroDoFiltro(dataStr){
+    if(tipoFiltroData==="nenhum")return true;
+    const [d,m,a]=dataStr.split("/");
+    if(tipoFiltroData==="mes"){
+      if(mesFiltro!=="todos"&&m!==mesFiltro)return false;
+      if(anoFiltro!=="todos"&&a!==anoFiltro)return false;
+      return true;
+    }
+    if(tipoFiltroData==="periodo"){
+      if(!dataInicio||!dataFim)return true;
+      const [di,mi,ai]=dataInicio.split("/");
+      const [df,mf,af]=dataFim.split("/");
+      if(!di||!mi||!ai||!df||!mf||!af)return true;
+      const dAtual=new Date(Number(a),Number(m)-1,Number(d));
+      const dIni=new Date(Number(ai),Number(mi)-1,Number(di));
+      const dFimD=new Date(Number(af),Number(mf)-1,Number(df));
+      return dAtual>=dIni&&dAtual<=dFimD;
+    }
+    return true;
+  }
+
   const regsBase=pacSel?registros.filter(r=>r.nome===pacSel.nome):registros;
   const regsOrdenados=[...regsBase].sort((a,b)=>a.nome.localeCompare(b.nome)||a.data.localeCompare(b.data));
   const regs=regsOrdenados.filter(r=>{
     if(filtroNF==="pendente") return !r.nfEmitida;
     if(filtroNF==="emitida") return r.nfEmitida;
     return true;
-  });
+  }).filter(r=>dataDentroDoFiltro(r.data));
   const pendentes=registros.filter(r=>!r.nfEmitida).length;
 
-function exportarCSV(){
-  if(!regs.length)return;
-
-  const linhas=regs.map(r=>{
+  function profissionalDoRegistro(r){
     const pac=pacientes.find(p=>p.nome===r.nome);
-    const tit=pac?titulares.find(t=>t.pacienteId===pac.id):null;
-    const valorNum=r.valor!=="—"?parseFloat(r.valor.replace(",",".")):0;
+    return pac?.profissional||"sem_profissional";
+  }
 
-    return [
-  r.nome,
-  pac?.cpf||r.cpf||"",
-  tit?tit.nome:"",
-  tit?tit.cpf:"",
-  r.pagamento.toUpperCase().replace("CARTÃO DE ",""),
-  valorNum > 0 ? `R$ ${valorNum.toFixed(2).replace(".", ",")}` : "",
-  r.nfEmitida ? "EMITIDA" : "PENDENTE"
-];
-  });
+  function exportarCSV(){
+    if(!regs.length)return;
 
-  const header=[
-    "PACIENTE",
-    "CPF PACIENTE",
-    "TITULAR",
-    "CPF TITULAR",
-    "FORMA DE PAGAMENTO",
-    "VALOR",
-    "STATUS NF"
-  ];
+    const grupos={diego:[],rhania:[],sem_profissional:[]};
+    regs.forEach(r=>{
+      const prof=profissionalDoRegistro(r);
+      if(grupos[prof]) grupos[prof].push(r);
+      else grupos.sem_profissional.push(r);
+    });
 
-  const ws=XLSX.utils.aoa_to_sheet([header,...linhas]);
+    function linhaDe(r){
+      const pac=pacientes.find(p=>p.nome===r.nome);
+      const tit=pac?titulares.find(t=>t.pacienteId===pac.id):null;
+      const valorNum=r.valor!=="—"?parseFloat(r.valor.replace(",",".")):0;
+      return [
+        r.nome.toUpperCase(),
+        pac?.cpf||r.cpf||"",
+        tit?tit.nome.toUpperCase():"",
+        tit?tit.cpf:"",
+        r.pagamento.toUpperCase().replace("CARTÃO DE ",""),
+        valorNum > 0 ? `R$ ${valorNum.toFixed(2).replace(".", ",")}` : "",
+        r.nfEmitida ? "EMITIDA" : "PENDENTE"
+      ];
+    }
 
-  ws["!cols"]=[
-    {wch:28},
-    {wch:16},
-    {wch:22},
-    {wch:16},
-    {wch:18},
-    {wch:12},
-    {wch:15}
-  ];
+    function totalDe(lista){
+      return lista.filter(r=>r.valor!=="—").reduce((s,r)=>s+(parseFloat(r.valor.replace(",","."))||0),0);
+    }
 
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Pagamentos");
+    const header=["PACIENTE","CPF PACIENTE","TITULAR","CPF TITULAR","FORMA DE PAGAMENTO","VALOR","STATUS NF"];
+    const linhas=[header];
 
-  const mes=new Date()
-    .toLocaleDateString("pt-BR",{month:"2-digit",year:"numeric"})
-    .replace("/","-");
+    const secoes=[
+      {chave:"diego",titulo:"PAGAMENTOS - DIEGO CIRIANI"},
+      {chave:"rhania",titulo:"PAGAMENTOS - RHANIA MULIA"},
+      {chave:"sem_profissional",titulo:"PAGAMENTOS - SEM PROFISSIONAL DEFINIDO"},
+    ];
 
-  XLSX.writeFile(wb,`notas-fiscais-${mes}.xlsx`);
-}
+    let totalGeral=0;
+    secoes.forEach(sec=>{
+      const lista=grupos[sec.chave];
+      if(lista.length===0)return;
+      linhas.push([sec.titulo]);
+      lista.forEach(r=>linhas.push(linhaDe(r)));
+      const totalSec=totalDe(lista);
+      totalGeral+=totalSec;
+      linhas.push([`TOTAL ${sec.chave.toUpperCase()}`,"","","","",`R$ ${totalSec.toFixed(2).replace(".",",")}`,""]);
+      linhas.push([]);
+    });
+
+    linhas.push(["TOTAL GERAL (DIEGO + RHANIA)","","","","",`R$ ${totalGeral.toFixed(2).replace(".",",")}`,""]);
+
+    const ws=XLSX.utils.aoa_to_sheet(linhas);
+    ws["!cols"]=[{wch:28},{wch:16},{wch:22},{wch:16},{wch:18},{wch:12},{wch:15}];
+
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Pagamentos");
+
+    const mesArquivo=new Date().toLocaleDateString("pt-BR",{month:"2-digit",year:"numeric"}).replace("/","-");
+    XLSX.writeFile(wb,`notas-fiscais-${mesArquivo}.xlsx`);
+  }
+
   const totalValor=regs.filter(r=>r.valor!=="—").reduce((s,r)=>{
     const v=parseFloat(r.valor.replace(",","."));return s+(isNaN(v)?0:v);
   },0);
@@ -688,6 +735,35 @@ function exportarCSV(){
           ))}
           {pendentes>0&&<span style={{fontFamily:"sans-serif",fontSize:13,color:"#c0392b",fontWeight:600,alignSelf:"center",marginLeft:8}}>⚠ {pendentes} pendente(s)</span>}
         </div>
+
+        <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+          {[["nenhum","Sem filtro de data"],["mes","Filtrar por mês"],["periodo","Filtrar por período"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setTipoFiltroData(v)} style={{padding:"7px 14px",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:tipoFiltroData===v?"#1a4a2a":"#fff",color:tipoFiltroData===v?"#fff":"#4a6a5a",border:tipoFiltroData===v?"none":"1.5px solid #c8ddd0",fontWeight:tipoFiltroData===v?700:400}}>{l}</button>
+          ))}
+        </div>
+
+        {tipoFiltroData==="mes"&&<div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+          <select value={mesFiltro} onChange={e=>setMesFiltro(e.target.value)} style={{...sel(false),width:"auto",fontSize:13,padding:"6px 10px"}}>
+            <option value="todos">Todos os meses</option>
+            {meses.map((m,i)=><option key={m} value={m}>{nomesMeses[i]}</option>)}
+          </select>
+          <select value={anoFiltro} onChange={e=>setAnoFiltro(e.target.value)} style={{...sel(false),width:"auto",fontSize:13,padding:"6px 10px"}}>
+            <option value="todos">Todos os anos</option>
+            {anosDisponiveis.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>}
+
+        {tipoFiltroData==="periodo"&&<div style={{display:"flex",gap:14,marginBottom:14,flexWrap:"wrap",alignItems:"flex-end"}}>
+          <div>
+            <LBL t="De"/>
+            <input style={{...inp(false),width:140}} type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10} value={dataInicio} onChange={e=>setDataInicio(fData(e.target.value))}/>
+          </div>
+          <div>
+            <LBL t="Até"/>
+            <input style={{...inp(false),width:140}} type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10} value={dataFim} onChange={e=>setDataFim(fData(e.target.value))}/>
+          </div>
+        </div>}
+
         <div style={{position:"relative",marginBottom:16}}>
           <LBL t="Filtrar por paciente"/>
           <input style={{...inp(false),fontSize:15,padding:"11px 14px"}} value={busca} onChange={e=>{setBusca(e.target.value);if(!e.target.value)setPacSel(null);}} placeholder="Digite o nome ou deixe em branco para ver todos..." autoComplete="off" onBlur={()=>setTimeout(()=>setSugestoes([]),150)}/>
