@@ -184,7 +184,21 @@ const SEC = {margin:"0 0 12px",fontSize:13,fontWeight:700,color:"#2a5a3a",fontFa
    PARTE 1 — Componente de seleção de profissional
    Cole isto ANTES da função FormPaciente (que começa na linha 138).
    ════════════════════════════════════════════════════════════════════ */}
+const STATUS_SESSAO = [
+  { id: "compareceu", label: "✅ Compareceu", cor: "#2a7a4a" },
+  { id: "falta_sem_justificativa", label: "❌ Faltou sem justificativa (sem direito a remarcação)", cor: "#c0392b" },
+  { id: "falta_justificativa", label: "🏥 Faltou com justificativa - ex. saúde (com direito a remarcação)", cor: "#B9762F" },
+  { id: "remarcacao_dentro_prazo", label: "🔄 Remarcação dentro do prazo +4h (com direito a remarcação)", cor: "#1a4a8a" },
+  { id: "remarcacao_fora_prazo", label: "⚠️ Remarcação fora do prazo -4h (sem direito a remarcação)", cor: "#8a5a1a" },
+];
 
+const STATUS_TEXTO = {
+  compareceu: "Sessão realizada normalmente. Paciente compareceu.",
+  falta_sem_justificativa: "Paciente faltou à sessão sem justificativa. Sem direito a remarcação.",
+  falta_justificativa: "Paciente faltou à sessão com justificativa (ex. saúde). Com direito a remarcação.",
+  remarcacao_dentro_prazo: "Paciente solicitou remarcação dentro do prazo (mais de 4h de antecedência). Com direito a remarcação.",
+  remarcacao_fora_prazo: "Paciente solicitou remarcação fora do prazo (menos de 4h de antecedência). Sem direito a remarcação.",
+};
 const PROFISSIONAIS = [
   { id: "diego", nome: "Diego Ciriani", titulo: "Psicólogo" },
   { id: "rhania", nome: "Rhania Mulia", titulo: "Psicóloga" },
@@ -1061,6 +1075,30 @@ async function salvarEvento(){
     setEditandoEvento(null);
     showT("Evento atualizado!");
   }
+
+  async function registrarStatusSessao(status){
+    const paciente = pacientes.find(p=>p.nome===editandoEvento.pacienteNome);
+    if(!paciente){showT("Paciente não encontrado no cadastro.","erro");return;}
+
+    if(!window.confirm(`Confirma registrar "${STATUS_SESSAO.find(s=>s.id===status)?.label}" para esta sessão?\n\nIsso vai atualizar o evento e criar uma anotação automática na ficha do paciente.`))return;
+
+    await updateItem("age",editandoEvento.id,{status});
+    setAgenda(agenda.map(ev=>ev.id===editandoEvento.id?{...ev,status}:ev));
+
+    const [dd,mm,yyyy]=editandoEvento.data.split("/");
+    const dataOrdenacao=(dd&&mm&&yyyy)?`${yyyy}-${mm}-${dd}`:"";
+    const dadosEvol={
+      pacienteId:paciente.id,
+      data:editandoEvento.data,
+      texto:STATUS_TEXTO[status],
+      dataOrdenacao
+    };
+    const novoId=await addItem("evol",dadosEvol);
+    setEvolucoes([...evolucoes,{id:novoId,...dadosEvol}]);
+
+    setEditandoEvento(null);
+    showT("Status registrado e anotação criada na ficha!");
+  }
 const isMobile = window.innerWidth < 768;
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
  const ROOT={
@@ -1637,7 +1675,22 @@ const ABAS_SECUNDARIAS=[
       </select>
     </div>
 
-    <button onClick={salvarEdicaoEvento} style={{width:"100%",padding:13,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:9,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif"}}>✓ Salvar alterações</button>
+    <button onClick={salvarEdicaoEvento} style={{width:"100%",padding:13,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:9,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",marginBottom: editandoEvento.tipo==="sessao" ? 18 : 0}}>✓ Salvar alterações</button>
+
+    {editandoEvento.tipo==="sessao"&&<div style={{borderTop:"1px solid #eef4ec",paddingTop:16}}>
+      <label style={LBS}>Status da sessão</label>
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
+        {STATUS_SESSAO.map(s=>(
+          <button key={s.id} onClick={()=>registrarStatusSessao(s.id)} style={{
+            padding:"10px 14px", borderRadius:8, cursor:"pointer",
+            fontSize:13, fontFamily:"sans-serif", fontWeight:600, textAlign:"left",
+            background: editandoEvento.status===s.id ? s.cor : "#f7faf8",
+            color: editandoEvento.status===s.id ? "#fff" : "#1a3a2a",
+            border: editandoEvento.status===s.id ? "none" : "1.5px solid #e0ede5"
+          }}>{s.label}</button>
+        ))}
+      </div>
+    </div>}
   </div>
 </div>}
 {aba==="dashboard"&&<>
