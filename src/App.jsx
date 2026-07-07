@@ -134,8 +134,8 @@ function Login({onLogin}){
   }
 
   return(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(135deg,#1a4a2a 0%,#2a7a4a 100%)"}}>
-      <div style={{background:"#fff",borderRadius:20,padding:"48px 40px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"linear-gradient(135deg,#1a4a2a 0%,#2a7a4a 100%)",padding:"24px 16px",boxSizing:"border-box"}}>
+      <div style={{background:"#fff",borderRadius:20,padding:"40px 32px",width:"100%",maxWidth:400,boxShadow:"0 20px 60px rgba(0,0,0,0.3)",boxSizing:"border-box"}}>
         <div style={{textAlign:"center",marginBottom:32}}>
           <img src={logoEspacoCiriani} alt="Espaço Ciriani" style={{width:56,height:56,marginBottom:12}}/>
           <h1 style={{margin:"0 0 4px",fontSize:22,fontWeight:600,color:"#1a3a2a",fontFamily:"Georgia,serif"}}>Espaço Ciriani</h1>
