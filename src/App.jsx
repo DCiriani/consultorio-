@@ -321,7 +321,6 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,onClose}
   const Row=({l,v})=>v?<div style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid #eef4ec",fontFamily:"sans-serif"}}><span style={{fontSize:11,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",width:110,flexShrink:0}}>{l}</span><span style={{fontSize:14,color:"#1a3a2a"}}>{v}</span></div>:null;
   const tits=titulares.filter(t=>t.pacienteId===p.id);
   const atendimentosPac=evolucoes.filter(ev=>ev.pacienteId===p.id).sort((a,b)=>(b.dataOrdenacao||"").localeCompare(a.dataOrdenacao||""));
-  const detalheEv=atendimentosPac.find(ev=>ev.id===detalheAtendimentoId);
   const hoje=new Date();
   const dataHojeStr=`${String(hoje.getDate()).padStart(2,"0")}/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`;
   const [novaDataEv,setNovaDataEv]=useState(dataHojeStr);
@@ -334,6 +333,7 @@ const [respostaAssistente,setRespostaAssistente]=useState("");
 const [erroAssistente,setErroAssistente]=useState("");
 const [detalheAtendimentoId,setDetalheAtendimentoId]=useState(null);
 const [mostrarSugestao,setMostrarSugestao]=useState(false);
+const detalheEv=atendimentosPac.find(ev=>ev.id===detalheAtendimentoId);
   const [gravando,setGravando]=useState(false);
 const recRef=useRef(null);
   const [textoEdit,setTextoEdit]=useState("");
