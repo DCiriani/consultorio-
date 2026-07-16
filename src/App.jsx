@@ -327,6 +327,10 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,onClose}
   const [novoTextoEv,setNovoTextoEv]=useState("");
   const [salvandoEv,setSalvandoEv]=useState(false);
   const [editandoEvId,setEditandoEvId]=useState(null);
+  const [modalAssistente,setModalAssistente]=useState(false);
+const [carregandoAssistente,setCarregandoAssistente]=useState(false);
+const [respostaAssistente,setRespostaAssistente]=useState("");
+const [erroAssistente,setErroAssistente]=useState("");
   const [gravando,setGravando]=useState(false);
 const recRef=useRef(null);
   const [textoEdit,setTextoEdit]=useState("");
@@ -363,6 +367,46 @@ const recRef=useRef(null);
     await updateItem("evol",editandoEvId,{texto:textoEdit,data:dataEdit,dataOrdenacao});
     setEvolucoes(evolucoes.map(ev=>ev.id===editandoEvId?{...ev,texto:textoEdit,data:dataEdit,dataOrdenacao}:ev));
     setEditandoEvId(null);
+  }
+
+  function montarTextoSessoes(escopo){
+    const ordenadosAsc=[...atendimentosPac].sort((a,b)=>(a.dataOrdenacao||"").localeCompare(b.dataOrdenacao||""));
+    let selecionados=[];
+    if(escopo==="atual"){
+      selecionados=ordenadosAsc.slice(-1);
+    }else if(escopo==="atual_anterior"){
+      selecionados=ordenadosAsc.slice(-2);
+    }else{
+      selecionados=ordenadosAsc;
+    }
+    return selecionados.map(ev=>`[${ev.data}]\n${ev.texto}`).join("\n\n---\n\n");
+  }
+
+  async function consultarAssistente(escopo){
+    if(atendimentosPac.length===0){
+      setErroAssistente("Não há anotações de atendimento registradas para este paciente.");
+      return;
+    }
+    setCarregandoAssistente(true);
+    setRespostaAssistente("");
+    setErroAssistente("");
+    try{
+      const textoSessoes=montarTextoSessoes(escopo);
+      const resp=await fetch("/api/assistente",{
+        method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({pacienteNome:p.nome, textoSessoes})
+      });
+      const data=await resp.json();
+      if(!resp.ok||data.erro){
+        setErroAssistente("Não foi possível consultar o assistente. Tente novamente.");
+      }else{
+        setRespostaAssistente(data.resposta);
+      }
+    }catch(e){
+      setErroAssistente("Erro de conexão ao consultar o assistente.");
+    }
+    setCarregandoAssistente(false);
   }
 
   const pagsPaciente=registros.filter(r=>r.nome===p.nome);
@@ -481,6 +525,7 @@ const recRef=useRef(null);
               disabled={salvandoEv||!novoTextoEv.trim()}
               style={{padding:"9px 18px",background:novoTextoEv.trim()?"#2a7a4a":"#cfe0d6",color:"#fff",border:"none",borderRadius:8,cursor:novoTextoEv.trim()?"pointer":"default",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}
             >{salvandoEv?"Salvando...":"Adicionar atendimento"}</button>
+            <button onClick={()=>{setModalAssistente(true);setRespostaAssistente("");setErroAssistente("");}} style={{marginLeft:8,padding:"9px 18px",background:"#1a4a8a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>🧠 Assistente</button>
           </div>
 
           {atendimentosPac.length===0
@@ -519,6 +564,35 @@ const recRef=useRef(null);
               ))}
             </div>
           }
+          {modalAssistente&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setModalAssistente(false)}>
+            <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:560,boxShadow:"0 8px 40px rgba(0,0,0,0.3)",maxHeight:"85vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+                <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>🧠 Assistente Clínico (TCC)</h3>
+                <button onClick={()=>setModalAssistente(false)} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
+              </div>
+
+              {!carregandoAssistente && !respostaAssistente && !erroAssistente && <>
+                <p style={{fontFamily:"sans-serif",fontSize:13,color:"#5a7a6a",marginBottom:16}}>Escolha o que o assistente deve analisar:</p>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  <button onClick={()=>consultarAssistente("atual")} style={{padding:"12px 16px",borderRadius:8,border:"1.5px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:14,fontFamily:"sans-serif",fontWeight:600,textAlign:"left",color:"#1a3a2a"}}>Analisar somente a sessão atual (última anotada)</button>
+                  <button onClick={()=>consultarAssistente("atual_anterior")} style={{padding:"12px 16px",borderRadius:8,border:"1.5px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:14,fontFamily:"sans-serif",fontWeight:600,textAlign:"left",color:"#1a3a2a"}}>Analisar a sessão atual e a anterior</button>
+                  <button onClick={()=>consultarAssistente("todas")} style={{padding:"12px 16px",borderRadius:8,border:"1.5px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:14,fontFamily:"sans-serif",fontWeight:600,textAlign:"left",color:"#1a3a2a"}}>Analisar todas as sessões deste paciente</button>
+                </div>
+              </>}
+
+              {carregandoAssistente && <div style={{textAlign:"center",padding:"30px 0",fontFamily:"sans-serif",color:"#5a7a6a",fontSize:14}}>Consultando o assistente...</div>}
+
+              {erroAssistente && <div style={{textAlign:"center",padding:"20px 0"}}>
+                <p style={{fontFamily:"sans-serif",color:"#c0392b",fontSize:14,marginBottom:14}}>{erroAssistente}</p>
+                <button onClick={()=>{setErroAssistente("");}} style={{padding:"9px 18px",background:"#1a4a2a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif"}}>Voltar</button>
+              </div>}
+
+              {respostaAssistente && <>
+                <div style={{fontFamily:"sans-serif",fontSize:13,color:"#1a3a2a",whiteSpace:"pre-wrap",lineHeight:1.6,background:"#f7faf8",borderRadius:8,padding:16,marginBottom:16}}>{respostaAssistente}</div>
+                <button onClick={()=>{setRespostaAssistente("");}} style={{padding:"9px 18px",background:"#1a4a2a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif"}}>Nova consulta</button>
+              </>}
+            </div>
+          </div>}
         </>}
       </div>
     </div>
