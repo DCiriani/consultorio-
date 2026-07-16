@@ -321,6 +321,7 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,onClose}
   const Row=({l,v})=>v?<div style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid #eef4ec",fontFamily:"sans-serif"}}><span style={{fontSize:11,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",width:110,flexShrink:0}}>{l}</span><span style={{fontSize:14,color:"#1a3a2a"}}>{v}</span></div>:null;
   const tits=titulares.filter(t=>t.pacienteId===p.id);
   const atendimentosPac=evolucoes.filter(ev=>ev.pacienteId===p.id).sort((a,b)=>(b.dataOrdenacao||"").localeCompare(a.dataOrdenacao||""));
+  const detalheEv=atendimentosPac.find(ev=>ev.id===detalheAtendimentoId);
   const hoje=new Date();
   const dataHojeStr=`${String(hoje.getDate()).padStart(2,"0")}/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`;
   const [novaDataEv,setNovaDataEv]=useState(dataHojeStr);
@@ -331,6 +332,8 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,onClose}
 const [carregandoAssistente,setCarregandoAssistente]=useState(false);
 const [respostaAssistente,setRespostaAssistente]=useState("");
 const [erroAssistente,setErroAssistente]=useState("");
+const [detalheAtendimentoId,setDetalheAtendimentoId]=useState(null);
+const [mostrarSugestao,setMostrarSugestao]=useState(false);
   const [gravando,setGravando]=useState(false);
 const recRef=useRef(null);
   const [textoEdit,setTextoEdit]=useState("");
@@ -387,6 +390,15 @@ const recRef=useRef(null);
       setErroAssistente("Não há anotações de atendimento registradas para este paciente.");
       return;
     }
+    async function salvarSugestaoAssistente(){
+    if(!atendimentosPac.length)return;
+    const alvo=atendimentosPac[0];
+    await updateItem("evol",alvo.id,{sugestao:respostaAssistente});
+    setEvolucoes(evolucoes.map(ev=>ev.id===alvo.id?{...ev,sugestao:respostaAssistente}:ev));
+    setModalAssistente(false);
+    setRespostaAssistente("");
+    showT("Sugestão salva na sessão mais recente!");
+  }
     setCarregandoAssistente(true);
     setRespostaAssistente("");
     setErroAssistente("");
@@ -554,6 +566,7 @@ const recRef=useRef(null);
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                       <span style={{fontSize:12,fontWeight:700,color:"#2a7a4a",fontFamily:"sans-serif"}}>{ev.data}</span>
                       <div style={{display:"flex",gap:10}}>
+                        <button onClick={()=>{setDetalheAtendimentoId(ev.id);setMostrarSugestao(false);}} style={{background:"none",border:"none",color:"#2a7a4a",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>ver anotação</button>
                         <button onClick={()=>iniciarEdicao(ev)} style={{background:"none",border:"none",color:"#1a3a6a",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>editar</button>
                         <button onClick={()=>excluirAtendimento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>excluir</button>
                       </div>
@@ -589,8 +602,28 @@ const recRef=useRef(null);
 
               {respostaAssistente && <>
                 <div style={{fontFamily:"sans-serif",fontSize:13,color:"#1a3a2a",whiteSpace:"pre-wrap",lineHeight:1.6,background:"#f7faf8",borderRadius:8,padding:16,marginBottom:16}}>{respostaAssistente}</div>
-                <button onClick={()=>{setRespostaAssistente("");}} style={{padding:"9px 18px",background:"#1a4a2a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif"}}>Nova consulta</button>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <button onClick={salvarSugestaoAssistente} style={{padding:"9px 18px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>✓ Salvar sugestão</button>
+                  <button onClick={()=>{setRespostaAssistente("");}} style={{padding:"9px 18px",background:"#fff",color:"#4a6a5a",border:"1.5px solid #c8ddd0",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif"}}>Nova consulta</button>
+                  <button onClick={()=>{setModalAssistente(false);setRespostaAssistente("");}} style={{padding:"9px 18px",background:"#fff",color:"#c0392b",border:"1.5px solid #f5c6cb",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif"}}>Cancelar</button>
+                </div>
               </>}
+            </div>
+          </div>}
+          {detalheEv&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>{setDetalheAtendimentoId(null);setMostrarSugestao(false);}}>
+            <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:520,boxShadow:"0 8px 40px rgba(0,0,0,0.3)",maxHeight:"85vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                <h3 style={{margin:0,color:"#1a3a2a",fontSize:18,fontFamily:"Georgia,serif"}}>Anotação — {detalheEv.data}</h3>
+                <button onClick={()=>{setDetalheAtendimentoId(null);setMostrarSugestao(false);}} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
+              </div>
+
+              <div style={{fontFamily:"sans-serif",fontSize:14,color:"#1a3a2a",whiteSpace:"pre-wrap",lineHeight:1.6,marginBottom:18}}>{detalheEv.texto}</div>
+
+              <button onClick={()=>setMostrarSugestao(v=>!v)} style={{padding:"9px 18px",background:"#1a4a8a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600,marginBottom:14}}>🧠 Sugestões</button>
+
+              {mostrarSugestao&&<div style={{fontFamily:"sans-serif",fontSize:13,color:"#1a3a2a",whiteSpace:"pre-wrap",lineHeight:1.6,background:"#f7faf8",borderRadius:8,padding:16}}>
+                {detalheEv.sugestao || "Nenhuma sugestão salva para esta sessão. Use o botão Assistente para gerar uma."}
+              </div>}
             </div>
           </div>}
         </>}
