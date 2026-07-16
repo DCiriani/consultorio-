@@ -329,14 +329,6 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,onClose}
   const [editandoEvId,setEditandoEvId]=useState(null);
   const [gravando,setGravando]=useState(false);
 const recRef=useRef(null);
-const [gravandoReuniao,setGravandoReuniao]=useState(false);
-const [blocosTranscricao,setBlocosTranscricao]=useState([]);
-const [processandoBloco,setProcessandoBloco]=useState(false);
-const mediaRecorderRef=useRef(null);
-const streamRef=useRef(null);
-const intervaloRef=useRef(null);
-const contadorBlocoRef=useRef(0);
-const textoBaseRef=useRef("");
   const [textoEdit,setTextoEdit]=useState("");
   const [dataEdit,setDataEdit]=useState("");
 
@@ -371,145 +363,6 @@ const textoBaseRef=useRef("");
     await updateItem("evol",editandoEvId,{texto:textoEdit,data:dataEdit,dataOrdenacao});
     setEvolucoes(evolucoes.map(ev=>ev.id===editandoEvId?{...ev,texto:textoEdit,data:dataEdit,dataOrdenacao}:ev));
     setEditandoEvId(null);
-  }
-
-  function blobParaBase64(blob){
-    return new Promise((resolve,reject)=>{
-      const reader=new FileReader();
-      reader.onloadend=()=>resolve(reader.result.split(",")[1]);
-      reader.onerror=reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  function atualizarTextoFinalComBlocos(blocos){
-    const ordenados=[...blocos].sort((a,b)=>a.num-b.num);
-    const texto=ordenados.map(b=>{
-      if(b.status==="processando")return `[Bloco ${b.num} - transcrevendo...]`;
-      return `[Bloco ${b.num}]\n${b.texto}`;
-    }).join("\n\n");
-    setNovoTextoEv(textoBaseRef.current ? textoBaseRef.current + "\n\n" + texto : texto);
-  }
-
-  async function enviarBlocoParaTranscricao(blob, num){
-    setBlocosTranscricao(prev=>{
-      const novo=[...prev,{num,status:"processando",texto:""}];
-      return novo;
-    });
-    try{
-      const base64=await blobParaBase64(blob);
-      const resp=await fetch("/api/transcrever",{
-        method:"POST",
-        headers:{"content-type":"application/json"},
-        body:JSON.stringify({audioBase64:base64, mimeType:blob.type||"audio/webm"})
-      });
-      const data=await resp.json();
-      if(!resp.ok || data.erro){
-        setBlocosTranscricao(prev=>{
-          const novo=prev.map(b=>b.num===num?{...b,status:"erro",texto:"[Erro ao transcrever este trecho]"}:b);
-          atualizarTextoFinalComBlocos(novo);
-          return novo;
-        });
-        return;
-      }
-      const id=data.id;
-      let tentativas=0;
-      const poll=async()=>{
-        tentativas++;
-        try{
-          const r=await fetch(`/api/status-transcricao?id=${id}`);
-          const d=await r.json();
-          if(d.status==="completed"){
-            const linhas=(d.utterances||[]).map(u=>`Pessoa ${u.speaker}: ${u.text}`).join("\n");
-            const textoFinal=linhas || d.texto || "[Sem fala detectada]";
-            setBlocosTranscricao(prev=>{
-              const novo=prev.map(b=>b.num===num?{...b,status:"concluido",texto:textoFinal}:b);
-              atualizarTextoFinalComBlocos(novo);
-              return novo;
-            });
-          }else if(d.status==="error"){
-            setBlocosTranscricao(prev=>{
-              const novo=prev.map(b=>b.num===num?{...b,status:"erro",texto:"[Erro ao processar este trecho]"}:b);
-              atualizarTextoFinalComBlocos(novo);
-              return novo;
-            });
-          }else if(tentativas<60){
-            setTimeout(poll,5000);
-          }else{
-            setBlocosTranscricao(prev=>{
-              const novo=prev.map(b=>b.num===num?{...b,status:"erro",texto:"[Tempo esgotado ao processar]"}:b);
-              atualizarTextoFinalComBlocos(novo);
-              return novo;
-            });
-          }
-        }catch{
-          if(tentativas<60)setTimeout(poll,5000);
-        }
-      };
-      poll();
-    }catch(e){
-      setBlocosTranscricao(prev=>{
-        const novo=prev.map(b=>b.num===num?{...b,status:"erro",texto:"[Erro de conexão]"}:b);
-        atualizarTextoFinalComBlocos(novo);
-        return novo;
-      });
-    }
-  }
-
-  function iniciarNovoBlocoGravacao(){
-    const stream=streamRef.current;
-    if(!stream)return;
-    contadorBlocoRef.current+=1;
-    const numBloco=contadorBlocoRef.current;
-    const mr=new MediaRecorder(stream,{mimeType:"audio/webm"});
-    const chunks=[];
-    mr.ondataavailable=(e)=>{if(e.data.size>0)chunks.push(e.data);};
-    mr.onstop=()=>{
-      const blob=new Blob(chunks,{type:"audio/webm"});
-      enviarBlocoParaTranscricao(blob, numBloco);
-    };
-    mr.start();
-    mediaRecorderRef.current=mr;
-  }
-
-  function pararBlocoAtualEIniciarNovo(){
-    const mr=mediaRecorderRef.current;
-    if(mr && mr.state!=="inactive"){
-      mr.stop();
-    }
-    iniciarNovoBlocoGravacao();
-  }
-
-  async function iniciarGravacaoReuniao(){
-    try{
-      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      streamRef.current=stream;
-      textoBaseRef.current=novoTextoEv;
-      setBlocosTranscricao([]);
-      contadorBlocoRef.current=0;
-      setGravandoReuniao(true);
-      iniciarNovoBlocoGravacao();
-      intervaloRef.current=setInterval(()=>{
-        pararBlocoAtualEIniciarNovo();
-      }, 4*60*1000);
-    }catch(e){
-      showT("Não foi possível acessar o microfone.","erro");
-    }
-  }
-
-  function pararGravacaoReuniao(){
-    clearInterval(intervaloRef.current);
-    intervaloRef.current=null;
-    const mr=mediaRecorderRef.current;
-    if(mr && mr.state!=="inactive"){
-      mr.stop();
-    }
-    const stream=streamRef.current;
-    if(stream){
-      stream.getTracks().forEach(t=>t.stop());
-    }
-    streamRef.current=null;
-    setGravandoReuniao(false);
   }
 
   const pagsPaciente=registros.filter(r=>r.nome===p.nome);
@@ -620,23 +473,9 @@ const textoBaseRef=useRef("");
               }} style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600,background:gravando?"#c0392b":"#1C3D2E",color:"#fff",display:"flex",alignItems:"center",gap:6}}>
                 {gravando ? "⏹ Parar gravação" : "🎤 Falar"}
               </button>
-              <button onClick={()=>{
-                if(gravandoReuniao){
-                  pararGravacaoReuniao();
-                }else{
-                  iniciarGravacaoReuniao();
-                }
-              }} style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600,background:gravandoReuniao?"#c0392b":"#1a4a8a",color:"#fff",marginLeft:8}}>
-                {gravandoReuniao ? `⏹ Parar gravação (bloco ${contadorBlocoRef.current})` : "🎥 Gravar reunião (2 pessoas)"}
-              </button>
+              
             </div>
-            {blocosTranscricao.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
-              {blocosTranscricao.sort((a,b)=>a.num-b.num).map(b=>(
-                <span key={b.num} style={{fontSize:11,fontFamily:"sans-serif",padding:"3px 8px",borderRadius:12,background:b.status==="processando"?"#fff3cd":b.status==="erro"?"#f8d7da":"#d4edda",color:b.status==="processando"?"#856404":b.status==="erro"?"#721c24":"#155724"}}>
-                  Bloco {b.num}: {b.status==="processando"?"transcrevendo...":b.status==="erro"?"erro":"pronto"}
-                </span>
-              ))}
-            </div>}
+            
             <button
               onClick={salvarAtendimento}
               disabled={salvandoEv||!novoTextoEv.trim()}
