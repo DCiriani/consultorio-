@@ -51,3 +51,6 @@ Seja direto e clinicamente fundamentado. Evite linguagem vaga ou genérica.`;
     return res.status(500).json({ erro: "Erro interno", detalhe: String(e) });
   }
 }
+export const config = {
+  maxDuration: 60,
+};
