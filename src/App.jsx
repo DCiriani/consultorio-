@@ -390,15 +390,6 @@ const recRef=useRef(null);
       setErroAssistente("Não há anotações de atendimento registradas para este paciente.");
       return;
     }
-    async function salvarSugestaoAssistente(){
-    if(!atendimentosPac.length)return;
-    const alvo=atendimentosPac[0];
-    await updateItem("evol",alvo.id,{sugestao:respostaAssistente});
-    setEvolucoes(evolucoes.map(ev=>ev.id===alvo.id?{...ev,sugestao:respostaAssistente}:ev));
-    setModalAssistente(false);
-    setRespostaAssistente("");
-    showT("Sugestão salva na sessão mais recente!");
-  }
     setCarregandoAssistente(true);
     setRespostaAssistente("");
     setErroAssistente("");
@@ -420,7 +411,15 @@ const recRef=useRef(null);
     }
     setCarregandoAssistente(false);
   }
-
+async function salvarSugestaoAssistente(){
+    if(!atendimentosPac.length)return;
+    const alvo=atendimentosPac[0];
+    await updateItem("evol",alvo.id,{sugestao:respostaAssistente});
+    setEvolucoes(evolucoes.map(ev=>ev.id===alvo.id?{...ev,sugestao:respostaAssistente}:ev));
+    setModalAssistente(false);
+    setRespostaAssistente("");
+    showT("Sugestão salva na sessão mais recente!");
+  }
   const pagsPaciente=registros.filter(r=>r.nome===p.nome);
   const anos=[...new Set(pagsPaciente.map(r=>r.data.split("/")[2]))].sort().reverse();
   const meses=["01","02","03","04","05","06","07","08","09","10","11","12"];
