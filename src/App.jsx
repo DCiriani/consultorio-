@@ -1147,6 +1147,7 @@ const pagamentosPendentesDash = registrosComData
   const [agendaVisao,setAgendaVisao]=useState("dia");
 const [agendaData,setAgendaData]=useState(new Date());
 const [modalEvento,setModalEvento]=useState(false);
+const [opcoesExclusao,setOpcoesExclusao]=useState(null);
 const [novoEvento,setNovoEvento]=useState({tipo:"sessao",pacienteNome:"",profissional:"diego",descricao:"",horario:"09:00",horarioFim:"10:00",data:"",modalidade:"presencial",recorrencia:"avulsa"});const [editandoEvento,setEditandoEvento]=useState(null);
 const [sugestoesEvento,setSugestoesEvento]=useState([]);
   const nomeRef=useRef(null);
@@ -1310,34 +1311,32 @@ async function salvarEvento(){
     showT(intervaloDias ? `${novosEventos.length} sessões agendadas!` : "Evento adicionado à agenda!");
   }
 
-  async function excluirEvento(id){
-    const ev=agenda.find(e=>e.id===id);
-    if(!ev)return;
-
-    if(ev.grupoRecorrencia){
-      const apagarTodas=window.confirm("Este evento faz parte de uma recorrência.\n\nClique OK para excluir esta E TODAS as sessões futuras desta recorrência.\nClique Cancelar para excluir SOMENTE esta sessão.");
-      if(apagarTodas){
-        const [dd,mm,yyyy]=ev.data.split("/");
-        const dataEv=new Date(Number(yyyy),Number(mm)-1,Number(dd));
-        const futuras=agenda.filter(e=>{
-          if(e.grupoRecorrencia!==ev.grupoRecorrencia)return false;
-          const [d2,m2,y2]=e.data.split("/");
-          const dataE=new Date(Number(y2),Number(m2)-1,Number(d2));
-          return dataE>=dataEv;
-        });
-        await Promise.all(futuras.map(f=>deleteItem("age",f.id)));
-        const idsRemovidos=new Set(futuras.map(f=>f.id));
-        setAgenda(agenda.filter(e=>!idsRemovidos.has(e.id)));
-        showT(`${futuras.length} sessões removidas.`);
-        return;
-      }
-    }else{
-      if(!window.confirm("Tem certeza que deseja excluir este evento da agenda?"))return;
-    }
-
+  async function excluirApenasEsta(id){
     await deleteItem("age",id);
     setAgenda(agenda.filter(e=>e.id!==id));
-    showT("Evento removido.");
+    setOpcoesExclusao(null);
+    showT("Sessão excluída.");
+  }
+
+  async function excluirComRecorrencia(ev){
+    const [dd,mm,yyyy]=ev.data.split("/");
+    const dataEv=new Date(Number(yyyy),Number(mm)-1,Number(dd));
+    const futuras=agenda.filter(e=>{
+      if(e.grupoRecorrencia!==ev.grupoRecorrencia)return false;
+      const [d2,m2,y2]=e.data.split("/");
+      const dataE=new Date(Number(y2),Number(m2)-1,Number(d2));
+      return dataE>=dataEv;
+    });
+    await Promise.all(futuras.map(f=>deleteItem("age",f.id)));
+    const idsRemovidos=new Set(futuras.map(f=>f.id));
+    setAgenda(agenda.filter(e=>!idsRemovidos.has(e.id)));
+    setOpcoesExclusao(null);
+    showT(`${futuras.length} sessões removidas.`);
+  }
+
+  function abrirReagendamento(ev){
+    setOpcoesExclusao(null);
+    setEditandoEvento({...ev});
   }
 
   async function salvarEdicaoEvento(){
@@ -1709,7 +1708,7 @@ const ABAS_SECUNDARIAS=[
                         </div>
                       </div>
                       <button onClick={()=>setEditandoEvento({...evDoHorario})} style={{background:"none",border:"none",color:"#1a3a6a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",marginRight:8}}>editar</button>
-                      <button onClick={()=>excluirEvento(evDoHorario.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
+                      <button onClick={()=>setOpcoesExclusao(evDoHorario)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
                     </div>
                   : <div onClick={()=>{setNovoEvento({...novoEvento,data:dataStr,horario:hr});setModalEvento(true);}} style={{flex:1,cursor:"pointer",borderRadius:8,margin:"4px 0"}} onMouseOver={e=>e.currentTarget.style.background="#f4f6f0"} onMouseOut={e=>e.currentTarget.style.background="transparent"}/>
                 }
@@ -1921,6 +1920,22 @@ const ABAS_SECUNDARIAS=[
     </div>
 
     <button onClick={salvarEvento} style={{width:"100%",padding:13,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:9,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif"}}>✓ Adicionar à agenda</button>
+  </div>
+</div>}
+{opcoesExclusao&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setOpcoesExclusao(null)}>
+  <div style={{background:"#fff",borderRadius:14,padding:24,width:"100%",maxWidth:380,boxShadow:"0 8px 40px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+      <h3 style={{margin:0,color:"#1a3a2a",fontSize:16,fontFamily:"Georgia,serif"}}>
+        {opcoesExclusao.tipo==="sessao"?opcoesExclusao.pacienteNome:opcoesExclusao.descricao}
+      </h3>
+      <button onClick={()=>setOpcoesExclusao(null)} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
+    </div>
+    <p style={{fontFamily:"sans-serif",fontSize:13,color:"#5a7a6a",marginBottom:16}}>{opcoesExclusao.data} às {opcoesExclusao.horario}</p>
+    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+      <button onClick={()=>abrirReagendamento(opcoesExclusao)} style={{padding:"11px 14px",borderRadius:8,border:"1.5px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:14,fontFamily:"sans-serif",fontWeight:600,textAlign:"left",color:"#1a4a8a"}}>📅 Reagendar</button>
+      <button onClick={()=>excluirApenasEsta(opcoesExclusao.id)} style={{padding:"11px 14px",borderRadius:8,border:"1.5px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:14,fontFamily:"sans-serif",fontWeight:600,textAlign:"left",color:"#c0392b"}}>🗑 Excluir sessão do dia</button>
+      {opcoesExclusao.grupoRecorrencia&&<button onClick={()=>excluirComRecorrencia(opcoesExclusao)} style={{padding:"11px 14px",borderRadius:8,border:"1.5px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:14,fontFamily:"sans-serif",fontWeight:600,textAlign:"left",color:"#c0392b"}}>🗑 Excluir sessão do dia e recorrência</button>}
+    </div>
   </div>
 </div>}
 {editandoEvento&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setEditandoEvento(null)}>
