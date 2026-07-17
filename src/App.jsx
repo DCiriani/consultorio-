@@ -314,12 +314,37 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional,dadosInicia
   );
 }
 // ── MODAL FICHA ───────────────────────────────────────────────────────────────
-function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,onClose}){
+function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,pacientes,setPacientes,onClose}){
   const [abaModal,setAbaModal]=useState("dados");
   const [filtroAno,setFiltroAno]=useState("todos");
   const [filtroMes,setFiltroMes]=useState("todos");
   const Row=({l,v})=>v?<div style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid #eef4ec",fontFamily:"sans-serif"}}><span style={{fontSize:11,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",width:110,flexShrink:0}}>{l}</span><span style={{fontSize:14,color:"#1a3a2a"}}>{v}</span></div>:null;
   const tits=titulares.filter(t=>t.pacienteId===p.id);
+  const pacienteAtual=pacientes.find(x=>x.id===p.id)||p;
+
+  async function atualizarTipoPagamento(novoTipo){
+    let dados={tipoPagamento:novoTipo};
+    if(novoTipo==="pacote4")dados.sessoesRestantes=4;
+    else if(novoTipo==="pacote8")dados.sessoesRestantes=8;
+    else dados.sessoesRestantes=null;
+    await updateItem("pac",p.id,dados);
+    setPacientes(pacientes.map(x=>x.id===p.id?{...x,...dados}:x));
+    showT("Plano de pagamento atualizado.");
+  }
+
+  async function ajustarSessoesRestantes(delta){
+    const atual=pacienteAtual.sessoesRestantes ?? 0;
+    const novo=Math.max(0,atual+delta);
+    await updateItem("pac",p.id,{sessoesRestantes:novo});
+    setPacientes(pacientes.map(x=>x.id===p.id?{...x,sessoesRestantes:novo}:x));
+  }
+
+  async function renovarPacote(){
+    const total=pacienteAtual.tipoPagamento==="pacote8"?8:4;
+    await updateItem("pac",p.id,{sessoesRestantes:total});
+    setPacientes(pacientes.map(x=>x.id===p.id?{...x,sessoesRestantes:total}:x));
+    showT("Pacote renovado!");
+  }
   const atendimentosPac=evolucoes.filter(ev=>ev.pacienteId===p.id).sort((a,b)=>(b.dataOrdenacao||"").localeCompare(a.dataOrdenacao||""));
   const hoje=new Date();
   const dataHojeStr=`${String(hoje.getDate()).padStart(2,"0")}/${String(hoje.getMonth()+1).padStart(2,"0")}/${hoje.getFullYear()}`;
@@ -456,6 +481,20 @@ async function salvarSugestaoAssistente(){
         {abaModal==="dados"&&<>
           <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",marginBottom:8}}>Dados pessoais</div>
           <Row l="CPF" v={p.cpf}/><Row l="Nascimento" v={p.nascimento}/><Row l="Telefone" v={p.tel1}/>
+          <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Plano de pagamento</div>
+          <select value={pacienteAtual.tipoPagamento||"avulso"} onChange={e=>atualizarTipoPagamento(e.target.value)} style={{...sel(false),marginBottom:8}}>
+            <option value="avulso">Avulso</option>
+            <option value="pacote4">Pacote de 4 sessões</option>
+            <option value="pacote8">Pacote de 8 sessões</option>
+          </select>
+          {(pacienteAtual.tipoPagamento==="pacote4"||pacienteAtual.tipoPagamento==="pacote8")&&
+            <div style={{display:"flex",alignItems:"center",gap:10,fontFamily:"sans-serif",fontSize:13,color:"#1a3a2a",marginBottom:4,flexWrap:"wrap"}}>
+              <span>Sessões restantes: <strong>{pacienteAtual.sessoesRestantes ?? 0}</strong></span>
+              <button onClick={()=>ajustarSessoesRestantes(-1)} style={{padding:"3px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:13}}>-1</button>
+              <button onClick={()=>ajustarSessoesRestantes(1)} style={{padding:"3px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:13}}>+1</button>
+              <button onClick={renovarPacote} style={{padding:"5px 12px",borderRadius:6,border:"none",background:"#2a7a4a",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:600}}>Renovar pacote</button>
+            </div>
+          }
           <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Contato de emergência</div>
           <Row l="Nome" v={p.emergNome}/><Row l="Parentesco" v={p.emergParentesco}/><Row l="Telefone" v={p.emergTel}/>
           <div style={{fontSize:11,fontWeight:700,color:"#2a5a3a",fontFamily:"sans-serif",textTransform:"uppercase",margin:"14px 0 8px"}}>Endereço</div>
@@ -1280,8 +1319,20 @@ async function salvarEvento(){
     const novoId=await addItem("evol",dadosEvol);
     setEvolucoes([...evolucoes,{id:novoId,...dadosEvol}]);
 
+    const statusQueConsome=["compareceu","falta_sem_justificativa","remarcacao_fora_prazo"];
+    let msgFinal="Status registrado e anotação criada na ficha!";
+    if(statusQueConsome.includes(status) && (paciente.tipoPagamento==="pacote4"||paciente.tipoPagamento==="pacote8")){
+      const atual=paciente.sessoesRestantes ?? 0;
+      const novo=Math.max(0,atual-1);
+      await updateItem("pac",paciente.id,{sessoesRestantes:novo});
+      setPacientes(pacientes.map(x=>x.id===paciente.id?{...x,sessoesRestantes:novo}:x));
+      msgFinal = novo===0
+        ? "Status registrado! ⚠️ Pacote esgotado — renove na ficha do paciente."
+        : `Status registrado! Restam ${novo} sessão(ões) no pacote.`;
+    }
+
     setEditandoEvento(null);
-    showT("Status registrado e anotação criada na ficha!");
+    showT(msgFinal);
   }
 const isMobile = window.innerWidth < 768;
   const titsPacSel=pacSel?titulares.filter(t=>t.pacienteId===pacSel.id):[];
@@ -1329,7 +1380,7 @@ const ABAS_SECUNDARIAS=[
   return(
     <div style={ROOT}>
       <Toast t={toast}/>
-{detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} evolucoes={evolucoes} setEvolucoes={setEvolucoes} showT={showT} onClose={()=>setDetalhe(null)}/>}      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
+{detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} evolucoes={evolucoes} setEvolucoes={setEvolucoes} showT={showT} pacientes={pacientes} setPacientes={setPacientes} onClose={()=>setDetalhe(null)}/>}      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
       {editandoReg&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setEditandoReg(null)}>
