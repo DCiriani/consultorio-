@@ -1310,10 +1310,17 @@ async function salvarEvento(){
 
     const [dd,mm,yyyy]=editandoEvento.data.split("/");
     const dataOrdenacao=(dd&&mm&&yyyy)?`${yyyy}-${mm}-${dd}`:"";
+    let infoPacote="";
+    if(paciente.tipoPagamento==="pacote4"||paciente.tipoPagamento==="pacote8"){
+      const totalPacote=paciente.tipoPagamento==="pacote8"?8:4;
+      const restanteAntes=paciente.sessoesRestantes ?? totalPacote;
+      const numeroSessao=totalPacote-restanteAntes+1;
+      infoPacote=` (Sessão ${numeroSessao}/${totalPacote} do pacote)`;
+    }
     const dadosEvol={
       pacienteId:paciente.id,
       data:editandoEvento.data,
-      texto:STATUS_TEXTO[status],
+      texto:STATUS_TEXTO[status]+infoPacote,
       dataOrdenacao
     };
     const novoId=await addItem("evol",dadosEvol);
