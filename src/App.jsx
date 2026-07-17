@@ -74,7 +74,31 @@ const PARENTESCOS = ["Mãe","Pai","Filho(a)","Cônjuge / Parceiro(a)","Irmão / 
 const OBRIG_PAC = ["nome","cpf","nascimento","tel1","emergNome","emergParentesco","emergTel","cep","logradouro","numero","bairro","cidade","estado"];
 const OBRIG_TIT = ["nome","cpf"];
 const VAZIO_PAC = {nome:"",cpf:"",nascimento:"",tel1:"",emergNome:"",emergParentesco:"",emergTel:"",cep:"",logradouro:"",numero:"",complemento:"",bairro:"",cidade:"",estado:"",profissional:""};
-
+function formatarTextoAnotacao(texto){
+  if(!texto)return null;
+  const partes=[];
+  const regex=/(\*\*(.+?)\*\*)|(__(.+?)__)|(==(.+?)==)/g;
+  let ultimoIndex=0;
+  let match;
+  let key=0;
+  while((match=regex.exec(texto))!==null){
+    if(match.index>ultimoIndex){
+      partes.push(texto.slice(ultimoIndex,match.index));
+    }
+    if(match[1]){
+      partes.push(<strong key={key++}>{match[2]}</strong>);
+    }else if(match[3]){
+      partes.push(<u key={key++}>{match[4]}</u>);
+    }else if(match[5]){
+      partes.push(<mark key={key++} style={{background:"#fff3a3",padding:"0 2px"}}>{match[6]}</mark>);
+    }
+    ultimoIndex=regex.lastIndex;
+  }
+  if(ultimoIndex<texto.length){
+    partes.push(texto.slice(ultimoIndex));
+  }
+  return partes;
+}
 function chipColor(p){
   if(p==="Pix")return{background:"#d4edda",color:"#155724"};
   if(p==="Dinheiro")return{background:"#fff3cd",color:"#856404"};
@@ -363,6 +387,23 @@ const detalheEv=atendimentosPac.find(ev=>ev.id===detalheAtendimentoId);
   const [gravando,setGravando]=useState(false);
 const recRef=useRef(null);
   const [textoEdit,setTextoEdit]=useState("");
+  const novoTextoEvRef=useRef(null);
+  const textoEditRef=useRef(null);
+
+  function aplicarFormatacao(ref, valor, setValor, marcador){
+    const ta=ref.current;
+    if(!ta)return;
+    const inicio=ta.selectionStart;
+    const fim=ta.selectionEnd;
+    if(inicio===fim)return;
+    const selecionado=valor.slice(inicio,fim);
+    const novoValor=valor.slice(0,inicio)+marcador+selecionado+marcador+valor.slice(fim);
+    setValor(novoValor);
+    setTimeout(()=>{
+      ta.focus();
+      ta.setSelectionRange(inicio+marcador.length, fim+marcador.length);
+    },0);
+  }
   const [dataEdit,setDataEdit]=useState("");
 
   async function salvarAtendimento(){
@@ -546,10 +587,16 @@ async function salvarSugestaoAssistente(){
               type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10}
               style={{width:110,padding:"8px 10px",borderRadius:7,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif",marginBottom:8}}
             />
+            <div style={{display:"flex",gap:6,marginBottom:6}}>
+              <button type="button" onClick={()=>aplicarFormatacao(novoTextoEvRef,novoTextoEv,setNovoTextoEv,"**")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>N</button>
+              <button type="button" onClick={()=>aplicarFormatacao(novoTextoEvRef,novoTextoEv,setNovoTextoEv,"__")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",textDecoration:"underline",fontSize:13}}>S</button>
+              <button type="button" onClick={()=>aplicarFormatacao(novoTextoEvRef,novoTextoEv,setNovoTextoEv,"==")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff3a3",cursor:"pointer",fontSize:13}}>Marcador</button>
+            </div>
             <textarea
+              ref={novoTextoEvRef}
               value={novoTextoEv}
               onChange={e=>setNovoTextoEv(e.target.value)}
-              placeholder="Escreva aqui as anotações desta sessão..."
+              placeholder="Escreva aqui as anotações desta sessão... (selecione um trecho e clique em N/S/Marcador para formatar)"
               rows={4}
               style={{width:"100%",padding:"10px 12px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",boxSizing:"border-box",resize:"vertical",marginBottom:8,display:"block"}}
             />
@@ -591,7 +638,13 @@ async function salvarSugestaoAssistente(){
                       type="text" inputMode="numeric" maxLength={10}
                       style={{width:110,padding:"7px 9px",borderRadius:6,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif",marginBottom:8}}
                     />
+                    <div style={{display:"flex",gap:6,marginBottom:6}}>
+                      <button type="button" onClick={()=>aplicarFormatacao(textoEditRef,textoEdit,setTextoEdit,"**")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontWeight:700,fontSize:12}}>N</button>
+                      <button type="button" onClick={()=>aplicarFormatacao(textoEditRef,textoEdit,setTextoEdit,"__")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",textDecoration:"underline",fontSize:12}}>S</button>
+                      <button type="button" onClick={()=>aplicarFormatacao(textoEditRef,textoEdit,setTextoEdit,"==")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff3a3",cursor:"pointer",fontSize:12}}>Marcador</button>
+                    </div>
                     <textarea
+                      ref={textoEditRef}
                       value={textoEdit}
                       onChange={e=>setTextoEdit(e.target.value)}
                       rows={4}
@@ -610,7 +663,7 @@ async function salvarSugestaoAssistente(){
                         <button onClick={()=>excluirAtendimento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>excluir</button>
                       </div>
                     </div>
-                    <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",whiteSpace:"pre-wrap",lineHeight:1.5}}>{ev.texto}</div>
+                    <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",whiteSpace:"pre-wrap",lineHeight:1.5}}>{formatarTextoAnotacao(ev.texto)}</div>
                   </div>
                 )
               ))}
@@ -656,7 +709,7 @@ async function salvarSugestaoAssistente(){
                 <button onClick={()=>{setDetalheAtendimentoId(null);setMostrarSugestao(false);}} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
               </div>
 
-              <div style={{fontFamily:"sans-serif",fontSize:14,color:"#1a3a2a",whiteSpace:"pre-wrap",lineHeight:1.6,marginBottom:18}}>{detalheEv.texto}</div>
+              <div style={{fontFamily:"sans-serif",fontSize:14,color:"#1a3a2a",whiteSpace:"pre-wrap",lineHeight:1.6,marginBottom:18}}>{formatarTextoAnotacao(detalheEv.texto)}</div>
 
               <button onClick={()=>setMostrarSugestao(v=>!v)} style={{padding:"9px 18px",background:"#1a4a8a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600,marginBottom:14}}>🧠 Sugestões</button>
 
