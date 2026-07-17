@@ -327,6 +327,7 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,paciente
     if(novoTipo==="pacote4")dados.sessoesRestantes=4;
     else if(novoTipo==="pacote8")dados.sessoesRestantes=8;
     else dados.sessoesRestantes=null;
+    if(novoTipo==="pacote4"||novoTipo==="pacote8")dados.avisarPacote=true;
     await updateItem("pac",p.id,dados);
     setPacientes(pacientes.map(x=>x.id===p.id?{...x,...dados}:x));
     showT("Plano de pagamento atualizado.");
@@ -341,8 +342,8 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,paciente
 
   async function renovarPacote(){
     const total=pacienteAtual.tipoPagamento==="pacote8"?8:4;
-    await updateItem("pac",p.id,{sessoesRestantes:total});
-    setPacientes(pacientes.map(x=>x.id===p.id?{...x,sessoesRestantes:total}:x));
+    await updateItem("pac",p.id,{sessoesRestantes:total,avisarPacote:true});
+    setPacientes(pacientes.map(x=>x.id===p.id?{...x,sessoesRestantes:total,avisarPacote:true}:x));
     showT("Pacote renovado!");
   }
   const atendimentosPac=evolucoes.filter(ev=>ev.pacienteId===p.id).sort((a,b)=>(b.dataOrdenacao||"").localeCompare(a.dataOrdenacao||""));
@@ -489,7 +490,7 @@ async function salvarSugestaoAssistente(){
           </select>
           {(pacienteAtual.tipoPagamento==="pacote4"||pacienteAtual.tipoPagamento==="pacote8")&&
             <div style={{display:"flex",alignItems:"center",gap:10,fontFamily:"sans-serif",fontSize:13,color:"#1a3a2a",marginBottom:4,flexWrap:"wrap"}}>
-              <span>Sessões restantes: <strong>{pacienteAtual.sessoesRestantes ?? 0}</strong></span>
+              <span style={{fontWeight:700}}>Sessões restantes: <strong style={{fontSize:15}}>{pacienteAtual.sessoesRestantes ?? 0}</strong></span>
               <button onClick={()=>ajustarSessoesRestantes(-1)} style={{padding:"3px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:13}}>-1</button>
               <button onClick={()=>ajustarSessoesRestantes(1)} style={{padding:"3px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:13}}>+1</button>
               <button onClick={renovarPacote} style={{padding:"5px 12px",borderRadius:6,border:"none",background:"#2a7a4a",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:600}}>Renovar pacote</button>
@@ -1204,6 +1205,11 @@ const [sugestoesEvento,setSugestoesEvento]=useState([]);
     await updateItem("pac",p.id,{inativo:false});
     setPacientes(pacientes.map(x=>x.id===p.id?{...x,inativo:false}:x));
     showT("Paciente reativado.");
+  }
+
+  async function marcarPacoteAvisado(p){
+    await updateItem("pac",p.id,{avisarPacote:false});
+    setPacientes(pacientes.map(x=>x.id===p.id?{...x,avisarPacote:false}:x));
   }
 
 async function salvarEvento(){
@@ -2046,7 +2052,7 @@ const ABAS_SECUNDARIAS=[
     gap:16
   }}>
     <div style={{background:"#fff", borderRadius:14, border:"1px solid #E3E0D8", padding:18}}>
-      <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Próximos atendimentos</h3>
+      <h3 style={{fontFamily:"sans-serif",fontSize:14,fontWeight:700,color:"#1C3D2E",margin:"0 0 14px"}}>Agenda do dia</h3>
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         {proximosAtendimentos.length===0 && (
           <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"20px 0",fontSize:13}}>Nenhum atendimento futuro agendado.</div>
@@ -2189,7 +2195,10 @@ const ABAS_SECUNDARIAS=[
       {pacientesBuscados.map(p=>(
         <div key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"#f7faf8",borderRadius:10,border:"1px solid #e0ede5",flexWrap:"wrap"}}>
           <div style={{flex:1,minWidth:160}}>
-            <div style={{fontWeight:700,fontSize:15,color:"#1a3a2a"}}>{p.nome}</div>
+            <div style={{fontWeight:700,fontSize:15,color:"#1a3a2a",display:"flex",alignItems:"center",gap:8}}>
+              {p.nome}
+              {p.avisarPacote&&<button onClick={()=>marcarPacoteAvisado(p)} title="Clique após avisar o paciente sobre o novo pacote" style={{background:"#fff3cd",border:"1px solid #ffe08a",borderRadius:20,padding:"2px 8px",cursor:"pointer",fontSize:11,fontWeight:600,color:"#856404",display:"inline-flex",alignItems:"center",gap:4}}>🔔 Avisar pacote</button>}
+            </div>
             <div style={{fontSize:13,color:"#5a7a6a",fontFamily:"sans-serif",marginTop:2}}>CPF: {p.cpf}{p.tel1&&` · ${p.tel1}`}{p.cidade&&` · ${p.cidade}`}</div>
           </div>
 
