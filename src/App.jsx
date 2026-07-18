@@ -404,43 +404,17 @@ const recRef=useRef(null);
       ta.setSelectionRange(inicio+marcador.length, fim+marcador.length);
     },0);
   }
-  function aplicarFormatacaoRica(ref, comando, setValor){
-    const el=ref.current;
-    if(!el)return;
-    el.focus();
-    if(comando==="marcador"){
-      document.execCommand("hiliteColor",false,"#fff3a3");
-    }else{
-      document.execCommand(comando,false,null);
-    }
-    setValor(el.innerHTML);
-  }
-
-  function tratarColagem(e, ref, setValor){
-    e.preventDefault();
-    const html=e.clipboardData.getData("text/html");
-    const texto=e.clipboardData.getData("text/plain");
-    if(html){
-      const limpo=limparHtmlColado(html);
-      document.execCommand("insertHTML",false,limpo);
-    }else{
-      document.execCommand("insertText",false,texto);
-    }
-    if(ref.current)setValor(ref.current.innerHTML);
-  }
   const [dataEdit,setDataEdit]=useState("");
 
   async function salvarAtendimento(){
-    const conteudoTexto=textoSimplesDeHtml(novoTextoEv).trim();
-    if(!conteudoTexto)return;
+    if(!novoTextoEv.trim())return;
     setSalvandoEv(true);
     const [dd,mm,yyyy]=novaDataEv.split("/");
     const dataOrdenacao=(dd&&mm&&yyyy)?`${yyyy}-${mm}-${dd}`:"";
-    const dados={pacienteId:p.id,data:novaDataEv,texto:novoTextoEv,dataOrdenacao};
+    const dados={pacienteId:p.id,data:novaDataEv,texto:novoTextoEv.trim(),dataOrdenacao};
     const novoId=await addItem("evol",dados);
     setEvolucoes([...evolucoes,{id:novoId,...dados}]);
     setNovoTextoEv("");
-    if(novoTextoEvRef.current)novoTextoEvRef.current.innerHTML="";
     setNovaDataEv(dataHojeStr);
     setSalvandoEv(false);
   }
@@ -475,7 +449,7 @@ const recRef=useRef(null);
     }else{
       selecionados=ordenadosAsc;
     }
-    return selecionados.map(ev=>`[${ev.data}]\n${ehHtml(ev.texto)?textoSimplesDeHtml(ev.texto):ev.texto}`).join("\n\n---\n\n");
+    return selecionados.map(ev=>`[${ev.data}]\n${ev.texto}`).join("\n\n---\n\n");
   }
 
   async function consultarAssistente(escopo){
@@ -613,66 +587,12 @@ async function salvarSugestaoAssistente(){
               type="text" inputMode="numeric" placeholder="DD/MM/AAAA" maxLength={10}
               style={{width:110,padding:"8px 10px",borderRadius:7,border:"1.5px solid #dbe8df",fontSize:13,fontFamily:"sans-serif",marginBottom:8}}
             />
-            <div style={{display:"flex",gap:6,marginBottom:6,flexWrap:"wrap"}}>
-              <button type="button" onClick={()=>aplicarFormatacaoRica(novoTextoEvRef,"bold",setNovoTextoEv)} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>N</button>
-              <button type="button" onClick={()=>aplicarFormatacaoRica(novoTextoEvRef,"underline",setNovoTextoEv)} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",textDecoration:"underline",fontSize:13}}>S</button>
-              <button type="button" onClick={()=>aplicarFormatacaoRica(novoTextoEvRef,"marcador",setNovoTextoEv)} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff3a3",cursor:"pointer",fontSize:13}}>Marcador</button>
-              <button type="button" onClick={()=>aplicarFormatacaoRica(novoTextoEvRef,"insertUnorderedList",setNovoTextoEv)} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:13}}>• Lista</button>
-              <button type="button" onClick={()=>aplicarFormatacaoRica(novoTextoEvRef,"removeFormat",setNovoTextoEv)} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontSize:13,color:"#8a8a85"}}>Limpar</button>
+            <div style={{display:"flex",gap:6,marginBottom:6}}>
+              <button type="button" onClick={()=>aplicarFormatacao(novoTextoEvRef,novoTextoEv,setNovoTextoEv,"**")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>N</button>
+              <button type="button" onClick={()=>aplicarFormatacao(novoTextoEvRef,novoTextoEv,setNovoTextoEv,"__")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff",cursor:"pointer",textDecoration:"underline",fontSize:13}}>S</button>
+              <button type="button" onClick={()=>aplicarFormatacao(novoTextoEvRef,novoTextoEv,setNovoTextoEv,"==")} style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c8ddd0",background:"#fff3a3",cursor:"pointer",fontSize:13}}>Marcador</button>
             </div>
-            <div
-              ref={novoTextoEvRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={e=>setNovoTextoEv(e.currentTarget.innerHTML)}
-              onPaste={e=>tratarColagem(e,novoTextoEvRef,setNovoTextoEv)}
-              data-placeholder="Escreva aqui as anotações desta sessão... (você pode colar do Google Docs mantendo a formatação)"
-              style={{width:"100%",minHeight:110,maxHeight:320,overflowY:"auto",padding:"10px 12px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",boxSizing:"border-box",marginBottom:8,lineHeight:1.5,outline:"none"}}
-            />
             <textarea
-            function limparHtmlColado(html){
-  if(!html)return "";
-  const doc=new DOMParser().parseFromString(html,"text/html");
-  const permitidas=["B","STRONG","I","EM","U","MARK","UL","OL","LI","P","BR","DIV","H1","H2","H3","H4","SPAN"];
-  function limpar(no){
-    const filhos=Array.from(no.childNodes);
-    filhos.forEach(filho=>{
-      if(filho.nodeType===1){
-        if(!permitidas.includes(filho.tagName)){
-          while(filho.firstChild)no.insertBefore(filho.firstChild,filho);
-          no.removeChild(filho);
-          return;
-        }
-        Array.from(filho.attributes).forEach(attr=>{
-          const nome=attr.name.toLowerCase();
-          const ehNegritoInline = nome==="style" && /font-weight\s*:\s*(bold|[6-9]00)/i.test(attr.value);
-          const ehSublinhadoInline = nome==="style" && /text-decoration[^;]*underline/i.test(attr.value);
-          if(ehNegritoInline||ehSublinhadoInline){
-            filho.setAttribute("style", (ehNegritoInline?"font-weight:700;":"")+(ehSublinhadoInline?"text-decoration:underline;":""));
-          }else{
-            filho.removeAttribute(attr.name);
-          }
-        });
-        limpar(filho);
-      }else if(filho.nodeType===8){
-        no.removeChild(filho);
-      }
-    });
-  }
-  limpar(doc.body);
-  return doc.body.innerHTML;
-}
-
-function textoSimplesDeHtml(html){
-  if(!html)return "";
-  const div=document.createElement("div");
-  div.innerHTML=html;
-  return div.textContent||"";
-}
-
-function ehHtml(texto){
-  return typeof texto==="string" && /<\/?[a-z][\s\S]*>/i.test(texto);
-}
               ref={novoTextoEvRef}
               value={novoTextoEv}
               onChange={e=>setNovoTextoEv(e.target.value)}
@@ -687,13 +607,7 @@ function ehHtml(texto){
                   setGravando(false);
                 }else{
                   const rec=criarReconhecimentoVoz(
-                    (texto)=>{
-                      const el=novoTextoEvRef.current;
-                      if(el){
-                        el.innerHTML = el.innerHTML ? (el.innerHTML+" "+texto) : texto;
-                        setNovoTextoEv(el.innerHTML);
-                      }
-                    },
+                    (texto)=>setNovoTextoEv(prev=>prev?(prev+" "+texto):texto),
                     (erro)=>showT(erro,"erro")
                   );
                   if(rec){recRef.current=rec;rec.start();setGravando(true);}
@@ -706,8 +620,8 @@ function ehHtml(texto){
             
             <button
               onClick={salvarAtendimento}
-              disabled={salvandoEv||!textoSimplesDeHtml(novoTextoEv).trim()}
-              style={{padding:"9px 18px",background:textoSimplesDeHtml(novoTextoEv).trim()?"#2a7a4a":"#cfe0d6",color:"#fff",border:"none",borderRadius:8,cursor:textoSimplesDeHtml(novoTextoEv).trim()?"pointer":"default",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}
+              disabled={salvandoEv||!novoTextoEv.trim()}
+              style={{padding:"9px 18px",background:novoTextoEv.trim()?"#2a7a4a":"#cfe0d6",color:"#fff",border:"none",borderRadius:8,cursor:novoTextoEv.trim()?"pointer":"default",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}
             >{salvandoEv?"Salvando...":"Adicionar atendimento"}</button>
             <button onClick={()=>{setModalAssistente(true);setRespostaAssistente("");setErroAssistente("");}} style={{marginLeft:8,padding:"9px 18px",background:"#1a4a8a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600}}>🧠 Assistente</button>
           </div>
@@ -749,10 +663,7 @@ function ehHtml(texto){
                         <button onClick={()=>excluirAtendimento(ev.id)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:12,fontFamily:"sans-serif"}}>excluir</button>
                       </div>
                     </div>
-                    {ehHtml(ev.texto)
-                      ? <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",lineHeight:1.5}} dangerouslySetInnerHTML={{__html:limparHtmlColado(ev.texto)}}/>
-                      : <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",whiteSpace:"pre-wrap",lineHeight:1.5}}>{formatarTextoAnotacao(ev.texto)}</div>
-                    }
+                    <div style={{fontSize:13,color:"#1a3a2a",fontFamily:"sans-serif",whiteSpace:"pre-wrap",lineHeight:1.5}}>{formatarTextoAnotacao(ev.texto)}</div>
                   </div>
                 )
               ))}
@@ -798,10 +709,7 @@ function ehHtml(texto){
                 <button onClick={()=>{setDetalheAtendimentoId(null);setMostrarSugestao(false);}} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#888"}}>✕</button>
               </div>
 
-              {ehHtml(detalheEv.texto)
-                ? <div style={{fontFamily:"sans-serif",fontSize:14,color:"#1a3a2a",lineHeight:1.6,marginBottom:18}} dangerouslySetInnerHTML={{__html:limparHtmlColado(detalheEv.texto)}}/>
-                : <div style={{fontFamily:"sans-serif",fontSize:14,color:"#1a3a2a",whiteSpace:"pre-wrap",lineHeight:1.6,marginBottom:18}}>{formatarTextoAnotacao(detalheEv.texto)}</div>
-              }
+              <div style={{fontFamily:"sans-serif",fontSize:14,color:"#1a3a2a",whiteSpace:"pre-wrap",lineHeight:1.6,marginBottom:18}}>{formatarTextoAnotacao(detalheEv.texto)}</div>
 
               <button onClick={()=>setMostrarSugestao(v=>!v)} style={{padding:"9px 18px",background:"#1a4a8a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600,marginBottom:14}}>🧠 Sugestões</button>
 
