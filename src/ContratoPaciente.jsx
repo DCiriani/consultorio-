@@ -9,6 +9,7 @@ export function PaginaContratoPaciente(){
   const [contrato,setContrato]=useState(null);
   const [nomeCompleto,setNomeCompleto]=useState("");
   const [cpf,setCpf]=useState("");
+  const [cidade,setCidade]=useState("");
   const [aceito,setAceito]=useState(false);
   const [enviando,setEnviando]=useState(false);
   const [concluido,setConcluido]=useState(false);
@@ -18,6 +19,7 @@ export function PaginaContratoPaciente(){
   const desenhandoRef=useRef(false);
 
   const token = new URLSearchParams(window.location.search).get("token");
+  const dataHoje = new Date().toLocaleDateString("pt-BR");
 
   useEffect(()=>{
     if(!token){ setErro("Link inválido."); setCarregando(false); return; }
@@ -93,6 +95,7 @@ export function PaginaContratoPaciente(){
   async function enviarAssinatura(){
     if(!nomeCompleto.trim()){ alert("Informe seu nome completo."); return; }
     if(cpf.replace(/\D/g,"").length!==11){ alert("Informe um CPF válido."); return; }
+    if(!cidade.trim()){ alert("Informe a cidade."); return; }
     if(!temAssinatura){ alert("Assine no campo indicado."); return; }
     if(!aceito){ alert("Marque a declaração de ciência e aceite."); return; }
 
@@ -102,7 +105,7 @@ export function PaginaContratoPaciente(){
       const resp=await fetch("/api/contrato-assinar",{
         method:"POST",
         headers:{"content-type":"application/json"},
-        body:JSON.stringify({token,nomeCompleto,cpf,assinaturaBase64})
+        body:JSON.stringify({token,nomeCompleto,cpf,cidade,assinaturaBase64})
       });
       const data=await resp.json();
       if(!resp.ok||data.erro){ alert(data.erro||"Não foi possível registrar a assinatura."); }
@@ -115,6 +118,8 @@ export function PaginaContratoPaciente(){
 
   const FUNDO={minHeight:"100vh",background:"#f4f6f0",padding:"24px 16px",boxSizing:"border-box",fontFamily:"sans-serif"};
   const CAIXA={background:"#fff",borderRadius:14,padding:"28px 24px",maxWidth:720,margin:"0 auto",border:"1px solid #deeade",boxSizing:"border-box"};
+  const LB={display:"block",fontSize:12,fontWeight:700,color:"#4a6a5a",marginBottom:5,textTransform:"uppercase",letterSpacing:"0.04em"};
+  const IN={width:"100%",padding:"11px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a",outline:"none"};
 
   if(carregando) return <div style={{...FUNDO,display:"flex",alignItems:"center",justifyContent:"center",color:"#4a6a5a"}}>Carregando contrato...</div>;
 
@@ -157,15 +162,23 @@ export function PaginaContratoPaciente(){
         }} dangerouslySetInnerHTML={{__html: contrato?.textoContrato || ""}}/>
 
         <div style={{marginBottom:14}}>
-          <label style={{display:"block",fontSize:12,fontWeight:700,color:"#4a6a5a",marginBottom:5,textTransform:"uppercase",letterSpacing:"0.04em"}}>Nome completo</label>
-          <input value={nomeCompleto} onChange={e=>setNomeCompleto(e.target.value)} placeholder="Seu nome completo"
-            style={{width:"100%",padding:"11px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a",outline:"none"}}/>
+          <label style={LB}>Nome completo</label>
+          <input value={nomeCompleto} onChange={e=>setNomeCompleto(e.target.value)} placeholder="Seu nome completo" style={IN}/>
         </div>
 
-        <div style={{marginBottom:18}}>
-          <label style={{display:"block",fontSize:12,fontWeight:700,color:"#4a6a5a",marginBottom:5,textTransform:"uppercase",letterSpacing:"0.04em"}}>CPF</label>
-          <input value={cpf} onChange={e=>setCpf(fCPFc(e.target.value))} placeholder="000.000.000-00" inputMode="numeric"
-            style={{width:"100%",padding:"11px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a",outline:"none"}}/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"14px",marginBottom:14}}>
+          <div>
+            <label style={LB}>CPF</label>
+            <input value={cpf} onChange={e=>setCpf(fCPFc(e.target.value))} placeholder="000.000.000-00" inputMode="numeric" style={IN}/>
+          </div>
+          <div>
+            <label style={LB}>Cidade</label>
+            <input value={cidade} onChange={e=>setCidade(e.target.value)} placeholder="Sua cidade" style={IN}/>
+          </div>
+        </div>
+
+        <div style={{marginBottom:18,fontSize:13,color:"#5a7a6a"}}>
+          Data: <strong style={{color:"#1a3a2a"}}>{dataHoje}</strong>
         </div>
 
         <div style={{marginBottom:18}}>

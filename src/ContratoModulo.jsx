@@ -6,6 +6,7 @@ const CX={background:"#fff",borderRadius:10,padding:16,border:"1px solid #e0ede5
 const BTN={padding:"9px 18px",background:"#2a7a4a",color:"#fff",border:"none",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",fontWeight:600};
 const BTN_SEC={padding:"9px 18px",background:"#fff",color:"#4a6a5a",border:"1.5px solid #c8ddd0",borderRadius:8,cursor:"pointer",fontSize:13,fontFamily:"sans-serif"};
 const LB={display:"block",fontSize:11,fontWeight:700,color:"#4a6a5a",marginBottom:5,fontFamily:"sans-serif",textTransform:"uppercase",letterSpacing:"0.04em"};
+const MINI={background:"none",border:"none",cursor:"pointer",fontSize:12,fontFamily:"sans-serif",padding:0};
 
 function limparHtmlContrato(html){
   if(!html)return "";
@@ -80,6 +81,7 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
   const [assinaturaPsicologo,setAssinaturaPsicologo]=useState("");
   const [salvandoModelo,setSalvandoModelo]=useState(false);
   const [detalhe,setDetalhe]=useState(null);
+  const [mostrarArquivados,setMostrarArquivados]=useState(false);
   const editorRef=useRef(null);
   const inputImgRef=useRef(null);
 
@@ -96,6 +98,31 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
   }
 
   useEffect(()=>{ carregarContratos(); },[pacienteId]);
+
+  async function gerenciar(token, acao){
+    if(acao==="excluir"){
+      const ok=window.confirm(
+        "Excluir definitivamente este contrato?\n\n" +
+        "Todos os dados de assinatura e as evidências (data, IP, integridade) serão apagados e não poderão ser recuperados.\n\n" +
+        "Se quiser apenas tirar da lista, use Arquivar."
+      );
+      if(!ok)return;
+    }
+    try{
+      const resp=await fetch("/api/contrato-gerenciar",{
+        method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({token,acao})
+      });
+      const data=await resp.json();
+      if(!resp.ok||data.erro){ showT(data.erro||"Não foi possível concluir a ação.","erro"); return; }
+      showT(acao==="excluir"?"Contrato excluído.":acao==="arquivar"?"Contrato arquivado.":"Contrato restaurado.");
+      setDetalhe(null);
+      await carregarContratos();
+    }catch{
+      showT("Erro de conexão.","erro");
+    }
+  }
 
   async function abrirEdicaoModelo(){
     try{
@@ -269,6 +296,7 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
           <div style={{fontSize:13,fontFamily:"sans-serif",color:"#1a3a2a",lineHeight:1.8}}>
             <div><strong>Assinado por:</strong> {detalhe.assinatura?.nomeCompleto}</div>
             <div><strong>CPF informado:</strong> {detalhe.assinatura?.cpf}</div>
+            {detalhe.assinatura?.cidade&&<div><strong>Cidade:</strong> {detalhe.assinatura.cidade}</div>}
             <div><strong>Data e hora:</strong> {detalhe.assinadoEm ? new Date(detalhe.assinadoEm).toLocaleString("pt-BR") : "—"}</div>
             <div><strong>IP de origem:</strong> {detalhe.evidencias?.ip||"—"}</div>
             <div><strong>Integridade do texto:</strong> {detalhe.evidencias?.hashConfere ? "✅ confere" : "⚠️ divergente"}</div>
@@ -289,6 +317,7 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
             }
             <div style={{borderTop:"1px solid #8aaa9a",paddingTop:6,fontSize:12,color:"#4a6a5a",fontFamily:"sans-serif"}}>
               {detalhe.assinatura?.nomeCompleto||"Pessoa atendida"}
+              {detalhe.assinatura?.cidade&&<><br/>{detalhe.assinatura.cidade}, {detalhe.assinadoEm ? new Date(detalhe.assinadoEm).toLocaleDateString("pt-BR") : ""}</>}
             </div>
           </div>
           <div style={{textAlign:"center",flex:"1 1 200px",minWidth:180}}>
@@ -302,15 +331,25 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
           </div>
         </div>
 
-        <div style={{fontSize:11,color:"#8aaa9a",fontFamily:"sans-serif",lineHeight:1.5}}>
+        <div style={{fontSize:11,color:"#8aaa9a",fontFamily:"sans-serif",lineHeight:1.5,marginBottom:14}}>
           Código de verificação (SHA-256): {detalhe.hashContrato}
+        </div>
+
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",borderTop:"1px solid #eef4ec",paddingTop:14}}>
+          {detalhe.arquivado
+            ? <button onClick={()=>gerenciar(detalhe.token,"desarquivar")} style={BTN_SEC}>↩ Desarquivar</button>
+            : <button onClick={()=>gerenciar(detalhe.token,"arquivar")} style={BTN_SEC}>📦 Arquivar</button>
+          }
+          <button onClick={()=>gerenciar(detalhe.token,"excluir")} style={{...BTN_SEC,color:"#c0392b",borderColor:"#f5c6cb"}}>🗑 Excluir definitivamente</button>
         </div>
       </div>
     );
   }
 
-  const assinados=contratos.filter(c=>c.status==="assinado");
-  const pendentes=contratos.filter(c=>c.status!=="assinado");
+  const ativos=contratos.filter(c=>!c.arquivado);
+  const arquivados=contratos.filter(c=>c.arquivado);
+  const assinados=ativos.filter(c=>c.status==="assinado");
+  const pendentes=ativos.filter(c=>c.status!=="assinado");
 
   return (
     <div>
@@ -370,14 +409,41 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
                   navigator.clipboard.writeText(url);
                   showT("Link copiado!");
                 }} style={BTN_SEC}>Copiar link</button>
+                <button onClick={()=>gerenciar(c.token,"excluir")} style={{...MINI,color:"#c0392b"}}>excluir</button>
               </div>
             ))}
           </>}
 
-          {contratos.length===0&&
+          {ativos.length===0&&arquivados.length===0&&
             <div style={{textAlign:"center",color:"#8aaa9a",fontFamily:"sans-serif",padding:"20px 0",fontSize:13,lineHeight:1.6}}>
               Nenhum contrato gerado para este paciente.<br/>
               Clique em "Gerar link de assinatura" para começar.
+            </div>
+          }
+
+          {arquivados.length>0&&
+            <div style={{marginTop:18,borderTop:"1px solid #eef4ec",paddingTop:14}}>
+              <button onClick={()=>setMostrarArquivados(v=>!v)} style={{...MINI,color:"#5a7a6a",fontWeight:600}}>
+                {mostrarArquivados?"▾":"▸"} Arquivados ({arquivados.length})
+              </button>
+              {mostrarArquivados&&
+                <div style={{marginTop:10}}>
+                  {arquivados.map(c=>(
+                    <div key={c.id} style={{...CX,background:"#f5f5f3",border:"1px solid #e5e3df",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",opacity:0.85}}>
+                      <div style={{flex:1,minWidth:160}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#5a5a5a",fontFamily:"sans-serif"}}>
+                          📦 {c.assinatura?.nomeCompleto||"Sem assinatura"}
+                        </div>
+                        <div style={{fontSize:12,color:"#8a8a8a",fontFamily:"sans-serif",marginTop:2}}>
+                          {c.assinadoEm ? new Date(c.assinadoEm).toLocaleString("pt-BR") : "Não assinado"}
+                        </div>
+                      </div>
+                      <button onClick={()=>setDetalhe(c)} style={BTN_SEC}>Ver</button>
+                      <button onClick={()=>gerenciar(c.token,"desarquivar")} style={{...MINI,color:"#2a7a4a"}}>desarquivar</button>
+                    </div>
+                  ))}
+                </div>
+              }
             </div>
           }
         </>

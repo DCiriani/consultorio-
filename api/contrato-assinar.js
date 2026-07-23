@@ -21,11 +21,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { token, nomeCompleto, cpf, assinaturaBase64 } = req.body;
+    const { token, nomeCompleto, cpf, cidade, assinaturaBase64 } = req.body;
 
     if (!token) return res.status(400).json({ erro: "Link inválido." });
     if (!nomeCompleto || !nomeCompleto.trim()) return res.status(400).json({ erro: "Informe o nome completo." });
     if (!cpf || cpf.replace(/\D/g,"").length !== 11) return res.status(400).json({ erro: "Informe um CPF válido." });
+    if (!cidade || !cidade.trim()) return res.status(400).json({ erro: "Informe a cidade." });
     if (!assinaturaBase64) return res.status(400).json({ erro: "Assine no campo indicado." });
 
     const db = getDb();
@@ -42,7 +43,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ erro: "Este contrato já foi assinado." });
     }
 
-    // Evidências
     const ip =
       (req.headers["x-forwarded-for"] || "").toString().split(",")[0].trim() ||
       req.socket?.remoteAddress ||
@@ -50,7 +50,6 @@ export default async function handler(req, res) {
     const userAgent = req.headers["user-agent"] || "desconhecido";
     const agora = new Date().toISOString();
 
-    // Reconfirma a integridade do texto que foi assinado
     const hashConfirmado = crypto
       .createHash("sha256")
       .update(contrato.textoContrato || "")
@@ -70,6 +69,7 @@ export default async function handler(req, res) {
       assinatura: {
         nomeCompleto: nomeCompleto.trim(),
         cpf: cpf.replace(/\D/g, ""),
+        cidade: cidade.trim(),
         imagemBase64: assinaturaBase64,
       },
       evidencias,
