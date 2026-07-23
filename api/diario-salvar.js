@@ -37,16 +37,7 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
 
-// Aumenta o limite de payload (áudio em base64 pesa ~33% a mais que o binário)
-module.exports.config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "6mb",
-    },
-  },
-};
-
-module.exports = async (req, res) => {
+const handler = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -133,3 +124,17 @@ module.exports = async (req, res) => {
     return res.status(500).json({ erro: "Erro interno ao salvar" });
   }
 };
+
+// Aumenta o limite de payload (áudio em base64 pesa ~33% a mais que o binário).
+// O config precisa ser anexado DEPOIS do handler, senão o module.exports
+// seguinte sobrescreveria ele.
+handler.config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "6mb",
+    },
+  },
+};
+
+module.exports = handler;
+module.exports.config = handler.config;
