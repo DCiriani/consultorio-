@@ -44,6 +44,37 @@ async function acaoToken(req, res) {
 }
 
 // ---------------------------------------------------------------------------
+//  AÇÃO: manifest — gera um manifest.json próprio pro paciente, com o
+//  start_url já apontando pro link dele (o manifest geral do app aponta
+//  pra "/", que cairia no login do psicólogo — não serve aqui)
+// ---------------------------------------------------------------------------
+async function acaoManifest(req, res) {
+  const { token } = req.query;
+  if (!token) return res.status(400).json({ erro: "Token ausente" });
+
+  const doc = await db.collection("diarioTokens").doc(String(token)).get();
+  const nome = doc.exists ? doc.data().pacienteNome || "Paciente" : "Paciente";
+
+  const manifest = {
+    name: `Diário — ${nome}`,
+    short_name: "Diário",
+    description: "Seu espaço pessoal de anotações do Espaço Ciriani",
+    start_url: `/diario?token=${encodeURIComponent(token)}`,
+    scope: "/diario",
+    display: "standalone",
+    background_color: "#f4f6f0",
+    theme_color: "#1C3D2E",
+    icons: [
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  };
+
+  res.setHeader("Content-Type", "application/manifest+json");
+  return res.status(200).json(manifest);
+}
+
+// ---------------------------------------------------------------------------
 //  AÇÃO: listar — histórico completo do próprio paciente
 // ---------------------------------------------------------------------------
 async function acaoListar(req, res) {
@@ -179,6 +210,7 @@ const handler = async (req, res) => {
   try {
     if (req.method === "GET" && acao === "token") return await acaoToken(req, res);
     if (req.method === "GET" && acao === "listar") return await acaoListar(req, res);
+    if (req.method === "GET" && acao === "manifest") return await acaoManifest(req, res);
     if (req.method === "POST" && acao === "salvar") return await acaoSalvar(req, res);
 
     return res.status(400).json({ erro: "Ação inválida" });

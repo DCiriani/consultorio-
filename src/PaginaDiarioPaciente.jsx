@@ -84,7 +84,20 @@ export function PaginaDiarioPaciente() {
         if (!r.ok) throw new Error();
         return r.json();
       })
-      .then((data) => setPaciente(data))
+      .then((data) => {
+        setPaciente(data);
+        // título da aba, em vez de "Espaço Ciriani — Cadastro"
+        document.title = `Diário — ${data.pacienteNome}`;
+        // manifest próprio do paciente: o manifest.json geral do app
+        // aponta start_url pra "/", que cairia no login do psicólogo
+        let linkManifest = document.querySelector('link[rel="manifest"]');
+        if (!linkManifest) {
+          linkManifest = document.createElement("link");
+          linkManifest.rel = "manifest";
+          document.head.appendChild(linkManifest);
+        }
+        linkManifest.href = `/api/diario?acao=manifest&token=${encodeURIComponent(token)}`;
+      })
       .catch(() => setErroToken("Este link não é válido ou expirou. Fale com seu psicólogo."))
       .finally(() => setCarregando(false));
   }, [token]);
