@@ -28,7 +28,6 @@ export default async function handler(req, res) {
 
     const db = getDb();
 
-    // Busca o modelo de contrato vigente
     const modeloSnap = await db.collection("configuracoes").doc("modeloContrato").get();
     if (!modeloSnap.exists) {
       return res.status(400).json({ erro: "Nenhum modelo de contrato cadastrado. Configure o modelo antes de gerar links." });
@@ -39,12 +38,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ erro: "O modelo de contrato está vazio." });
     }
 
-    // Impressão digital do texto (para provar integridade depois)
     const hashContrato = crypto.createHash("sha256").update(textoContrato).digest("hex");
-
-    // Token longo e aleatório
     const token = crypto.randomBytes(32).toString("hex");
-
     const agora = new Date().toISOString();
 
     await db.collection("contratos").doc(token).set({
@@ -52,6 +47,7 @@ export default async function handler(req, res) {
       pacienteId,
       pacienteNome: pacienteNome || "",
       textoContrato,
+      assinaturaPsicologo: modelo.assinaturaPsicologo || "",
       hashContrato,
       versaoModelo: modelo.versao || 1,
       status: "pendente",

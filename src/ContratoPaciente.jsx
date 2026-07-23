@@ -170,7 +170,7 @@ export function PaginaContratoPaciente(){
 
         <div style={{marginBottom:18}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-            <label style={{fontSize:12,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",letterSpacing:"0.04em"}}>Assinatura</label>
+            <label style={{fontSize:12,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",letterSpacing:"0.04em"}}>Sua assinatura</label>
             <button type="button" onClick={limparAssinatura} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:12,padding:0}}>limpar</button>
           </div>
           <canvas
@@ -181,6 +181,15 @@ export function PaginaContratoPaciente(){
           />
           <p style={{fontSize:12,color:"#8aaa9a",margin:"6px 0 0"}}>Assine com o dedo (celular) ou com o mouse.</p>
         </div>
+
+        {contrato?.assinaturaPsicologo&&
+          <div style={{marginBottom:20,paddingTop:16,borderTop:"1px solid #eef4ec",textAlign:"center"}}>
+            <img src={contrato.assinaturaPsicologo} alt="Assinatura do psicólogo" style={{maxWidth:240,maxHeight:80,display:"block",margin:"0 auto 4px"}}/>
+            <div style={{borderTop:"1px solid #8aaa9a",display:"inline-block",paddingTop:6,fontSize:12,color:"#4a6a5a",minWidth:220}}>
+              Diego Ciriani - Psicólogo<br/>CRP 04/44668
+            </div>
+          </div>
+        }
 
         <label style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:20,cursor:"pointer",fontSize:13,color:"#1a3a2a",lineHeight:1.55}}>
           <input type="checkbox" checked={aceito} onChange={e=>setAceito(e.target.checked)} style={{accentColor:"#2a7a4a",marginTop:3,flexShrink:0,width:16,height:16}}/>

@@ -37,6 +37,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       pacienteNome: c.pacienteNome || "",
       textoContrato: c.textoContrato || "",
+      assinaturaPsicologo: c.assinaturaPsicologo || "",
       status: c.status || "pendente",
       assinadoEm: c.assinadoEm || null,
       nomeAssinante: c.assinatura?.nomeCompleto || null,

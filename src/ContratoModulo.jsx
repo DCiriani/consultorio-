@@ -46,6 +46,30 @@ function textoPuro(html){
   return d.textContent||"";
 }
 
+function redimensionarImagem(file, larguraMax=520){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const escala=Math.min(1, larguraMax/img.width);
+        const canvas=document.createElement("canvas");
+        canvas.width=Math.round(img.width*escala);
+        canvas.height=Math.round(img.height*escala);
+        const ctx=canvas.getContext("2d");
+        ctx.fillStyle="#fff";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror=reject;
+      img.src=reader.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function AbaContrato({pacienteId,pacienteNome,showT}){
   const [contratos,setContratos]=useState([]);
   const [carregando,setCarregando]=useState(true);
@@ -53,9 +77,11 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
   const [linkGerado,setLinkGerado]=useState("");
   const [modoEdicao,setModoEdicao]=useState(false);
   const [modeloTexto,setModeloTexto]=useState("");
+  const [assinaturaPsicologo,setAssinaturaPsicologo]=useState("");
   const [salvandoModelo,setSalvandoModelo]=useState(false);
   const [detalhe,setDetalhe]=useState(null);
   const editorRef=useRef(null);
+  const inputImgRef=useRef(null);
 
   async function carregarContratos(){
     setCarregando(true);
@@ -74,13 +100,30 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
   async function abrirEdicaoModelo(){
     try{
       const snap=await getDoc(doc(db,"configuracoes","modeloContrato"));
-      const texto=snap.exists()?(snap.data().texto||""):"";
+      const dados=snap.exists()?snap.data():{};
+      const texto=dados.texto||"";
       setModeloTexto(texto);
+      setAssinaturaPsicologo(dados.assinaturaPsicologo||"");
       setModoEdicao(true);
       setTimeout(()=>{ if(editorRef.current)editorRef.current.innerHTML=texto; },0);
     }catch(e){
       showT("Não foi possível carregar o modelo.","erro");
     }
+  }
+
+  async function escolherImagem(e){
+    const file=e.target.files?.[0];
+    if(!file)return;
+    if(!file.type.startsWith("image/")){ showT("Escolha um arquivo de imagem.","erro"); return; }
+    try{
+      const base64=await redimensionarImagem(file);
+      if(base64.length>700000){ showT("Imagem muito grande. Recorte a assinatura e tente de novo.","erro"); return; }
+      setAssinaturaPsicologo(base64);
+      showT("Assinatura carregada. Salve o modelo para aplicar.");
+    }catch{
+      showT("Não foi possível ler a imagem.","erro");
+    }
+    e.target.value="";
   }
 
   async function salvarModelo(){
@@ -90,7 +133,12 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
       const ref=doc(db,"configuracoes","modeloContrato");
       const atual=await getDoc(ref);
       const versao=atual.exists()?((atual.data().versao||1)+1):1;
-      await setDoc(ref,{texto:modeloTexto,versao,atualizadoEm:new Date().toISOString()});
+      await setDoc(ref,{
+        texto:modeloTexto,
+        assinaturaPsicologo:assinaturaPsicologo||"",
+        versao,
+        atualizadoEm:new Date().toISOString()
+      });
       showT("Modelo de contrato salvo!");
       setModoEdicao(false);
     }catch(e){
@@ -179,8 +227,28 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
           suppressContentEditableWarning
           onInput={e=>setModeloTexto(e.currentTarget.innerHTML)}
           onPaste={colar}
-          style={{width:"100%",minHeight:300,maxHeight:460,overflowY:"auto",padding:"12px 14px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",boxSizing:"border-box",marginBottom:12,lineHeight:1.6,outline:"none",background:"#fafdfa"}}
+          style={{width:"100%",minHeight:280,maxHeight:420,overflowY:"auto",padding:"12px 14px",borderRadius:8,border:"1.5px solid #dbe8df",fontSize:14,fontFamily:"sans-serif",boxSizing:"border-box",marginBottom:16,lineHeight:1.6,outline:"none",background:"#fafdfa"}}
         />
+
+        <div style={CX}>
+          <div style={LB}>Sua assinatura (aparece no rodapé de todo contrato)</div>
+          {assinaturaPsicologo
+            ? <div>
+                <img src={assinaturaPsicologo} alt="Assinatura do psicólogo" style={{maxWidth:"100%",maxHeight:120,border:"1px solid #e0ede5",borderRadius:8,background:"#fff",display:"block",marginBottom:8}}/>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                  <button onClick={()=>inputImgRef.current?.click()} style={BTN_SEC}>Trocar imagem</button>
+                  <button onClick={()=>setAssinaturaPsicologo("")} style={{...BTN_SEC,color:"#c0392b",borderColor:"#f5c6cb"}}>Remover</button>
+                </div>
+              </div>
+            : <div>
+                <button onClick={()=>inputImgRef.current?.click()} style={BTN_SEC}>📷 Escolher imagem da assinatura</button>
+                <p style={{fontSize:11,color:"#8aaa9a",fontFamily:"sans-serif",margin:"8px 0 0",lineHeight:1.5}}>
+                  Use uma foto da assinatura em fundo claro, recortada rente. A imagem é reduzida automaticamente.
+                </p>
+              </div>
+          }
+          <input ref={inputImgRef} type="file" accept="image/*" onChange={escolherImagem} style={{display:"none"}}/>
+        </div>
 
         <button onClick={salvarModelo} disabled={salvandoModelo} style={{...BTN,width:"100%",padding:12,fontSize:15,opacity:salvandoModelo?0.7:1}}>
           {salvandoModelo?"Salvando...":"✓ Salvar modelo"}
@@ -207,17 +275,31 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
           </div>
         </div>
 
-        {detalhe.assinatura?.imagemBase64&&
-          <div style={CX}>
-            <div style={LB}>Assinatura</div>
-            <img src={detalhe.assinatura.imagemBase64} alt="Assinatura" style={{maxWidth:"100%",border:"1px solid #e0ede5",borderRadius:8,background:"#fff"}}/>
-          </div>
-        }
-
         <div style={CX}>
           <div style={LB}>Texto assinado</div>
-          <div style={{maxHeight:360,overflowY:"auto",fontSize:13,fontFamily:"sans-serif",lineHeight:1.6,color:"#1a3a2a"}}
+          <div style={{maxHeight:340,overflowY:"auto",fontSize:13,fontFamily:"sans-serif",lineHeight:1.6,color:"#1a3a2a"}}
             dangerouslySetInnerHTML={{__html:limparHtmlContrato(detalhe.textoContrato||"")}}/>
+        </div>
+
+        <div style={{...CX,display:"flex",gap:20,flexWrap:"wrap",justifyContent:"space-around",alignItems:"flex-end"}}>
+          <div style={{textAlign:"center",flex:"1 1 200px",minWidth:180}}>
+            {detalhe.assinatura?.imagemBase64
+              ? <img src={detalhe.assinatura.imagemBase64} alt="Assinatura do paciente" style={{maxWidth:"100%",maxHeight:90,display:"block",margin:"0 auto 4px"}}/>
+              : <div style={{height:90}}/>
+            }
+            <div style={{borderTop:"1px solid #8aaa9a",paddingTop:6,fontSize:12,color:"#4a6a5a",fontFamily:"sans-serif"}}>
+              {detalhe.assinatura?.nomeCompleto||"Pessoa atendida"}
+            </div>
+          </div>
+          <div style={{textAlign:"center",flex:"1 1 200px",minWidth:180}}>
+            {detalhe.assinaturaPsicologo
+              ? <img src={detalhe.assinaturaPsicologo} alt="Assinatura do psicólogo" style={{maxWidth:"100%",maxHeight:90,display:"block",margin:"0 auto 4px"}}/>
+              : <div style={{height:90}}/>
+            }
+            <div style={{borderTop:"1px solid #8aaa9a",paddingTop:6,fontSize:12,color:"#4a6a5a",fontFamily:"sans-serif"}}>
+              Diego Ciriani - Psicólogo<br/>CRP 04/44668
+            </div>
+          </div>
         </div>
 
         <div style={{fontSize:11,color:"#8aaa9a",fontFamily:"sans-serif",lineHeight:1.5}}>
