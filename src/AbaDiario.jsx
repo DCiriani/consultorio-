@@ -24,7 +24,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import { db } from "./firebase"; // ajuste o caminho conforme o teu projeto
+import { db } from "./firebase";
 
 function gerarTokenAleatorio() {
   // token simples e único o bastante pra link de paciente (não é segredo
@@ -76,8 +76,11 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
   };
 
   // ---- carrega as anotações visíveis pro terapeuta ---------------------
+  const [erroCarregar, setErroCarregar] = useState(null);
+
   const carregar = useCallback(async () => {
     setCarregando(true);
+    setErroCarregar(null);
     try {
       const q = query(
         collection(db, "diarios"),
@@ -105,10 +108,14 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
           })
       );
       setAudioUrls(urls);
+    } catch (e) {
+      console.error("Erro ao carregar diário:", e);
+      setErroCarregar(e.message || "Erro ao carregar anotações.");
     } finally {
       setCarregando(false);
     }
   }, [pacienteId]);
+
 
   useEffect(() => {
     carregar();
@@ -145,7 +152,17 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
 
       {carregando && <p>Carregando anotações...</p>}
 
-      {!carregando && registros.length === 0 && (
+      {!carregando && erroCarregar && (
+        <p style={{ color: "#B3261E" }}>
+          Não consegui carregar: {erroCarregar}
+          <br />
+          <span style={{ fontSize: 12 }}>
+            (confere o console do navegador — F12 — se for erro de índice do Firestore)
+          </span>
+        </p>
+      )}
+
+      {!carregando && !erroCarregar && registros.length === 0 && (
         <p style={{ color: "#888" }}>Nenhuma anotação visível ainda.</p>
       )}
 
