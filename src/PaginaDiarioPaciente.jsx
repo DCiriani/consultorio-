@@ -2,29 +2,77 @@
 //  PaginaDiarioPaciente.jsx
 //  Espaço Ciriani | Diário do Paciente — página pública (rota /diario)
 // ----------------------------------------------------------------------------
-//  Uso: adiciona no teu roteador (App.jsx ou main.jsx):
+//  Uso: adiciona no teu roteador (App.jsx):
 //
 //    <Route path="/diario" element={<PaginaDiarioPaciente />} />
+//    (fora do bloqueio de autenticação, igual a rota /cadastro)
 //
-//  Essa rota precisa estar FORA do bloqueio de autenticação, igual a rota
-//  /cadastro já está hoje. O paciente acessa via link salvo na tela do
-//  celular: https://SEUDOMINIO/diario?token=XXXX
-//
-//  Não usa Firestore/Storage direto — tudo passa pelas 3 functions em api/,
-//  então não precisa de nenhuma config de Firebase client aqui.
+//  O paciente acessa via link permanente: https://SEUDOMINIO/diario?token=XXXX
+//  Tudo passa pelas ações de api/diario.js — não usa Firestore/Storage direto.
 // ============================================================================
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const LIMITE_AUDIO_MS = 3 * 60 * 1000; // 3 minutos
 
+const FORMATOS_ORIENTACAO = [
+  { id: "texto", emoji: "💬", titulo: "Resposta por texto", preco: "R$ 30,00" },
+  { id: "audio", emoji: "🎙️", titulo: "Resposta por áudio", preco: "R$ 50,00" },
+  { id: "video", emoji: "🎥", titulo: "Videochamada (30 min)", preco: "R$ 100,00" },
+];
+
+const PERGUNTAS_TRIAGEM = [
+  {
+    texto: "Nos últimos dias, você teve pensamentos de que não valeria a pena continuar vivendo?",
+    opcoes: ["Não", "Às vezes", "Sim, com frequência"],
+  },
+  {
+    texto: "Você chegou a pensar em como faria isso, ou já tem um plano?",
+    opcoes: ["Não", "Sim"],
+  },
+  {
+    texto: "Existe algo ou alguém que te impede de agir nesse pensamento agora?",
+    opcoes: ["Sim, tenho isso claro", "Não sei / Não tenho certeza"],
+  },
+];
+
 export function PaginaDiarioPaciente() {
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
+  const retornoPagamento = params.get("pagamento") === "retorno";
+  const pedidoRetorno = params.get("pedido");
 
   const [carregando, setCarregando] = useState(true);
   const [erroToken, setErroToken] = useState(null);
   const [paciente, setPaciente] = useState(null);
+
+  const [aba, setAba] = useState("escrever"); // "escrever" | "historico"
+  const [modo, setModo] = useState("texto"); // "texto" | "audio"
+  const [texto, setTexto] = useState("");
+  const [visibilidade, setVisibilidade] = useState("privado");
+
+  const [gravando, setGravando] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [tempoGravado, setTempoGravado] = useState(0);
+
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState(null);
+
+  const [historico, setHistorico] = useState([]);
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false);
+  const [erroHistorico, setErroHistorico] = useState(null);
+
+  // ---- fluxo de orientação paga -------------------------------------------
+  // null | "formato" | "triagem" | "acolhimento" | "redirecionando"
+  const [etapaOrientacao, setEtapaOrientacao] = useState(null);
+  const [formatoEscolhido, setFormatoEscolhido] = useState(null);
+  const [respostasRisco, setRespostasRisco] = useState([null, null, null]);
+  const [erroOrientacao, setErroOrientacao] = useState(null);
+
+  // ---- retorno do pagamento ------------------------------------------------
+  const [verificandoPagamento, setVerificandoPagamento] = useState(retornoPagamento);
+  const [statusPagamentoRetorno, setStatusPagamentoRetorno] = useState(null);
 
   // ---- instalar na tela inicial ------------------------------------------
   const [promptInstalacao, setPromptInstalacao] = useState(null);
@@ -55,23 +103,6 @@ export function PaginaDiarioPaciente() {
     setPromptInstalacao(null);
   };
 
-
-  const [aba, setAba] = useState("escrever"); // "escrever" | "historico"
-  const [modo, setModo] = useState("texto"); // "texto" | "audio"
-  const [texto, setTexto] = useState("");
-  const [visibilidade, setVisibilidade] = useState("privado");
-
-  const [gravando, setGravando] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const [audioUrl, setAudioUrl] = useState(null);
-  const [tempoGravado, setTempoGravado] = useState(0);
-
-  const [salvando, setSalvando] = useState(false);
-  const [mensagem, setMensagem] = useState(null);
-
-  const [historico, setHistorico] = useState([]);
-  const [carregandoHistorico, setCarregandoHistorico] = useState(false);
-
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -90,10 +121,7 @@ export function PaginaDiarioPaciente() {
       })
       .then((data) => {
         setPaciente(data);
-        // título da aba, em vez de "Espaço Ciriani — Cadastro"
         document.title = `Diário — ${data.pacienteNome}`;
-        // manifest próprio do paciente: o manifest.json geral do app
-        // aponta start_url pra "/", que cairia no login do psicólogo
         let linkManifest = document.querySelector('link[rel="manifest"]');
         if (!linkManifest) {
           linkManifest = document.createElement("link");
@@ -106,9 +134,43 @@ export function PaginaDiarioPaciente() {
       .finally(() => setCarregando(false));
   }, [token]);
 
-  // ---- histórico ------------------------------------------------------------
-  const [erroHistorico, setErroHistorico] = useState(null);
+  // ---- confere retorno de pagamento (InfinityPay redirecionou de volta) ---
+  useEffect(() => {
+    if (!retornoPagamento || !pedidoRetorno) return;
 
+    let tentativas = 0;
+    const maxTentativas = 8;
+
+    const checar = () => {
+      tentativas += 1;
+      fetch(`/api/diario?acao=statusPagamento&id=${encodeURIComponent(pedidoRetorno)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.statusPagamento === "pago") {
+            setStatusPagamentoRetorno("pago");
+            setVerificandoPagamento(false);
+            setAba("historico");
+          } else if (tentativas >= maxTentativas) {
+            setStatusPagamentoRetorno("pendente");
+            setVerificandoPagamento(false);
+          } else {
+            setTimeout(checar, 2500);
+          }
+        })
+        .catch(() => {
+          if (tentativas >= maxTentativas) {
+            setStatusPagamentoRetorno("pendente");
+            setVerificandoPagamento(false);
+          } else {
+            setTimeout(checar, 2500);
+          }
+        });
+    };
+
+    checar();
+  }, [retornoPagamento, pedidoRetorno]);
+
+  // ---- histórico ------------------------------------------------------------
   const carregarHistorico = useCallback(() => {
     if (!token) return;
     setCarregandoHistorico(true);
@@ -126,7 +188,6 @@ export function PaginaDiarioPaciente() {
       .finally(() => setCarregandoHistorico(false));
   }, [token]);
 
-
   useEffect(() => {
     if (aba === "historico") carregarHistorico();
   }, [aba, carregarHistorico]);
@@ -135,20 +196,13 @@ export function PaginaDiarioPaciente() {
   const iniciarGravacao = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const tiposSuportados = [
-        "audio/webm",
-        "audio/mp4",
-        "audio/aac",
-        "audio/ogg",
-        "audio/wav",
-      ];
-      const mimeType =
-        tiposSuportados.find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || "";
 
-      const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream); // deixa o navegador escolher (ex: iOS Safari)
+      const tiposSuportados = ["audio/webm", "audio/mp4", "audio/aac", "audio/ogg", "audio/wav"];
+      const mimeType = tiposSuportados.find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || "";
+
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       const tipoFinal = recorder.mimeType || mimeType || "audio/mp4";
+
       chunksRef.current = [];
 
       recorder.ondataavailable = (e) => {
@@ -192,7 +246,7 @@ export function PaginaDiarioPaciente() {
     setTempoGravado(0);
   };
 
-  // ---- salvar ------------------------------------------------------------
+  // ---- salvar (privado / visível) ------------------------------------------
   const blobParaBase64 = (blob) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -200,6 +254,16 @@ export function PaginaDiarioPaciente() {
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
+
+  const resetarFormulario = () => {
+    setTexto("");
+    descartarAudio();
+    setVisibilidade("privado");
+    setEtapaOrientacao(null);
+    setFormatoEscolhido(null);
+    setRespostasRisco([null, null, null]);
+    setErroOrientacao(null);
+  };
 
   const salvar = async () => {
     setMensagem(null);
@@ -210,6 +274,12 @@ export function PaginaDiarioPaciente() {
     }
     if (modo === "audio" && !audioBlob) {
       setMensagem({ tipo: "erro", texto: "Grava um áudio antes de salvar." });
+      return;
+    }
+
+    // "solicitar orientação" não salva direto — abre o fluxo de formato + triagem
+    if (visibilidade === "orientacao") {
+      setEtapaOrientacao("formato");
       return;
     }
 
@@ -232,13 +302,61 @@ export function PaginaDiarioPaciente() {
       if (!r.ok) throw new Error(data?.erro || `Erro ${r.status}`);
 
       setMensagem({ tipo: "sucesso", texto: "Anotação salva." });
-      setTexto("");
-      descartarAudio();
-      setVisibilidade("privado");
+      resetarFormulario();
     } catch (e) {
       setMensagem({ tipo: "erro", texto: e.message || "Não consegui salvar agora. Tenta de novo em instantes." });
     } finally {
       setSalvando(false);
+    }
+  };
+
+  // ---- fluxo de orientação: enviar triagem e ir pro pagamento --------------
+  const confirmarTriagemEIrParaPagamento = async () => {
+    if (respostasRisco.some((r) => r === null)) {
+      setErroOrientacao("Responde as 3 perguntas antes de continuar.");
+      return;
+    }
+
+    setErroOrientacao(null);
+    setEtapaOrientacao("redirecionando");
+
+    try {
+      const body = {
+        acao: "iniciarPagamento",
+        token,
+        tipo: modo,
+        formatoResposta: formatoEscolhido,
+        respostasRisco,
+      };
+      if (modo === "texto") {
+        body.conteudo = texto.trim();
+      } else {
+        body.audioBase64 = await blobParaBase64(audioBlob);
+      }
+
+      const r = await fetch("/api/diario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.erro || `Erro ${r.status}`);
+
+      if (data.risco) {
+        setEtapaOrientacao("acolhimento");
+        return;
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+
+      throw new Error("Resposta inesperada do servidor.");
+    } catch (e) {
+      setErroOrientacao(e.message || "Não consegui continuar. Tenta de novo.");
+      setEtapaOrientacao("triagem");
     }
   };
 
@@ -249,6 +367,10 @@ export function PaginaDiarioPaciente() {
 
   if (erroToken) {
     return <TelaCentral erro>{erroToken}</TelaCentral>;
+  }
+
+  if (verificandoPagamento) {
+    return <TelaCentral>Confirmando seu pagamento, só um instante...</TelaCentral>;
   }
 
   const segundosRestantes = Math.max(0, Math.ceil((LIMITE_AUDIO_MS - tempoGravado) / 1000));
@@ -263,6 +385,18 @@ export function PaginaDiarioPaciente() {
       <div style={estilos.container}>
         <h1 style={estilos.titulo}>Diário — {paciente.pacienteNome}</h1>
 
+        {statusPagamentoRetorno === "pago" && (
+          <div style={estilos.avisoSucesso}>
+            ✅ Pagamento confirmado! Seu psicólogo foi avisado e vai te procurar.
+          </div>
+        )}
+        {statusPagamentoRetorno === "pendente" && (
+          <div style={estilos.avisoPendente}>
+            Ainda estamos confirmando seu pagamento. Se você já pagou, atualiza essa página em
+            alguns instantes.
+          </div>
+        )}
+
         {!jaInstalado && !appInstalado && (promptInstalacao || ehIOS) && (
           <div style={estilos.bannerInstalar}>
             {promptInstalacao && !ehIOS && (
@@ -275,14 +409,12 @@ export function PaginaDiarioPaciente() {
             )}
             {ehIOS && (
               <span>
-                📲 Pra ter isso como um app: toque em{" "}
-                <strong>Compartilhar (⬆️)</strong> e depois em{" "}
+                📲 Pra ter isso como um app: toque em <strong>Compartilhar (⬆️)</strong> e depois em{" "}
                 <strong>Adicionar à Tela de Início</strong>.
               </span>
             )}
           </div>
         )}
-
 
         <div style={estilos.abas}>
           <button
@@ -299,7 +431,7 @@ export function PaginaDiarioPaciente() {
           </button>
         </div>
 
-        {aba === "escrever" && (
+        {aba === "escrever" && !etapaOrientacao && (
           <div style={estilos.card}>
             <div style={estilos.abas}>
               <button
@@ -374,8 +506,8 @@ export function PaginaDiarioPaciente() {
                 selecionado={visibilidade === "orientacao"}
                 onClick={() => setVisibilidade("orientacao")}
                 emoji="💬"
-                titulo="Salvar e solicitar orientação"
-                descricao="Seu psicólogo será avisado e vai entrar em contato."
+                titulo="Solicitar orientação (pago)"
+                descricao="Você escolhe o formato da resposta e paga pra receber orientação."
               />
             </div>
 
@@ -386,7 +518,106 @@ export function PaginaDiarioPaciente() {
             )}
 
             <button onClick={salvar} disabled={salvando} style={estilos.botaoSalvar}>
-              {salvando ? "Salvando..." : "Salvar anotação"}
+              {salvando ? "Salvando..." : visibilidade === "orientacao" ? "Continuar" : "Salvar anotação"}
+            </button>
+          </div>
+        )}
+
+        {aba === "escrever" && etapaOrientacao === "formato" && (
+          <div style={estilos.card}>
+            <button onClick={() => setEtapaOrientacao(null)} style={estilos.botaoVoltar}>
+              ← Voltar
+            </button>
+            <p style={estilos.perguntaVisibilidade}>Como você quer receber a orientação?</p>
+            {FORMATOS_ORIENTACAO.map((f) => (
+              <div
+                key={f.id}
+                onClick={() => {
+                  setFormatoEscolhido(f.id);
+                  setEtapaOrientacao("triagem");
+                }}
+                style={estilos.opcaoFormato}
+              >
+                <span style={{ fontSize: 20, marginRight: 10 }}>{f.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600 }}>{f.titulo}</div>
+                </div>
+                <div style={{ fontWeight: 700, color: "#3E5433" }}>{f.preco}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {aba === "escrever" && etapaOrientacao === "triagem" && (
+          <div style={estilos.card}>
+            <button onClick={() => setEtapaOrientacao("formato")} style={estilos.botaoVoltar}>
+              ← Voltar
+            </button>
+            <p style={estilos.perguntaVisibilidade}>
+              Antes de continuar, responde essas 3 perguntas rápidas:
+            </p>
+            {PERGUNTAS_TRIAGEM.map((pergunta, i) => (
+              <div key={i} style={estilos.blocoPergunta}>
+                <p style={estilos.textoPergunta}>{pergunta.texto}</p>
+                {pergunta.opcoes.map((opcao, j) => (
+                  <label key={j} style={estilos.opcaoRadio}>
+                    <input
+                      type="radio"
+                      name={`pergunta-${i}`}
+                      checked={respostasRisco[i] === j}
+                      onChange={() => {
+                        const novas = [...respostasRisco];
+                        novas[i] = j;
+                        setRespostasRisco(novas);
+                      }}
+                    />
+                    {opcao}
+                  </label>
+                ))}
+              </div>
+            ))}
+
+            {erroOrientacao && <div style={estilos.mensagemErro}>{erroOrientacao}</div>}
+
+            <button onClick={confirmarTriagemEIrParaPagamento} style={estilos.botaoSalvar}>
+              Continuar para pagamento
+            </button>
+          </div>
+        )}
+
+        {aba === "escrever" && etapaOrientacao === "redirecionando" && (
+          <div style={estilos.card}>
+            <p>Preparando seu pagamento, só um instante...</p>
+          </div>
+        )}
+
+        {aba === "escrever" && etapaOrientacao === "acolhimento" && (
+          <div style={estilos.card}>
+            <div style={estilos.blocoAcolhimento}>
+              <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>
+                Percebemos que você pode estar passando por um momento difícil.
+              </p>
+              <p style={{ marginBottom: 10 }}>
+                Esse canal não é indicado pra situações de risco imediato. Sua anotação foi
+                registrada e seu psicólogo já foi avisado, mas se você está em perigo agora, por
+                favor busque ajuda imediata:
+              </p>
+              <p style={{ marginBottom: 6 }}>
+                📞 <strong>CVV — 188</strong> (ligação gratuita, 24h)
+              </p>
+              <p style={{ marginBottom: 6 }}>
+                🚑 <strong>SAMU — 192</strong>
+              </p>
+              <p>Ou procure o pronto-socorro mais próximo.</p>
+            </div>
+            <button
+              onClick={() => {
+                resetarFormulario();
+                setAba("escrever");
+              }}
+              style={estilos.botaoSalvar}
+            >
+              Entendi
             </button>
           </div>
         )}
@@ -442,9 +673,11 @@ function OpcaoVisibilidade({ selecionado, onClick, emoji, titulo, descricao }) {
 
 function ItemHistorico({ item }) {
   const data = item.criadoEm ? new Date(item.criadoEm).toLocaleString("pt-BR") : "";
-  const rotulo = { privado: "🔒 Só para mim", visivel: "👁 Visível", orientacao: "💬 Orientação solicitada" }[
-    item.visibilidade
-  ];
+  const rotulo = {
+    privado: "🔒 Só para mim",
+    visivel: "👁 Visível",
+    orientacao: "💬 Orientação (paga)",
+  }[item.visibilidade];
 
   return (
     <div style={estilos.itemHistorico}>
@@ -471,6 +704,22 @@ const estilos = {
     padding: "10px 16px",
     fontSize: 13,
     fontWeight: 500,
+  },
+  avisoSucesso: {
+    background: "#E9F3E5",
+    color: "#2E5433",
+    borderRadius: 10,
+    padding: "10px 14px",
+    marginBottom: 14,
+    fontSize: 14,
+  },
+  avisoPendente: {
+    background: "#FFF6E5",
+    color: "#8A6116",
+    borderRadius: 10,
+    padding: "10px 14px",
+    marginBottom: 14,
+    fontSize: 14,
   },
   container: { maxWidth: 560, margin: "0 auto", padding: "24px 16px" },
   titulo: { fontSize: 22, marginBottom: 16, color: "#2E3B2C" },
@@ -530,9 +779,15 @@ const estilos = {
   opcoesVisibilidade: { marginTop: 18 },
   perguntaVisibilidade: { fontSize: 14, fontWeight: 600, marginBottom: 8, color: "#444" },
   opcaoVisibilidade: { display: "flex", alignItems: "center", border: "1.5px solid #DDD", borderRadius: 10, padding: "10px 12px", marginBottom: 8, cursor: "pointer" },
+  opcaoFormato: { display: "flex", alignItems: "center", border: "1.5px solid #DDD", borderRadius: 10, padding: "12px 14px", marginBottom: 8, cursor: "pointer" },
   mensagemErro: { marginTop: 14, color: "#B3261E", fontSize: 14 },
   mensagemSucesso: { marginTop: 14, color: "#3E5433", fontSize: 14 },
   botaoSalvar: { width: "100%", marginTop: 16, padding: "14px", borderRadius: 10, border: "none", background: "#6F8F5E", color: "#FFF", fontSize: 16, fontWeight: 600, cursor: "pointer" },
+  botaoVoltar: { background: "none", border: "none", color: "#6F8F5E", fontWeight: 600, cursor: "pointer", marginBottom: 14, padding: 0, fontSize: 14 },
+  blocoPergunta: { marginBottom: 18 },
+  textoPergunta: { fontWeight: 600, fontSize: 14, color: "#333", marginBottom: 8 },
+  opcaoRadio: { display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "#444", marginBottom: 6, cursor: "pointer" },
+  blocoAcolhimento: { background: "#FDECEA", borderRadius: 10, padding: 16, color: "#7A2B24", fontSize: 14, lineHeight: 1.5 },
   itemHistorico: { borderBottom: "1px solid #EEE", padding: "12px 0" },
   itemCabecalho: { display: "flex", justifyContent: "space-between" },
 };
