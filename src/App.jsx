@@ -10,6 +10,8 @@ import { auth, db } from "./firebase";
 import { PaginaAvaliacaoPaciente, AbaAvaliacoes } from "./AvaliacoesModulo";
 import { PaginaContratoPaciente } from "./ContratoPaciente";
 import { AbaContrato } from "./ContratoModulo";
+import { PaginaDiarioPaciente } from "./PaginaDiarioPaciente";
+import { AbaDiario } from "./AbaDiario";
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const fCPF = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
@@ -583,12 +585,13 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,paciente
         </div>
 
         <div style={{display:"flex",gap:6,marginBottom:18}}>
-          {[["dados","📋 Dados"],["pagamentos",`💳 Pagamentos (${pagsPaciente.length})`],["atendimentos",`📝 Atendimentos (${atendimentosPac.length})`],["avaliacoes","🧪 Avaliações"],["contrato","📄 Contrato"]].map(([v,l])=>(
+          {[["dados","📋 Dados"],["pagamentos",`💳 Pagamentos (${pagsPaciente.length})`],["atendimentos",`📝 Atendimentos (${atendimentosPac.length})`],["avaliacoes","🧪 Avaliações"],["diario","📓 Diário"],["contrato","📄 Contrato"]].map(([v,l])=>(
             <button key={v} onClick={()=>setAbaModal(v)} style={{padding:"7px 14px",borderRadius:7,cursor:"pointer",fontSize:13,fontFamily:"sans-serif",background:abaModal===v?"#2a7a4a":"#f4f6f0",color:abaModal===v?"#fff":"#4a6a5a",border:"none",fontWeight:abaModal===v?700:400}}>{l}</button>
           ))}
         </div>
 
         {abaModal==="avaliacoes"&&<AbaAvaliacoes pacienteId={p.id} pacienteNome={p.nome}/>}
+        {abaModal==="diario"&&<AbaDiario pacienteId={p.id} pacienteNome={p.nome}/>}
         {abaModal==="contrato"&&<AbaContrato pacienteId={p.id} pacienteNome={p.nome} showT={showT}/>}
 
         {abaModal==="dados"&&<>
@@ -2564,6 +2567,9 @@ export default function App(){
   }
   if(window.location.pathname==="/contrato"){
     return <PaginaContratoPaciente/>;
+  }
+  if(window.location.pathname==="/diario"){
+    return <PaginaDiarioPaciente/>;
   }
 
   if(tela==="login") return <Login onLogin={handleLogin}/>;
