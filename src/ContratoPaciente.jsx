@@ -3,6 +3,21 @@ import logoEspacoCiriani from "./assets/logo-espaco-ciriani.png";
 
 const fCPFc = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
 
+const DESTAQUES = [
+  {
+    titulo: "Remarcação",
+    texto: "Caso seja necessário remarcar uma sessão, avisar a assistente Maria pelo telefone (34) 9 9141-2984 com 4 horas de antecedência; caso contrário, a sessão deverá ser paga ou descontada do pacote."
+  },
+  {
+    titulo: "Comparecimento",
+    texto: "As sessões agendadas entre paciente e psicólogo serão cumpridas nos horários combinados, sem necessidade de confirmação prévia a cada semana."
+  },
+  {
+    titulo: "Sigilo das Informações",
+    texto: "Fique tranquilo. A privacidade de todas as comunicações entre paciente e psicólogo é protegida pelo Código de Ética profissional."
+  },
+];
+
 export function PaginaContratoPaciente(){
   const [carregando,setCarregando]=useState(true);
   const [erro,setErro]=useState("");
@@ -14,6 +29,7 @@ export function PaginaContratoPaciente(){
   const [enviando,setEnviando]=useState(false);
   const [concluido,setConcluido]=useState(false);
   const [temAssinatura,setTemAssinatura]=useState(false);
+  const [dadosAssinado,setDadosAssinado]=useState(null);
 
   const canvasRef=useRef(null);
   const desenhandoRef=useRef(false);
@@ -92,6 +108,87 @@ export function PaginaContratoPaciente(){
     setTemAssinatura(false);
   }
 
+  function baixarCopia(){
+    const d = dadosAssinado;
+    if(!d) return;
+
+    const destaquesHtml = DESTAQUES.map(x=>`
+      <div class="destaque">
+        <div class="destaque-titulo">${x.titulo}</div>
+        <div class="destaque-texto">${x.texto}</div>
+      </div>`).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Termo de Adesão - ${d.nomeCompleto}</title>
+<style>
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f4f6f0;margin:0;padding:24px 16px;color:#1a3a2a;line-height:1.6;}
+  .folha{background:#fff;max-width:760px;margin:0 auto;padding:36px 32px;border-radius:14px;border:1px solid #deeade;}
+  h1{font-family:Georgia,serif;font-size:22px;text-align:center;margin:0 0 4px;}
+  .sub{text-align:center;font-size:13px;color:#5a7a6a;margin:0 0 28px;}
+  .caixa-destaques{background:#eef6f1;border:1px solid #b0d8bc;border-radius:12px;padding:20px 22px;margin-bottom:30px;}
+  .caixa-destaques h2{font-size:15px;margin:0 0 14px;color:#1a4a2a;text-transform:uppercase;letter-spacing:.04em;}
+  .destaque{margin-bottom:14px;}
+  .destaque:last-child{margin-bottom:0;}
+  .destaque-titulo{font-weight:700;font-size:14px;color:#1a4a2a;margin-bottom:2px;}
+  .destaque-texto{font-size:13.5px;color:#2a4a3a;}
+  .conteudo{font-size:14px;}
+  .assinaturas{display:flex;gap:24px;flex-wrap:wrap;justify-content:space-around;align-items:flex-end;margin-top:40px;padding-top:8px;}
+  .assinatura{text-align:center;flex:1 1 220px;min-width:200px;}
+  .assinatura img{max-width:100%;max-height:90px;display:block;margin:0 auto 4px;}
+  .linha{border-top:1px solid #8aaa9a;padding-top:6px;font-size:12.5px;color:#4a6a5a;}
+  .evidencias{margin-top:32px;padding-top:16px;border-top:1px solid #eef4ec;font-size:11.5px;color:#6a8a7a;line-height:1.7;}
+  .evidencias strong{color:#4a6a5a;}
+  @media print{body{background:#fff;padding:0;}.folha{border:none;border-radius:0;max-width:none;padding:0;}}
+</style>
+</head>
+<body>
+<div class="folha">
+  <h1>Termo de Adesão</h1>
+  <p class="sub">Diego Ciriani - Psicólogo | CRP 04/44668</p>
+
+  <div class="caixa-destaques">
+    <h2>Pontos de destaque do contrato</h2>
+    ${destaquesHtml}
+  </div>
+
+  <div class="conteudo">${d.textoContrato}</div>
+
+  <div class="assinaturas">
+    <div class="assinatura">
+      <img src="${d.assinaturaPaciente}" alt="Assinatura">
+      <div class="linha">${d.nomeCompleto}<br>${d.cidade}, ${d.dataAssinatura}</div>
+    </div>
+    <div class="assinatura">
+      ${d.assinaturaPsicologo?`<img src="${d.assinaturaPsicologo}" alt="Assinatura">`:`<div style="height:90px"></div>`}
+      <div class="linha">Diego Ciriani - Psicólogo<br>CRP 04/44668</div>
+    </div>
+  </div>
+
+  <div class="evidencias">
+    <strong>Registro do aceite:</strong><br>
+    Assinado por ${d.nomeCompleto} - CPF ${d.cpf}<br>
+    Data e hora: ${d.dataHoraCompleta}<br>
+    Local informado: ${d.cidade}
+  </div>
+</div>
+</body>
+</html>`;
+
+    const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Termo-de-Adesao-${d.nomeCompleto.replace(/\s+/g,"-")}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   async function enviarAssinatura(){
     if(!nomeCompleto.trim()){ alert("Informe seu nome completo."); return; }
     if(cpf.replace(/\D/g,"").length!==11){ alert("Informe um CPF válido."); return; }
@@ -109,7 +206,20 @@ export function PaginaContratoPaciente(){
       });
       const data=await resp.json();
       if(!resp.ok||data.erro){ alert(data.erro||"Não foi possível registrar a assinatura."); }
-      else{ setConcluido(true); }
+      else{
+        const quando = data.assinadoEm ? new Date(data.assinadoEm) : new Date();
+        setDadosAssinado({
+          nomeCompleto: nomeCompleto.trim(),
+          cpf: fCPFc(cpf),
+          cidade: cidade.trim(),
+          dataAssinatura: quando.toLocaleDateString("pt-BR"),
+          dataHoraCompleta: quando.toLocaleString("pt-BR"),
+          textoContrato: contrato?.textoContrato || "",
+          assinaturaPaciente: assinaturaBase64,
+          assinaturaPsicologo: contrato?.assinaturaPsicologo || "",
+        });
+        setConcluido(true);
+      }
     }catch{
       alert("Erro de conexão. Tente novamente.");
     }
@@ -138,10 +248,27 @@ export function PaginaContratoPaciente(){
       <div style={{...CAIXA,textAlign:"center"}}>
         <div style={{fontSize:52,marginBottom:14}}>✅</div>
         <h2 style={{color:"#1a4a2a",margin:"0 0 10px",fontFamily:"Georgia,serif"}}>Contrato assinado!</h2>
-        <p style={{color:"#4a6a5a",fontSize:14,lineHeight:1.6,margin:0}}>
+        <p style={{color:"#4a6a5a",fontSize:14,lineHeight:1.6,margin:"0 0 22px"}}>
           Seu aceite foi registrado com sucesso.<br/>
           Uma cópia ficará arquivada no seu prontuário.
         </p>
+
+        {dadosAssinado
+          ? <>
+              <button onClick={baixarCopia}
+                style={{width:"100%",padding:13,background:"#1a4a8a",color:"#fff",border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer"}}>
+                ↓ Baixar minha cópia
+              </button>
+              <p style={{fontSize:12,color:"#8aaa9a",margin:"12px 0 0",lineHeight:1.5}}>
+                O arquivo abre em qualquer navegador.<br/>
+                Para salvar em PDF, abra e use a opção Imprimir → Salvar como PDF.
+              </p>
+            </>
+          : <p style={{fontSize:13,color:"#8aaa9a",margin:0,lineHeight:1.5}}>
+              Este contrato já foi assinado anteriormente.<br/>
+              Solicite uma cópia ao psicólogo, se precisar.
+            </p>
+        }
       </div>
     </div>
   );
@@ -153,6 +280,16 @@ export function PaginaContratoPaciente(){
           <img src={logoEspacoCiriani} alt="Espaço Ciriani" style={{width:48,height:48}}/>
           <h1 style={{margin:"8px 0 2px",fontSize:20,fontWeight:700,color:"#1a3a2a",fontFamily:"Georgia,serif"}}>Termo de Adesão</h1>
           <p style={{margin:0,fontSize:13,color:"#5a7a6a"}}>Leia com atenção antes de assinar</p>
+        </div>
+
+        <div style={{background:"#eef6f1",border:"1px solid #b0d8bc",borderRadius:12,padding:"16px 18px",marginBottom:20}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#1a4a2a",textTransform:"uppercase",letterSpacing:"0.04em",marginBottom:12}}>Pontos de destaque</div>
+          {DESTAQUES.map((x,i)=>(
+            <div key={i} style={{marginBottom:i===DESTAQUES.length-1?0:12}}>
+              <div style={{fontWeight:700,fontSize:13.5,color:"#1a4a2a",marginBottom:2}}>{x.titulo}</div>
+              <div style={{fontSize:13,color:"#2a4a3a",lineHeight:1.55}}>{x.texto}</div>
+            </div>
+          ))}
         </div>
 
         <div style={{
