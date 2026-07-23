@@ -26,6 +26,32 @@ export function PaginaDiarioPaciente() {
   const [erroToken, setErroToken] = useState(null);
   const [paciente, setPaciente] = useState(null);
 
+  // ---- instalar na tela inicial ------------------------------------------
+  const [promptInstalacao, setPromptInstalacao] = useState(null);
+  const [appInstalado, setAppInstalado] = useState(false);
+  const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const jaInstalado =
+    window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+  useEffect(() => {
+    const aoTerPrompt = (e) => {
+      e.preventDefault();
+      setPromptInstalacao(e);
+    };
+    window.addEventListener("beforeinstallprompt", aoTerPrompt);
+    window.addEventListener("appinstalled", () => setAppInstalado(true));
+    return () => window.removeEventListener("beforeinstallprompt", aoTerPrompt);
+  }, []);
+
+  const instalarApp = async () => {
+    if (!promptInstalacao) return;
+    promptInstalacao.prompt();
+    const escolha = await promptInstalacao.userChoice;
+    if (escolha.outcome === "accepted") setAppInstalado(true);
+    setPromptInstalacao(null);
+  };
+
+
   const [aba, setAba] = useState("escrever"); // "escrever" | "historico"
   const [modo, setModo] = useState("texto"); // "texto" | "audio"
   const [texto, setTexto] = useState("");
@@ -220,6 +246,27 @@ export function PaginaDiarioPaciente() {
       <div style={estilos.container}>
         <h1 style={estilos.titulo}>Diário — {paciente.pacienteNome}</h1>
 
+        {!jaInstalado && !appInstalado && (promptInstalacao || ehIOS) && (
+          <div style={estilos.bannerInstalar}>
+            {promptInstalacao && !ehIOS && (
+              <>
+                <span>📲 Instala esse link como um app na tela do seu celular.</span>
+                <button onClick={instalarApp} style={estilos.botaoInstalar}>
+                  Instalar
+                </button>
+              </>
+            )}
+            {ehIOS && (
+              <span>
+                📲 Pra ter isso como um app: toque em{" "}
+                <strong>Compartilhar (⬆️)</strong> e depois em{" "}
+                <strong>Adicionar à Tela de Início</strong>.
+              </span>
+            )}
+          </div>
+        )}
+
+
         <div style={estilos.abas}>
           <button
             onClick={() => setAba("escrever")}
@@ -410,6 +457,30 @@ const estilos = {
   },
   container: { maxWidth: 560, margin: "0 auto", padding: "24px 16px" },
   titulo: { fontSize: 22, marginBottom: 16, color: "#2E3B2C" },
+  bannerInstalar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    flexWrap: "wrap",
+    background: "#F1F6EE",
+    border: "1px solid #C9DCC0",
+    borderRadius: 10,
+    padding: "10px 14px",
+    marginBottom: 16,
+    fontSize: 13,
+    color: "#3E5433",
+  },
+  botaoInstalar: {
+    padding: "6px 14px",
+    borderRadius: 8,
+    border: "none",
+    background: "#6F8F5E",
+    color: "#FFF",
+    fontWeight: 600,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  },
   abas: { display: "flex", gap: 8, marginBottom: 16 },
   aba: {
     flex: 1,
