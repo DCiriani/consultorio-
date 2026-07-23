@@ -64,15 +64,25 @@ export function PaginaDiarioPaciente() {
   }, [token]);
 
   // ---- histórico ------------------------------------------------------------
+  const [erroHistorico, setErroHistorico] = useState(null);
+
   const carregarHistorico = useCallback(() => {
     if (!token) return;
     setCarregandoHistorico(true);
+    setErroHistorico(null);
     fetch(`/api/diario?acao=listar&token=${encodeURIComponent(token)}`)
-      .then((r) => r.json())
-      .then((data) => setHistorico(data.registros || []))
-      .catch(() => setHistorico([]))
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data?.erro || `Erro ${r.status}`);
+        setHistorico(data.registros || []);
+      })
+      .catch((e) => {
+        setHistorico([]);
+        setErroHistorico(e.message || "Não consegui carregar o histórico.");
+      })
       .finally(() => setCarregandoHistorico(false));
   }, [token]);
+
 
   useEffect(() => {
     if (aba === "historico") carregarHistorico();
@@ -82,7 +92,20 @@ export function PaginaDiarioPaciente() {
   const iniciarGravacao = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const tiposSuportados = [
+        "audio/webm",
+        "audio/mp4",
+        "audio/aac",
+        "audio/ogg",
+        "audio/wav",
+      ];
+      const mimeType =
+        tiposSuportados.find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || "";
+
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream); // deixa o navegador escolher (ex: iOS Safari)
+      const tipoFinal = recorder.mimeType || mimeType || "audio/mp4";
       chunksRef.current = [];
 
       recorder.ondataavailable = (e) => {
@@ -90,7 +113,7 @@ export function PaginaDiarioPaciente() {
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(chunksRef.current, { type: tipoFinal });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
         stream.getTracks().forEach((t) => t.stop());
@@ -162,14 +185,15 @@ export function PaginaDiarioPaciente() {
         body: JSON.stringify(body),
       });
 
-      if (!r.ok) throw new Error();
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.erro || `Erro ${r.status}`);
 
       setMensagem({ tipo: "sucesso", texto: "Anotação salva." });
       setTexto("");
       descartarAudio();
       setVisibilidade("privado");
     } catch (e) {
-      setMensagem({ tipo: "erro", texto: "Não consegui salvar agora. Tenta de novo em instantes." });
+      setMensagem({ tipo: "erro", texto: e.message || "Não consegui salvar agora. Tenta de novo em instantes." });
     } finally {
       setSalvando(false);
     }
@@ -306,7 +330,12 @@ export function PaginaDiarioPaciente() {
         {aba === "historico" && (
           <div style={estilos.card}>
             {carregandoHistorico && <p>Carregando histórico...</p>}
-            {!carregandoHistorico && historico.length === 0 && <p>Você ainda não tem anotações.</p>}
+            {!carregandoHistorico && erroHistorico && (
+              <p style={{ color: "#B3261E" }}>Não consegui carregar: {erroHistorico}</p>
+            )}
+            {!carregandoHistorico && !erroHistorico && historico.length === 0 && (
+              <p>Você ainda não tem anotações.</p>
+            )}
             {!carregandoHistorico &&
               historico.map((item) => <ItemHistorico key={item.id} item={item} />)}
           </div>
