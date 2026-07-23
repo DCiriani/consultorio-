@@ -8,6 +8,7 @@ import { getToken } from "firebase/messaging";
 import { getMessagingIfSupported } from "./firebase-messaging";
 import { auth, db } from "./firebase";
 import { PaginaAvaliacaoPaciente, AbaAvaliacoes } from "./AvaliacoesModulo";
+import { PaginaContratoPaciente } from "./ContratoPaciente";
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const fCPF = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
@@ -2558,6 +2559,9 @@ export default function App(){
   // Rota pública - página do paciente, sem login e sem carregar dados do painel
   if(window.location.pathname==="/avaliacao"){
     return <PaginaAvaliacaoPaciente/>;
+  }
+  if(window.location.pathname==="/contrato"){
+    return <PaginaContratoPaciente/>;
   }
 
   if(tela==="login") return <Login onLogin={handleLogin}/>;
