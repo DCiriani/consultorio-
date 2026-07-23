@@ -53,7 +53,7 @@ export function PaginaDiarioPaciente() {
       setCarregando(false);
       return;
     }
-    fetch(`/api/diario-token?token=${encodeURIComponent(token)}`)
+    fetch(`/api/diario?acao=token&token=${encodeURIComponent(token)}`)
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
@@ -67,7 +67,7 @@ export function PaginaDiarioPaciente() {
   const carregarHistorico = useCallback(() => {
     if (!token) return;
     setCarregandoHistorico(true);
-    fetch(`/api/diario-listar?token=${encodeURIComponent(token)}`)
+    fetch(`/api/diario?acao=listar&token=${encodeURIComponent(token)}`)
       .then((r) => r.json())
       .then((data) => setHistorico(data.registros || []))
       .catch(() => setHistorico([]))
@@ -149,14 +149,14 @@ export function PaginaDiarioPaciente() {
 
     setSalvando(true);
     try {
-      const body = { token, tipo: modo, visibilidade };
+      const body = { acao: "salvar", token, tipo: modo, visibilidade };
       if (modo === "texto") {
         body.conteudo = texto.trim();
       } else {
         body.audioBase64 = await blobParaBase64(audioBlob);
       }
 
-      const r = await fetch("/api/diario-salvar", {
+      const r = await fetch("/api/diario", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
