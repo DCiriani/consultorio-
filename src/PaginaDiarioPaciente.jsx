@@ -29,7 +29,11 @@ export function PaginaDiarioPaciente() {
   // ---- instalar na tela inicial ------------------------------------------
   const [promptInstalacao, setPromptInstalacao] = useState(null);
   const [appInstalado, setAppInstalado] = useState(false);
-  const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const ehIOS =
+    (/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream) ||
+    // iPadOS 13+ se identifica como "Macintosh" no user agent — só dá pra
+    // diferenciar de um Mac de verdade pela tela sensível ao toque
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const jaInstalado =
     window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true;
 
