@@ -41,9 +41,9 @@ const PERGUNTAS_TRIAGEM = [
 ];
 
 const COMO_FUNCIONA = {
-  texto: "Funciona assim: você escreve sua dúvida com todos os detalhes. Seu psicólogo tem até 24h para te responder por escrito. Depois da resposta, você pode enviar mais uma mensagem sobre o mesmo assunto, e ele responde mais uma vez para fechar. É uma orientação única, focada em um ponto específico — não dá para abrir vários assuntos aqui. Capriche nos detalhes.",
-  audio: "Funciona assim: você grava sua dúvida em áudio, com todos os detalhes. Seu psicólogo tem até 24h para te responder, também em áudio. Depois da resposta, você pode gravar mais um áudio sobre o mesmo assunto, e ele responde mais uma vez para fechar. É uma orientação única, focada em um ponto específico — não dá para abrir vários assuntos aqui. Capriche nos detalhes.",
-  video: "Funciona assim: depois do pagamento, seu psicólogo vai entrar em contato em até 72h para agendar uma chamada de 30 minutos com você. É uma orientação única, focada em um ponto específico — pensa com antecedência no que quer conversar, para aproveitar bem o tempo.",
+  texto: "Funciona assim: você escreve sua dúvida com todos os detalhes. Seu psicólogo tem até 24h para te responder por escrito. Depois da resposta, você pode enviar mais uma mensagem sobre o mesmo assunto, e ele responde mais uma vez para fechar. É uma orientação única, focada em um ponto específico, então capriche nos detalhes.",
+  audio: "Funciona assim: você grava sua dúvida em áudio, com todos os detalhes. Seu psicólogo tem até 24h para te responder, também em áudio. Depois da resposta, você pode gravar mais um áudio sobre o mesmo assunto, e ele responde mais uma vez para fechar. É uma orientação única, focada em um ponto específico, então capriche nos detalhes.",
+  video: "Funciona assim: depois do pagamento, seu psicólogo vai entrar em contato em até 72h para agendar uma chamada de 30 minutos com você. É uma orientação única, focada em um ponto específico, então pensa com antecedência no que quer conversar, para aproveitar bem o tempo.",
 };
 
 export function PaginaDiarioPaciente() {
@@ -448,7 +448,11 @@ export function PaginaDiarioPaciente() {
 
         {statusPagamentoRetorno === "pago" && (
           <div style={estilos.avisoSucesso}>
-            ✅ Pagamento confirmado! Seu psicólogo foi avisado e vai te procurar.
+            <div style={estilos.avisoSucessoIcone}>✅</div>
+            <div>
+              <div style={estilos.avisoSucessoTitulo}>Pagamento confirmado!</div>
+              <div style={estilos.avisoSucessoTexto}>Seu psicólogo foi avisado e vai te procurar.</div>
+            </div>
           </div>
         )}
         {statusPagamentoRetorno === "pendente" && (
@@ -975,7 +979,10 @@ function ItemHistorico({ item, token, onRecarregar }) {
 const estilos = {
   pagina: { minHeight: "100vh", background: "#F7F8F6", padding: "0 0 40px" },
   avisoEmergencia: { background: "#FDECEA", color: "#B3261E", textAlign: "center", padding: "10px 16px", fontSize: 13, fontWeight: 500 },
-  avisoSucesso: { background: "#E9F3E5", color: "#2E5433", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 14 },
+  avisoSucesso: { display: "flex", alignItems: "center", gap: 12, background: "#DFF3D8", border: "2px solid #4A8F3C", borderRadius: 12, padding: "16px 18px", marginBottom: 16 },
+  avisoSucessoIcone: { fontSize: 28 },
+  avisoSucessoTitulo: { fontSize: 17, fontWeight: 700, color: "#255A1B" },
+  avisoSucessoTexto: { fontSize: 14, color: "#2E5433", marginTop: 2 },
   avisoPendente: { background: "#FFF6E5", color: "#8A6116", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 14 },
   container: { maxWidth: 560, margin: "0 auto", padding: "24px 16px" },
   titulo: { fontSize: 22, marginBottom: 16, color: "#2E3B2C" },
