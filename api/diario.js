@@ -41,10 +41,12 @@ const bucket = admin.storage().bucket();
 const INFINITEPAY_HANDLE = "espacociriani";
 
 // preços em centavos, por formato de resposta da orientação
+// >>> TEMPORÁRIO: todos em R$ 1,00 para teste real do pagamento/webhook.
+//     Depois do teste, voltar para: texto 3000, audio 5000, video 10000.
 const PRECOS_ORIENTACAO = {
-  texto: 3000, // R$ 30,00
-  audio: 5000, // R$ 50,00
-  video: 10000, // R$ 100,00 (chamada de 30 min)
+  texto: 100, // R$ 1,00 (teste)
+  audio: 100, // R$ 1,00 (teste)
+  video: 100, // R$ 1,00 (teste)
 };
 
 const DESCRICAO_FORMATO = {
