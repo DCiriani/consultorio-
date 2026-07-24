@@ -150,9 +150,12 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
     setRegistros((prev) => prev.map((r) => (r.id === id ? { ...r, conversadoNaSessao: !valorAtual } : r)));
   };
 
+  const [copiado, setCopiado] = useState(false);
+
   const copiarLink = () => {
     navigator.clipboard.writeText(linkExistente);
-    alert("Link copiado.");
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
   };
 
   return (
@@ -163,10 +166,9 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
             {gerandoLink ? "Gerando..." : "Gerar link do diário"}
           </button>
         ) : (
-          <div style={estilos.linkPronto}>
-            <span style={estilos.linkTexto}>{linkExistente}</span>
-            <button onClick={copiarLink} style={estilos.botaoCopiar}>Copiar</button>
-          </div>
+          <button onClick={copiarLink} style={copiado ? estilos.botaoCopiadoOk : estilos.botaoCopiarLink}>
+            {copiado ? "✓ Link copiado!" : "📋 Copiar link do diário"}
+          </button>
         )}
       </div>
 
@@ -415,9 +417,8 @@ const estilos = {
   container: { padding: "4px 0" },
   blocoLink: { marginBottom: 16 },
   botaoGerar: { padding: "10px 16px", borderRadius: 8, border: "none", background: "#6F8F5E", color: "#FFF", cursor: "pointer" },
-  linkPronto: { display: "flex", alignItems: "center", gap: 10, background: "#F1F6EE", padding: "10px 12px", borderRadius: 8 },
-  linkTexto: { fontSize: 13, color: "#3E5433", flex: 1, wordBreak: "break-all" },
-  botaoCopiar: { padding: "6px 12px", borderRadius: 6, border: "1px solid #6F8F5E", background: "#FFF", color: "#3E5433", cursor: "pointer" },
+  botaoCopiarLink: { padding: "10px 16px", borderRadius: 8, border: "1px solid #6F8F5E", background: "#F1F6EE", color: "#3E5433", cursor: "pointer", fontWeight: 600, fontSize: 14 },
+  botaoCopiadoOk: { padding: "10px 16px", borderRadius: 8, border: "1px solid #6F8F5E", background: "#6F8F5E", color: "#FFF", cursor: "pointer", fontWeight: 600, fontSize: 14 },
   item: { border: "1px solid #EEE", borderRadius: 10, padding: 12, marginBottom: 10 },
   itemCabecalho: { display: "flex", justifyContent: "space-between", alignItems: "center" },
   tagOrientacao: { fontSize: 12, fontWeight: 600, color: "#B3261E" },
