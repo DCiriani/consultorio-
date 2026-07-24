@@ -6,7 +6,7 @@ import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebas
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, setDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 import { getToken } from "firebase/messaging";
 import { getMessagingIfSupported } from "./firebase-messaging";
-import { auth, db } from "./firebase";
+import { auth, db, firebaseApp } from "./firebase";
 import { PaginaAvaliacaoPaciente, AbaAvaliacoes } from "./AvaliacoesModulo";
 import { PaginaContratoPaciente } from "./ContratoPaciente";
 import { AbaContrato } from "./ContratoModulo";
