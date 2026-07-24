@@ -712,7 +712,10 @@ export function PaginaDiarioPaciente() {
             {!carregandoHistorico && !erroHistorico && historico.length === 0 && (
               <p>Você ainda não tem anotações.</p>
             )}
-            {!carregandoHistorico && historico.map((item) => <ItemHistorico key={item.id} item={item} />)}
+            {!carregandoHistorico &&
+              historico.map((item) => (
+                <ItemHistorico key={item.id} item={item} token={token} onRecarregar={carregarHistorico} />
+              ))}
           </div>
         )}
       </div>
@@ -751,13 +754,97 @@ function OpcaoVisibilidade({ selecionado, onClick, emoji, titulo, descricao }) {
   );
 }
 
-function ItemHistorico({ item }) {
+function ItemHistorico({ item, token, onRecarregar }) {
   const data = item.criadoEm ? new Date(item.criadoEm).toLocaleString("pt-BR") : "";
   const rotulo = {
     privado: "🔒 Só para mim",
     visivel: "👁 Visível",
     orientacao: "💬 Orientação (paga)",
   }[item.visibilidade];
+
+  const [respondendo, setRespondendo] = useState(false);
+  const [textoReplica, setTextoReplica] = useState("");
+  const [gravando, setGravando] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioUrlLocal, setAudioUrlLocal] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState(null);
+  const recorderRef = useRef(null);
+
+  const iniciarGravacao = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const tiposSuportados = ["audio/webm", "audio/mp4", "audio/aac", "audio/ogg", "audio/wav"];
+      const mimeType = tiposSuportados.find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || "";
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      const tipoFinal = recorder.mimeType || mimeType || "audio/mp4";
+      const chunks = [];
+      recorder.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: tipoFinal });
+        setAudioBlob(blob);
+        setAudioUrlLocal(URL.createObjectURL(blob));
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      recorder.start();
+      recorderRef.current = recorder;
+      setGravando(true);
+    } catch (e) {
+      setErro("Não consegui acessar o microfone.");
+    }
+  };
+
+  const pararGravacao = () => {
+    if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop();
+    setGravando(false);
+  };
+
+  const blobParaBase64 = (blob) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+  const enviarReplica = async () => {
+    setErro(null);
+    const tipo = item.formatoResposta === "audio" ? "audio" : "texto";
+
+    if (tipo === "texto" && !textoReplica.trim()) {
+      setErro("Escreve sua réplica antes de enviar.");
+      return;
+    }
+    if (tipo === "audio" && !audioBlob) {
+      setErro("Grava sua réplica antes de enviar.");
+      return;
+    }
+
+    setEnviando(true);
+    try {
+      const body = { acao: "enviarReplica", token, diarioId: item.id, tipo };
+      if (tipo === "texto") body.conteudo = textoReplica.trim();
+      else body.audioBase64 = await blobParaBase64(audioBlob);
+
+      const r = await fetch("/api/diario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data?.erro || `Erro ${r.status}`);
+
+      setRespondendo(false);
+      setTextoReplica("");
+      setAudioBlob(null);
+      setAudioUrlLocal(null);
+      await onRecarregar();
+    } catch (e) {
+      setErro(e.message || "Não consegui enviar. Tenta de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   return (
     <div style={estilos.itemHistorico}>
@@ -768,6 +855,73 @@ function ItemHistorico({ item }) {
       {item.tipo === "texto" && <p style={{ marginTop: 6 }}>{item.conteudo}</p>}
       {item.tipo === "audio" && item.audioUrl && (
         <audio src={item.audioUrl} controls style={{ width: "100%", marginTop: 6 }} />
+      )}
+
+      {(item.mensagens || []).length > 0 && (
+        <div style={estilos.blocoConversa}>
+          {item.mensagens.map((m) => (
+            <div key={m.id} style={m.autor === "psicologo" ? estilos.bolhaPsicologo : estilos.bolhaPaciente}>
+              <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4, opacity: 0.7 }}>
+                {m.autor === "psicologo" ? "Seu psicólogo" : "Você"}
+              </div>
+              {m.tipo === "texto" && <p style={{ margin: 0 }}>{m.conteudo}</p>}
+              {m.tipo === "audio" && m.audioUrl && (
+                <audio src={m.audioUrl} controls style={{ width: "100%" }} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {item.conversaEncerrada && (
+        <p style={{ fontSize: 12, color: "#888", marginTop: 8 }}>Essa conversa foi encerrada.</p>
+      )}
+
+      {item.podeReplicar && !respondendo && (
+        <button onClick={() => setRespondendo(true)} style={estilos.botaoResponderPaciente}>
+          Responder
+        </button>
+      )}
+
+      {item.podeReplicar && respondendo && (
+        <div style={estilos.compositor}>
+          {item.formatoResposta === "audio" ? (
+            <div>
+              {!audioUrlLocal && !gravando && (
+                <button onClick={iniciarGravacao} style={estilos.botaoGravar}>🎙️ Gravar réplica</button>
+              )}
+              {gravando && <button onClick={pararGravacao} style={estilos.botaoParar}>⏹ Parar</button>}
+              {audioUrlLocal && !gravando && (
+                <div>
+                  <audio src={audioUrlLocal} controls style={{ width: "100%" }} />
+                  <button
+                    onClick={() => { setAudioBlob(null); setAudioUrlLocal(null); }}
+                    style={estilos.botaoDescartar}
+                  >
+                    Descartar e gravar de novo
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <textarea
+              value={textoReplica}
+              onChange={(e) => setTextoReplica(e.target.value)}
+              rows={4}
+              style={estilos.textarea}
+              placeholder="Escreve sua réplica..."
+            />
+          )}
+
+          {erro && <p style={{ color: "#B3261E", fontSize: 13 }}>{erro}</p>}
+
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={enviarReplica} disabled={enviando} style={estilos.botaoEnviarReplica}>
+              {enviando ? "Enviando..." : "Enviar"}
+            </button>
+            <button onClick={() => setRespondendo(false)} style={estilos.botaoCancelarReplica}>Cancelar</button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -811,4 +965,11 @@ const estilos = {
   blocoAcolhimento: { background: "#FDECEA", borderRadius: 10, padding: 16, color: "#7A2B24", fontSize: 14, lineHeight: 1.5 },
   itemHistorico: { borderBottom: "1px solid #EEE", padding: "12px 0" },
   itemCabecalho: { display: "flex", justifyContent: "space-between" },
+  blocoConversa: { marginTop: 10, display: "flex", flexDirection: "column", gap: 8 },
+  bolhaPsicologo: { background: "#F1F6EE", borderRadius: 8, padding: "8px 10px", alignSelf: "flex-start", maxWidth: "90%" },
+  bolhaPaciente: { background: "#EAF1FB", borderRadius: 8, padding: "8px 10px", alignSelf: "flex-end", maxWidth: "90%" },
+  botaoResponderPaciente: { marginTop: 10, padding: "8px 14px", borderRadius: 8, border: "none", background: "#6F8F5E", color: "#FFF", cursor: "pointer", fontWeight: 600, fontSize: 13 },
+  compositor: { marginTop: 10, background: "#FAFAFA", borderRadius: 10, padding: 12 },
+  botaoEnviarReplica: { padding: "8px 16px", borderRadius: 8, border: "none", background: "#6F8F5E", color: "#FFF", cursor: "pointer", fontWeight: 600 },
+  botaoCancelarReplica: { padding: "8px 16px", borderRadius: 8, border: "1px solid #DDD", background: "#FFF", color: "#666", cursor: "pointer" },
 };

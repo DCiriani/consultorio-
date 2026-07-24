@@ -6,12 +6,19 @@
 //  Serverless Functions do plano Hobby da Vercel.
 //
 //  GET  /api/diario?acao=token&token=X          -> valida o link, devolve paciente
-//  GET  /api/diario?acao=listar&token=X          -> histórico do paciente
+//  GET  /api/diario?acao=listar&token=X          -> histórico do paciente (com conversa)
 //  GET  /api/diario?acao=manifest&token=X        -> manifest.json pra instalar
 //  GET  /api/diario?acao=statusPagamento&id=X    -> paciente confere se já pagou
 //  POST /api/diario  { acao:"salvar", ... }              -> anotação privada/visível
 //  POST /api/diario  { acao:"iniciarPagamento", ... }    -> triagem + link InfinityPay
 //  POST /api/diario  { acao:"webhookPagamento", ... }    -> InfinityPay confirma pagamento
+//  POST /api/diario  { acao:"enviarReplica", ... }       -> paciente responde a orientação
+//
+//  Conversa de uma orientação paga (subcoleção diarios/{id}/mensagens):
+//  pergunta original (campo raiz do doc) -> resposta do psicólogo (direto no
+//  Firestore, client SDK autenticado, em AbaDiario.jsx) -> réplica do
+//  paciente (aqui, via enviarReplica) -> resposta final do psicólogo.
+//  Depois de 3 mensagens na subcoleção, a conversa está encerrada.
 // ============================================================================
 
 const admin = require("firebase-admin");
@@ -172,6 +179,46 @@ async function acaoListar(req, res) {
           console.error("Erro ao gerar URL assinada:", e);
           item.audioUrl = null;
         }
+      }
+
+      // pedidos de orientação pagos trazem a conversa junto (resposta do
+      // psicólogo, réplica, resposta final)
+      if (d.visibilidade === "orientacao" && d.statusPagamento === "pago") {
+        const msgsSnap = await db
+          .collection("diarios")
+          .doc(doc.id)
+          .collection("mensagens")
+          .orderBy("criadoEm", "asc")
+          .get();
+
+        item.mensagens = await Promise.all(
+          msgsSnap.docs.map(async (m) => {
+            const md = m.data();
+            const msg = {
+              id: m.id,
+              autor: md.autor,
+              tipo: md.tipo,
+              conteudo: md.conteudo || null,
+              criadoEm: md.criadoEm ? md.criadoEm.toDate().toISOString() : null,
+            };
+            if (md.tipo === "audio" && md.audioPath) {
+              try {
+                const [url] = await bucket.file(md.audioPath).getSignedUrl({
+                  action: "read",
+                  expires: Date.now() + 60 * 60 * 1000,
+                });
+                msg.audioUrl = url;
+              } catch (e) {
+                msg.audioUrl = null;
+              }
+            }
+            return msg;
+          })
+        );
+
+        // a réplica só é permitida logo depois da 1ª resposta do psicólogo
+        item.podeReplicar = item.mensagens.length === 1 && item.mensagens[0].autor === "psicologo";
+        item.conversaEncerrada = item.mensagens.length >= 3;
       }
 
       return item;
@@ -415,6 +462,76 @@ async function acaoStatusPagamento(req, res) {
 }
 
 // ---------------------------------------------------------------------------
+//  AÇÃO: enviarReplica — paciente responde depois da 1ª resposta do
+//  psicólogo (uma réplica só, depois disso a conversa aguarda a resposta
+//  final e encerra)
+// ---------------------------------------------------------------------------
+async function acaoEnviarReplica(req, res) {
+  const { token, diarioId, tipo, conteudo, audioBase64 } = req.body || {};
+
+  if (!token) return res.status(400).json({ erro: "Token ausente" });
+  if (!diarioId) return res.status(400).json({ erro: "Pedido ausente" });
+  if (!["texto", "audio"].includes(tipo)) return res.status(400).json({ erro: "Tipo inválido" });
+  if (tipo === "texto" && !conteudo?.trim()) return res.status(400).json({ erro: "Conteúdo vazio" });
+  if (tipo === "audio" && !audioBase64) return res.status(400).json({ erro: "Áudio ausente" });
+
+  const tokenDoc = await db.collection("diarioTokens").doc(String(token)).get();
+  if (!tokenDoc.exists) return res.status(404).json({ erro: "Link inválido" });
+  const { pacienteId } = tokenDoc.data();
+
+  const diarioRef = db.collection("diarios").doc(String(diarioId));
+  const diarioDoc = await diarioRef.get();
+  if (!diarioDoc.exists) return res.status(404).json({ erro: "Pedido não encontrado" });
+
+  const dados = diarioDoc.data();
+  if (dados.pacienteId !== pacienteId) {
+    return res.status(403).json({ erro: "Esse pedido não pertence a esse link" });
+  }
+  if (dados.visibilidade !== "orientacao" || dados.statusPagamento !== "pago") {
+    return res.status(400).json({ erro: "Esse pedido ainda não está liberado para conversa" });
+  }
+
+  const msgsSnap = await diarioRef.collection("mensagens").orderBy("criadoEm", "asc").get();
+  const mensagens = msgsSnap.docs.map((d) => d.data());
+
+  if (mensagens.length !== 1 || mensagens[0].autor !== "psicologo") {
+    return res.status(400).json({
+      erro:
+        mensagens.length === 0
+          ? "Seu psicólogo ainda não respondeu."
+          : "Você já usou sua réplica nessa orientação.",
+    });
+  }
+
+  const mensagem = { autor: "paciente", tipo, criadoEm: admin.firestore.FieldValue.serverTimestamp() };
+
+  if (tipo === "texto") {
+    mensagem.conteudo = conteudo.trim();
+  } else {
+    const matches = audioBase64.match(/^data:(audio\/\w+);base64,(.+)$/);
+    if (!matches) return res.status(400).json({ erro: "Formato de áudio inválido" });
+    const mimeType = matches[1];
+    const buffer = Buffer.from(matches[2], "base64");
+    if (buffer.length > 5 * 1024 * 1024) return res.status(400).json({ erro: "Áudio muito grande" });
+    const extensao = mimeType.split("/")[1] || "webm";
+    const caminho = `diarios/${pacienteId}/respostas/${Date.now()}.${extensao}`;
+    await bucket.file(caminho).save(buffer, { metadata: { contentType: mimeType } });
+    mensagem.audioPath = caminho;
+    mensagem.audioMimeType = mimeType;
+  }
+
+  await diarioRef.collection("mensagens").add(mensagem);
+
+  await notificarPush(
+    "💬 Réplica na orientação",
+    `${dados.pacienteNome} respondeu na conversa de orientação. Abra o Diário na ficha.`,
+    { tipo: "replica_diario", pacienteId: String(pacienteId), diarioId: String(diarioId) }
+  ).catch((e) => console.error("Falha ao notificar réplica:", e));
+
+  return res.status(200).json({ ok: true });
+}
+
+// ---------------------------------------------------------------------------
 //  Roteador
 // ---------------------------------------------------------------------------
 const handler = async (req, res) => {
@@ -433,6 +550,7 @@ const handler = async (req, res) => {
     if (req.method === "POST" && acao === "salvar") return await acaoSalvar(req, res);
     if (req.method === "POST" && acao === "iniciarPagamento") return await acaoIniciarPagamento(req, res);
     if (req.method === "POST" && acao === "webhookPagamento") return await acaoWebhookPagamento(req, res);
+    if (req.method === "POST" && acao === "enviarReplica") return await acaoEnviarReplica(req, res);
 
     return res.status(400).json({ erro: "Ação inválida" });
   } catch (erro) {
