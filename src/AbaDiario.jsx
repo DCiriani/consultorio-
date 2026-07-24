@@ -318,7 +318,13 @@ function ItemDiario({ registro: r, audioUrls, onMarcarConversado, onRecarregar }
       {ehOrientacaoPaga && mensagens.length > 0 && (
         <div style={estilos.blocoConversa}>
           {mensagens.map((m) => (
-            <div key={m.id} style={m.autor === "psicologo" ? estilos.bolhaPsicologo : estilos.bolhaPaciente}>
+            <div
+              key={m.id}
+              style={{
+                ...(m.autor === "psicologo" ? estilos.bolhaPsicologo : estilos.bolhaPaciente),
+                ...(m.tipo === "audio" ? { minWidth: 260 } : {}),
+              }}
+            >
               <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4, opacity: 0.7 }}>
                 {m.autor === "psicologo" ? "Você" : "Paciente"}
               </div>
