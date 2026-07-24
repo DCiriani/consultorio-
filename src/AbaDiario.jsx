@@ -29,7 +29,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
-import { db } from "../firebase"; // ajuste o caminho conforme o teu projeto
+import { db } from "./firebase";
 
 function gerarTokenAleatorio() {
   // token simples e único o bastante pra link de paciente (não é segredo
