@@ -77,12 +77,26 @@ function avaliarRisco(respostas) {
 async function notificarPush(titulo, corpo, dataExtra) {
   const tokensSnap = await db.collection("tokens").get();
   const tokens = tokensSnap.docs.map((d) => d.id).filter(Boolean);
-  if (!tokens.length) return;
+  console.log(`notificarPush: ${tokens.length} token(s) encontrado(s) na coleção "tokens"`);
+  if (!tokens.length) {
+    console.log("notificarPush: nenhum token cadastrado, nada a enviar");
+    return;
+  }
 
-  await admin.messaging().sendEachForMulticast({
+  const resposta = await admin.messaging().sendEachForMulticast({
     tokens,
     notification: { title: titulo, body: corpo },
     data: dataExtra || {},
+  });
+
+  console.log(
+    `notificarPush: ${resposta.successCount} enviado(s) com sucesso, ${resposta.failureCount} falha(s)`
+  );
+
+  resposta.responses.forEach((r, i) => {
+    if (!r.success) {
+      console.log(`notificarPush: falha no token ${tokens[i].slice(0, 12)}... -> ${r.error?.code} ${r.error?.message}`);
+    }
   });
 }
 
