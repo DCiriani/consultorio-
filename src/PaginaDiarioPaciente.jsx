@@ -853,7 +853,7 @@ function ItemHistorico({ item, token, onRecarregar }) {
   const [excluindo, setExcluindo] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
-  const podeExcluir = ["privado", "visivel"].includes(item.visibilidade);
+  const podeExcluir = true; // agora vale pra tudo, inclusive orientação paga
 
   const excluir = async () => {
     setExcluindo(true);
@@ -908,6 +908,14 @@ function ItemHistorico({ item, token, onRecarregar }) {
 
       {item.conversaEncerrada && (
         <p style={{ fontSize: 12, color: "#888", marginTop: 8 }}>Essa conversa foi encerrada.</p>
+      )}
+
+      {item.visibilidade === "orientacao" && item.formatoResposta === "video" && (
+        <p style={{ fontSize: 13, marginTop: 8, color: item.chamadaRealizada ? "#3E5433" : "#8A6116" }}>
+          {item.chamadaRealizada
+            ? "✅ Chamada realizada."
+            : "🕓 Aguardando seu psicólogo entrar em contato para agendar a chamada."}
+        </p>
       )}
 
       {item.podeReplicar && !respondendo && (
@@ -965,7 +973,11 @@ function ItemHistorico({ item, token, onRecarregar }) {
 
       {podeExcluir && confirmandoExclusao && (
         <div style={estilos.confirmarExclusao}>
-          <span>Apagar essa anotação? Não dá pra desfazer.</span>
+          <span>
+            {item.visibilidade === "orientacao"
+              ? "Apagar essa orientação? Vai apagar a conversa inteira (sua pergunta e as respostas do seu psicólogo). Não dá pra desfazer."
+              : "Apagar essa anotação? Não dá pra desfazer."}
+          </span>
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button onClick={excluir} disabled={excluindo} style={estilos.botaoConfirmarApagar}>
               {excluindo ? "Apagando..." : "Sim, apagar"}

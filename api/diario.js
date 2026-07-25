@@ -87,6 +87,11 @@ async function notificarPush(titulo, corpo, dataExtra) {
     tokens,
     notification: { title: titulo, body: corpo },
     data: dataExtra || {},
+    // prioridade alta: sem isso, o Android pode segurar a notificação por
+    // minutos (às vezes até 10+) por economia de bateria, quando o celular
+    // está parado. Isso instrui o sistema a entregar imediatamente.
+    android: { priority: "high" },
+    webpush: { headers: { Urgency: "high" } },
   });
 
   console.log(
@@ -98,6 +103,20 @@ async function notificarPush(titulo, corpo, dataExtra) {
       console.log(`notificarPush: falha no token ${tokens[i].slice(0, 12)}... -> ${r.error?.code} ${r.error?.message}`);
     }
   });
+
+  // limpa tokens mortos (aparelho desinstalou o app, trocou de navegador,
+  // etc.) pra não acumular lixo e nem tentar mandar pra eles de novo
+  const paraApagar = new Set();
+  resposta.responses.forEach((r, i) => {
+    if (!r.success && r.error?.code === "messaging/registration-token-not-registered") {
+      paraApagar.add(tokens[i]);
+    }
+  });
+
+  if (paraApagar.size) {
+    await Promise.all([...paraApagar].map((t) => db.collection("tokens").doc(t).delete()));
+    console.log(`notificarPush: ${paraApagar.size} token(s) morto(s) removido(s) da coleção`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +193,7 @@ async function acaoListar(req, res) {
         visibilidade: d.visibilidade,
         statusPagamento: d.statusPagamento || null,
         formatoResposta: d.formatoResposta || null,
+        chamadaRealizada: d.chamadaRealizada || false,
         criadoEm: d.criadoEm ? d.criadoEm.toDate().toISOString() : null,
       };
 
@@ -478,9 +498,9 @@ async function acaoStatusPagamento(req, res) {
 }
 
 // ---------------------------------------------------------------------------
-//  AÇÃO: excluir — paciente apaga uma anotação própria (só privado/visível
-//  — pedidos de orientação pagos não podem ser apagados, já envolvem
-//  pagamento e a resposta do psicólogo)
+//  AÇÃO: excluir — paciente apaga qualquer anotação própria, inclusive
+//  pedidos de orientação pagos. Se tiver conversa (mensagens), apaga tudo
+//  em cascata (mensagens + áudios no Storage).
 // ---------------------------------------------------------------------------
 async function acaoExcluir(req, res) {
   const { token, diarioId } = req.body || {};
@@ -499,13 +519,23 @@ async function acaoExcluir(req, res) {
   if (dados.pacienteId !== pacienteId) {
     return res.status(403).json({ erro: "Essa anotação não pertence a esse link" });
   }
-  if (!["privado", "visivel"].includes(dados.visibilidade)) {
-    return res.status(400).json({ erro: "Pedidos de orientação não podem ser apagados." });
-  }
 
+  // apaga o áudio da pergunta original, se tiver
   if (dados.tipo === "audio" && dados.audioPath) {
     await bucket.file(dados.audioPath).delete().catch((e) => console.error("Falha ao apagar áudio:", e));
   }
+
+  // apaga a conversa inteira (mensagens + áudios de cada mensagem)
+  const msgsSnap = await diarioRef.collection("mensagens").get();
+  await Promise.all(
+    msgsSnap.docs.map(async (m) => {
+      const md = m.data();
+      if (md.tipo === "audio" && md.audioPath) {
+        await bucket.file(md.audioPath).delete().catch((e) => console.error("Falha ao apagar áudio da mensagem:", e));
+      }
+      await m.ref.delete();
+    })
+  );
 
   await diarioRef.delete();
   return res.status(200).json({ ok: true });

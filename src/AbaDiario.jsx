@@ -150,6 +150,11 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
     setRegistros((prev) => prev.map((r) => (r.id === id ? { ...r, conversadoNaSessao: !valorAtual } : r)));
   };
 
+  const marcarChamadaRealizada = async (id, valorAtual) => {
+    await updateDoc(doc(db, "diarios", id), { chamadaRealizada: !valorAtual });
+    setRegistros((prev) => prev.map((r) => (r.id === id ? { ...r, chamadaRealizada: !valorAtual } : r)));
+  };
+
   const [copiado, setCopiado] = useState(false);
 
   const copiarLink = () => {
@@ -188,7 +193,14 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
 
       {!carregando &&
         registros.map((r) => (
-          <ItemDiario key={r.id} registro={r} audioUrls={audioUrls} onMarcarConversado={marcarConversado} onRecarregar={carregar} />
+          <ItemDiario
+            key={r.id}
+            registro={r}
+            audioUrls={audioUrls}
+            onMarcarConversado={marcarConversado}
+            onMarcarChamadaRealizada={marcarChamadaRealizada}
+            onRecarregar={carregar}
+          />
         ))}
     </div>
   );
@@ -198,7 +210,7 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
 //  Um item do diário — se for orientação paga, mostra a conversa toda e o
 //  compositor de resposta (quando for a vez do psicólogo responder)
 // ---------------------------------------------------------------------------
-function ItemDiario({ registro: r, audioUrls, onMarcarConversado, onRecarregar }) {
+function ItemDiario({ registro: r, audioUrls, onMarcarConversado, onMarcarChamadaRealizada, onRecarregar }) {
   const [respondendo, setRespondendo] = useState(false);
   const [modoResposta, setModoResposta] = useState("texto"); // "texto" | "audio"
   const [textoResposta, setTextoResposta] = useState("");
@@ -210,11 +222,14 @@ function ItemDiario({ registro: r, audioUrls, onMarcarConversado, onRecarregar }
   const recorderRef = useRef(null);
 
   const ehOrientacaoPaga = r.visibilidade === "orientacao" && r.statusPagamento === "pago";
+  const ehVideo = r.formatoResposta === "video";
+  const ehConversaTextoAudio = ehOrientacaoPaga && !ehVideo;
   const mensagens = r.mensagens || [];
   // vez do psicólogo responder: 0 mensagens (1ª resposta) ou 2 mensagens
-  // (resposta final, depois da réplica do paciente)
-  const vezDoPsicologo = ehOrientacaoPaga && (mensagens.length === 0 || mensagens.length === 2);
-  const conversaEncerrada = ehOrientacaoPaga && mensagens.length >= 3;
+  // (resposta final, depois da réplica do paciente) — só se aplica a
+  // orientação por texto/áudio; vídeo é combinado por fora (WhatsApp)
+  const vezDoPsicologo = ehConversaTextoAudio && (mensagens.length === 0 || mensagens.length === 2);
+  const conversaEncerrada = ehConversaTextoAudio && mensagens.length >= 3;
 
   const iniciarGravacao = async () => {
     try {
@@ -315,7 +330,7 @@ function ItemDiario({ registro: r, audioUrls, onMarcarConversado, onRecarregar }
         <audio src={audioUrls[r.id]} controls style={{ width: "100%", marginTop: 6 }} />
       )}
 
-      {ehOrientacaoPaga && mensagens.length > 0 && (
+      {ehConversaTextoAudio && mensagens.length > 0 && (
         <div style={estilos.blocoConversa}>
           {mensagens.map((m) => (
             <div
@@ -337,17 +352,28 @@ function ItemDiario({ registro: r, audioUrls, onMarcarConversado, onRecarregar }
         </div>
       )}
 
-      {ehOrientacaoPaga && conversaEncerrada && (
+      {ehConversaTextoAudio && conversaEncerrada && (
         <p style={{ fontSize: 12, color: "#888", marginTop: 8 }}>Conversa encerrada.</p>
       )}
 
-      {ehOrientacaoPaga && vezDoPsicologo && !respondendo && (
+      {ehVideo && ehOrientacaoPaga && (
+        <label style={estilos.checkboxRealizada}>
+          <input
+            type="checkbox"
+            checked={!!r.chamadaRealizada}
+            onChange={() => onMarcarChamadaRealizada(r.id, r.chamadaRealizada)}
+          />
+          Chamada realizada
+        </label>
+      )}
+
+      {ehConversaTextoAudio && vezDoPsicologo && !respondendo && (
         <button onClick={() => setRespondendo(true)} style={estilos.botaoResponder}>
           {mensagens.length === 0 ? "Responder" : "Enviar resposta final"}
         </button>
       )}
 
-      {ehOrientacaoPaga && vezDoPsicologo && respondendo && (
+      {ehConversaTextoAudio && vezDoPsicologo && respondendo && (
         <div style={estilos.compositor}>
           <div style={estilos.abasCompositor}>
             <button
@@ -429,6 +455,7 @@ const estilos = {
   itemCabecalho: { display: "flex", justifyContent: "space-between", alignItems: "center" },
   tagOrientacao: { fontSize: 12, fontWeight: 600, color: "#B3261E" },
   checkboxLabel: { display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#666", marginTop: 8 },
+  checkboxRealizada: { display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#3E5433", fontWeight: 600, marginTop: 10 },
   blocoConversa: { marginTop: 10, display: "flex", flexDirection: "column", gap: 8 },
   bolhaPsicologo: { background: "#E9F3E5", borderRadius: 8, padding: "8px 10px", alignSelf: "flex-end", maxWidth: "90%" },
   bolhaPaciente: { background: "#FFF", border: "1px solid #EEE", borderRadius: 8, padding: "8px 10px", alignSelf: "flex-start", maxWidth: "90%" },
