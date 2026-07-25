@@ -160,6 +160,19 @@ module.exports = async (req, res) => {
 
     await batch.commit();
 
+    // notificação interna (aba Notificações do painel) — toda avaliação
+    // respondida gera um aviso, independente de ter item crítico ou não
+    db.collection("notificacoes").add({
+      tipo: "avaliacao",
+      titulo: "🧪 Avaliação respondida",
+      mensagem: `${t.pacienteNome || "Paciente"} respondeu ${(t.instrumentos || []).join(", ")}.`,
+      pacienteId: t.pacienteId,
+      pacienteNome: t.pacienteNome || "Paciente",
+      lida: false,
+      criadoEm: admin.firestore.FieldValue.serverTimestamp(),
+      dados: { instrumentos: t.instrumentos || [], algumCritico },
+    }).catch((e) => console.error("Falha ao registrar notificação de avaliação:", e));
+
     if (algumCritico) {
       await notificarRisco(t, resumo).catch((e) =>
         console.error("Falha ao notificar risco:", e)

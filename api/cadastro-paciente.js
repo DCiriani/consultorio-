@@ -67,6 +67,19 @@ module.exports = async (req, res) => {
       criadoEm: admin.firestore.FieldValue.serverTimestamp(),
     });
 
+    // notificação interna (aba Notificações do painel) — não bloqueia a
+    // resposta pro paciente se falhar, só registra o erro no log
+    db.collection("notificacoes").add({
+      tipo: "cadastro",
+      titulo: "📝 Novo cadastro",
+      mensagem: `${dados.nome} se cadastrou.`,
+      pacienteId: ref.id,
+      pacienteNome: dados.nome,
+      lida: false,
+      criadoEm: admin.firestore.FieldValue.serverTimestamp(),
+      dados: {},
+    }).catch((e) => console.error("Falha ao registrar notificação de cadastro:", e));
+
     return res.status(200).json({ ok: true, id: ref.id });
   } catch (e) {
     console.error("cadastro-paciente erro:", e);

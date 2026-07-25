@@ -1,5 +1,5 @@
 import { getApps, initializeApp, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import crypto from "crypto";
 
 function getDb(){
@@ -74,6 +74,19 @@ export default async function handler(req, res) {
       },
       evidencias,
     });
+
+    // notificação interna (aba Notificações do painel) — não bloqueia a
+    // resposta pro paciente se falhar, só registra o erro no log
+    db.collection("notificacoes").add({
+      tipo: "contrato",
+      titulo: "📄 Contrato assinado",
+      mensagem: `${nomeCompleto.trim()} assinou o contrato.`,
+      pacienteId: contrato.pacienteId || null,
+      pacienteNome: nomeCompleto.trim(),
+      lida: false,
+      criadoEm: FieldValue.serverTimestamp(),
+      dados: { token: String(token) },
+    }).catch((e) => console.error("Falha ao registrar notificação de contrato:", e));
 
     return res.status(200).json({ ok: true, assinadoEm: agora });
   } catch (e) {

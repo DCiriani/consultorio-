@@ -9,6 +9,7 @@ import { getMessagingIfSupported } from "./firebase-messaging";
 import { auth, db, firebaseApp } from "./firebase";
 import { PaginaAvaliacaoPaciente, AbaAvaliacoes } from "./AvaliacoesModulo";
 import { PaginaContratoPaciente } from "./ContratoPaciente";
+import { NotificacoesModulo } from "./NotificacoesModulo";
 import { AbaContrato } from "./ContratoModulo";
 import { PaginaDiarioPaciente } from "./PaginaDiarioPaciente";
 import { AbaDiario } from "./AbaDiario";
@@ -1119,6 +1120,7 @@ function IconAba({nome,color="currentColor",size=17}){
     pacientes:<><circle cx="12" cy="8" r="3.5" {...st}/><path d="M5 20c0-3.5 3-6.5 7-6.5s7 3 7 6.5" {...st}/></>,
     titulares:<><path d="M6 2.5h9l3 3v16H6z" {...st}/><line x1="9" y1="9" x2="15" y2="9" {...st}/><line x1="9" y1="13" x2="15" y2="13" {...st}/><line x1="9" y1="17" x2="13" y2="17" {...st}/></>,
     relatorio:<><line x1="5" y1="20" x2="5" y2="11" {...st}/><line x1="12" y1="20" x2="12" y2="6" {...st}/><line x1="19" y1="20" x2="19" y2="14" {...st}/><line x1="3" y1="20" x2="21" y2="20" {...st}/></>,
+    notificacoes:<><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" {...st}/><path d="M10 21a2 2 0 0 0 4 0" {...st}/></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24">{paths[nome]}</svg>;
 }
@@ -1518,6 +1520,7 @@ const isMobile = window.innerWidth < 768;
   const INS={width:"100%",padding:"10px 14px",border:"1.5px solid #c8ddd0",borderRadius:8,fontSize:15,fontFamily:"sans-serif",outline:"none",boxSizing:"border-box",background:"#fafdfa",color:"#1a3a2a"};
 const ABAS=[
 {k:"dashboard",l:"Dashboard",icon:"dashboard"},
+{k:"notificacoes",l:"Notificações",icon:"notificacoes"},
 {k:"agenda",l:"Agenda",icon:"agenda"},
 {k:"pagamentos",l:`Pagamentos (${registrosFiltrados.length})`,icon:"pagamentos"},
 {k:"pacientes",l:`Pacientes (${pacientesAtivos.length})`,icon:"pacientes"},
@@ -1533,6 +1536,7 @@ const ABAS_PRINCIPAIS=[
 {k:"relatorio",l:"Relatório",icon:"relatorio"},
 ];
 const ABAS_SECUNDARIAS=[
+{k:"notificacoes",l:"Notificações",icon:"notificacoes"},
 {k:"inativados",l:`Inativados (${pacientesInativos.length})`,icon:"pacientes"},
 {k:"titulares",l:`Titulares (${titulares.length})`,icon:"titulares"},
 ];
@@ -2413,6 +2417,12 @@ const ABAS_SECUNDARIAS=[
   }
 </section>}
 
+{aba==="notificacoes"&&(
+  <section style={CARD2}>
+    <h2 style={{margin:"0 0 18px",fontSize:17,fontWeight:700,color:"#1a3a2a"}}>Notificações</h2>
+    <NotificacoesModulo/>
+  </section>
+)}
       {aba==="titulares"&&(
   <AbaTitulares
     titulares={titulares}

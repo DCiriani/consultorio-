@@ -120,6 +120,26 @@ async function notificarPush(titulo, corpo, dataExtra) {
 }
 
 // ---------------------------------------------------------------------------
+//  Notificação interna (aba "Notificações" do painel) — fica registrada no
+//  Firestore independente do push funcionar ou não. Mesmo padrão pode ser
+//  reaproveitado em outros módulos (cadastro, avaliações, contrato):
+//  db.collection("notificacoes").add({ tipo, titulo, mensagem, pacienteId,
+//  pacienteNome, lida: false, criadoEm, dados })
+// ---------------------------------------------------------------------------
+async function registrarNotificacao({ tipo, titulo, mensagem, pacienteId, pacienteNome, dados }) {
+  await db.collection("notificacoes").add({
+    tipo,
+    titulo,
+    mensagem,
+    pacienteId: pacienteId || null,
+    pacienteNome: pacienteNome || null,
+    lida: false,
+    criadoEm: admin.firestore.FieldValue.serverTimestamp(),
+    dados: dados || {},
+  });
+}
+
+// ---------------------------------------------------------------------------
 //  AÇÃO: token — valida o link permanente
 // ---------------------------------------------------------------------------
 async function acaoToken(req, res) {
@@ -402,6 +422,15 @@ async function acaoIniciarPagamento(req, res) {
       { tipo: "risco_diario", pacienteId: String(pacienteId) }
     ).catch((e) => console.error("Falha ao notificar risco:", e));
 
+    await registrarNotificacao({
+      tipo: "diario_risco",
+      titulo: "🚨 Risco detectado no Diário",
+      mensagem: `${nome} sinalizou risco na triagem ao pedir orientação.`,
+      pacienteId,
+      pacienteNome: nome,
+      dados: { diarioId: docRef.id },
+    }).catch((e) => console.error("Falha ao registrar notificação:", e));
+
     return res.status(200).json({ risco: true });
   }
 
@@ -479,6 +508,15 @@ async function acaoWebhookPagamento(req, res) {
     `${dados.pacienteNome} pagou por ${DESCRICAO_FORMATO[dados.formatoResposta] || "orientação"}. Abra o Diário na ficha.`,
     { tipo: "orientacao_paga", pacienteId: String(dados.pacienteId), diarioId: doc.id }
   ).catch((e) => console.error("Falha ao notificar pagamento:", e));
+
+  await registrarNotificacao({
+    tipo: "diario_pagamento",
+    titulo: "💰 Orientação paga",
+    mensagem: `${dados.pacienteNome} pagou por ${DESCRICAO_FORMATO[dados.formatoResposta] || "orientação"}.`,
+    pacienteId: dados.pacienteId,
+    pacienteNome: dados.pacienteNome,
+    dados: { diarioId: doc.id, formatoResposta: dados.formatoResposta || null },
+  }).catch((e) => console.error("Falha ao registrar notificação:", e));
 
   return res.status(200).json({ success: true, message: null });
 }
@@ -607,6 +645,15 @@ async function acaoEnviarReplica(req, res) {
     `${dados.pacienteNome} respondeu na conversa de orientação. Abra o Diário na ficha.`,
     { tipo: "replica_diario", pacienteId: String(pacienteId), diarioId: String(diarioId) }
   ).catch((e) => console.error("Falha ao notificar réplica:", e));
+
+  await registrarNotificacao({
+    tipo: "diario_replica",
+    titulo: "💬 Réplica na orientação",
+    mensagem: `${dados.pacienteNome} respondeu na conversa de orientação.`,
+    pacienteId,
+    pacienteNome: dados.pacienteNome,
+    dados: { diarioId: String(diarioId) },
+  }).catch((e) => console.error("Falha ao registrar notificação:", e));
 
   return res.status(200).json({ ok: true });
 }
