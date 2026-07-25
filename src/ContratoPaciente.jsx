@@ -41,7 +41,7 @@ export function PaginaContratoPaciente(){
     if(!token){ setErro("Link inválido."); setCarregando(false); return; }
     (async()=>{
       try{
-        const resp=await fetch(`/api/contrato-buscar?token=${encodeURIComponent(token)}`);
+        const resp=await fetch(`/api/contrato?rota=buscar&token=${encodeURIComponent(token)}`);
         const data=await resp.json();
         if(!resp.ok||data.erro){ setErro(data.erro||"Não foi possível carregar o contrato."); }
         else{
@@ -199,10 +199,10 @@ export function PaginaContratoPaciente(){
     setEnviando(true);
     try{
       const assinaturaBase64=canvasRef.current.toDataURL("image/png");
-      const resp=await fetch("/api/contrato-assinar",{
+      const resp=await fetch("/api/contrato",{
         method:"POST",
         headers:{"content-type":"application/json"},
-        body:JSON.stringify({token,nomeCompleto,cpf,cidade,assinaturaBase64})
+        body:JSON.stringify({rota:"assinar",token,nomeCompleto,cpf,cidade,assinaturaBase64})
       });
       const data=await resp.json();
       if(!resp.ok||data.erro){ alert(data.erro||"Não foi possível registrar a assinatura."); }

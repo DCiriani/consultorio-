@@ -109,10 +109,10 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
       if(!ok)return;
     }
     try{
-      const resp=await fetch("/api/contrato-gerenciar",{
+      const resp=await fetch("/api/contrato",{
         method:"POST",
         headers:{"content-type":"application/json"},
-        body:JSON.stringify({token,acao})
+        body:JSON.stringify({rota:"gerenciar",token,acao})
       });
       const data=await resp.json();
       if(!resp.ok||data.erro){ showT(data.erro||"Não foi possível concluir a ação.","erro"); return; }
@@ -196,10 +196,10 @@ export function AbaContrato({pacienteId,pacienteNome,showT}){
     setGerando(true);
     setLinkGerado("");
     try{
-      const resp=await fetch("/api/contrato-gerar",{
+      const resp=await fetch("/api/contrato",{
         method:"POST",
         headers:{"content-type":"application/json"},
-        body:JSON.stringify({pacienteId,pacienteNome})
+        body:JSON.stringify({rota:"gerar",pacienteId,pacienteNome})
       });
       const data=await resp.json();
       if(!resp.ok||data.erro){
