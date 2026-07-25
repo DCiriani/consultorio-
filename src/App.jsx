@@ -1546,8 +1546,9 @@ const ABAS_SECUNDARIAS=[
   return(
     <div style={ROOT}>
       <Toast t={toast}/>
-{detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} evolucoes={evolucoes} setEvolucoes={setEvolucoes} showT={showT} pacientes={pacientes} setPacientes={setPacientes} onClose={()=>setDetalhe(null)}/>}      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
-  {pacienteParaPagamento&&<SolicitarPagamentoModal paciente={pacienteParaPagamento} onClose={()=>setPacienteParaPagamento(null)}/>}
+{detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} evolucoes={evolucoes} setEvolucoes={setEvolucoes} showT={showT} pacientes={pacientes} setPacientes={setPacientes} onClose={()=>setDetalhe(null)}/>}
+{pacienteParaPagamento&&<SolicitarPagamentoModal paciente={pacienteParaPagamento} onClose={()=>setPacienteParaPagamento(null)}/>}
+      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
       {editandoReg&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setEditandoReg(null)}>
