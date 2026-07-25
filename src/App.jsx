@@ -13,6 +13,7 @@ import { NotificacoesModulo } from "./NotificacoesModulo";
 import { AbaContrato } from "./ContratoModulo";
 import { PaginaDiarioPaciente } from "./PaginaDiarioPaciente";
 import { AbaDiario } from "./AbaDiario";
+import { SolicitarPagamentoModal } from "./SolicitarPagamentoModal";
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 const fCPF = r => { const d = r.replace(/\D/g,"").slice(0,11); return d.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); };
@@ -1237,6 +1238,7 @@ const pagamentosPendentesDash = registrosComData
   const [sugestoes,setSugestoes]=useState([]);const [sidx,setSidx]=useState(-1);
   const [toast,setToast]=useState(null);
   const [detalhe,setDetalhe]=useState(null);
+  const [pacienteParaPagamento,setPacienteParaPagamento]=useState(null);
   const [modalCad,setModalCad]=useState(false);
   const [salvandoPag,setSalvandoPag]=useState(false);
   const [salvandoPac,setSalvandoPac]=useState(false);
@@ -1545,6 +1547,7 @@ const ABAS_SECUNDARIAS=[
     <div style={ROOT}>
       <Toast t={toast}/>
 {detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} evolucoes={evolucoes} setEvolucoes={setEvolucoes} showT={showT} pacientes={pacientes} setPacientes={setPacientes} onClose={()=>setDetalhe(null)}/>}      {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
+  {pacienteParaPagamento&&<SolicitarPagamentoModal paciente={pacienteParaPagamento} onClose={()=>setPacienteParaPagamento(null)}/>}
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
       </div>}
       {editandoReg&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setEditandoReg(null)}>
@@ -2379,6 +2382,7 @@ const ABAS_SECUNDARIAS=[
           </select>
 
           <button onClick={()=>setDetalhe(p)} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a"}}>Ver ficha</button>
+          <button onClick={()=>setPacienteParaPagamento(p)} style={{padding:"6px 12px",background:"#fff7e8",border:"1px solid #e8cfa3",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#8a5a1a"}}>💰 Solicitar pagamento</button>
           <button onClick={()=>setEditandoPac(p)} style={{padding:"6px 12px",background:"#eaf0fb",border:"1px solid #b8cdf0",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a3a6a"}}>Editar</button>
           <button onClick={()=>inativarPac(p)} style={{padding:"6px 12px",background:"#fbf0e3",border:"1px solid #e8cfa3",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#8a5a1a"}}>Inativar</button>
           <button onClick={async()=>{if(!window.confirm(`Tem certeza que deseja excluir o paciente "${p.nome}"? Essa ação não pode ser desfeita.`))return;await deleteItem("pac",p.id);const a=pacientes.filter(x=>x.id!==p.id);setPacientes(a);showT("Paciente excluído.");}} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
