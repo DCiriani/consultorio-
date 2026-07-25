@@ -12,6 +12,7 @@
 // ============================================================================
 
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -72,16 +73,21 @@ async function rotaSolicitar(req, res) {
     return res.status(400).json({ erro: "Informe um valor válido." });
   }
 
+  // código curto pro link de compartilhar (em vez do ID longo do Firestore)
+  const codigo = crypto.randomBytes(4).toString("hex"); // 8 caracteres
+
   // registro "pendente" — só vira um pagamento de verdade quando o
   // webhook confirmar; guardado numa coleção separada pra não aparecer
   // na tabela de "Últimos registros" antes da hora
-  const pendenteRef = await db.collection("solicitacoesPagamento").add({
+  const pendenteRef = db.collection("solicitacoesPagamento").doc(codigo);
+  await pendenteRef.set({
     pacienteId,
     pacienteNome,
     cpf: cpf || "",
     titularId: titularId || null,
     valorCentavos,
     status: "aguardando",
+    checkoutUrl: null,
     criadoEm: admin.firestore.FieldValue.serverTimestamp(),
   });
 
@@ -93,7 +99,7 @@ async function rotaSolicitar(req, res) {
         handle: INFINITEPAY_HANDLE,
         redirect_url: BASE_URL,
         webhook_url: `${BASE_URL}/api/pagamento?rota=webhook`,
-        order_nsu: pendenteRef.id,
+        order_nsu: codigo,
         customer: { name: pacienteNome },
         items: [
           {
@@ -112,12 +118,30 @@ async function rotaSolicitar(req, res) {
       return res.status(502).json({ erro: "Não consegui gerar o link de pagamento. Tenta de novo." });
     }
 
-    return res.status(200).json({ url: dados.url, id: pendenteRef.id });
+    await pendenteRef.update({ checkoutUrl: dados.url });
+
+    return res.status(200).json({ codigo, linkCurto: `${BASE_URL}/p/${codigo}` });
   } catch (e) {
     console.error("Erro ao chamar InfinityPay:", e);
     await pendenteRef.delete();
     return res.status(502).json({ erro: "Não consegui gerar o link de pagamento. Tenta de novo." });
   }
+}
+
+// ---------------------------------------------------------------------------
+//  ROTA: ir — link curto (/p/codigo) redireciona pro checkout real
+// ---------------------------------------------------------------------------
+async function rotaIr(req, res) {
+  const { id } = req.query;
+  if (!id) return res.status(400).send("Link inválido.");
+
+  const doc = await db.collection("solicitacoesPagamento").doc(String(id)).get();
+  if (!doc.exists || !doc.data().checkoutUrl) {
+    return res.status(404).send("Este link de pagamento não existe ou expirou.");
+  }
+
+  res.writeHead(302, { Location: doc.data().checkoutUrl });
+  return res.end();
 }
 
 // ---------------------------------------------------------------------------
@@ -193,6 +217,7 @@ const handler = async (req, res) => {
   const rota = req.query?.rota || req.body?.rota;
 
   try {
+    if (req.method === "GET" && rota === "ir") return await rotaIr(req, res);
     if (req.method === "POST" && rota === "solicitar") return await rotaSolicitar(req, res);
     if (req.method === "POST" && rota === "webhook") return await rotaWebhook(req, res);
     return res.status(400).json({ erro: "Rota inválida" });

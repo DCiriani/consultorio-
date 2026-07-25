@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/p/:id", "destination": "/api/pagamento?rota=ir&id=:id" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [
