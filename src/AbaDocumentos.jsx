@@ -17,6 +17,7 @@
 import { useState, useEffect } from "react";
 import { collection, addDoc, getDocs, doc, getDoc, setDoc, query, where, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase";
+import logoEspacoCiriani from "./assets/logo-espaco-ciriani.png";
 
 // ---------------------------------------------------------------------------
 //  AJUSTE AQUI: IDs dos profissionais, tem que bater com o campo
@@ -106,7 +107,29 @@ function redimensionarImagem(file, larguraMax = 480) {
   });
 }
 
-function baixarHtml(nomeArquivo, corpoHtml) {
+// busca o logo do projeto e converte pra base64, pra ficar embutido no
+// arquivo baixado (funciona mesmo offline, sem depender do site estar no ar)
+let logoBase64Cache = null;
+async function obterLogoBase64() {
+  if (logoBase64Cache) return logoBase64Cache;
+  try {
+    const resp = await fetch(logoEspacoCiriani);
+    const blob = await resp.blob();
+    logoBase64Cache = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    return logoBase64Cache;
+  } catch (e) {
+    console.error("Não consegui carregar o logo:", e);
+    return null;
+  }
+}
+
+async function baixarHtml(nomeArquivo, corpoHtml) {
+  const logo = await obterLogoBase64();
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -115,9 +138,11 @@ function baixarHtml(nomeArquivo, corpoHtml) {
 <title>${nomeArquivo}</title>
 <style>
   body{font-family:Georgia,serif;background:#f4f6f0;margin:0;padding:24px 16px;color:#1a3a2a;line-height:1.7;}
-  .folha{background:#fff;max-width:720px;margin:0 auto;padding:48px 44px;border-radius:6px;border:1px solid #deeade;}
-  .cabecalho{text-align:center;margin-bottom:36px;}
-  .cabecalho h2{font-size:16px;margin:0;letter-spacing:0.02em;}
+  .folha{background:#fff;max-width:720px;margin:0 auto;padding:48px 44px;border-radius:6px;border:1px solid #deeade;display:flex;flex-direction:column;min-height:900px;box-sizing:border-box;}
+  .conteudo{flex:1;}
+  .cabecalho{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:36px;padding-bottom:20px;border-bottom:1px solid #e3ede6;}
+  .cabecalho img{width:44px;height:44px;flex-shrink:0;}
+  .cabecalho h2{font-size:18px;margin:0;letter-spacing:0.02em;}
   .titulo{text-align:center;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 30px;}
   .corpo{font-size:15px;text-align:justify;}
   .corpo p{margin:0 0 16px;}
@@ -127,13 +152,23 @@ function baixarHtml(nomeArquivo, corpoHtml) {
   .bloco-assinatura-carimbo img.assinatura{max-height:320px;max-width:600px;display:block;}
   .bloco-assinatura-carimbo img.carimbo{max-height:130px;max-width:220px;display:block;}
   .linha-nome{border-top:1px solid #444;padding-top:6px;margin-top:2px;font-size:13px;min-width:260px;text-align:center;}
+  .rodape{margin-top:40px;padding-top:16px;border-top:1px solid #e3ede6;text-align:center;font-size:11px;color:#7a9488;line-height:1.6;}
   @media print{body{background:#fff;padding:0;}.folha{border:none;max-width:none;padding:0;}}
 </style>
 </head>
 <body>
 <div class="folha">
-  <div class="cabecalho"><h2>Espaço Ciriani</h2></div>
-  ${corpoHtml}
+  <div class="conteudo">
+    <div class="cabecalho">
+      ${logo ? `<img src="${logo}" alt="Espaço Ciriani"/>` : ""}
+      <h2>Espaço Ciriani</h2>
+    </div>
+    ${corpoHtml}
+  </div>
+  <div class="rodape">
+    R. Piauí, 1657 — Santa Maria, Uberaba - MG, 38050-460<br/>
+    (34) 99141-2984
+  </div>
 </div>
 </body>
 </html>`;
@@ -317,7 +352,7 @@ function FormularioAtestado({ paciente, assinaturas, onGerado, showT }) {
           <div class="linha-nome">${prof.nomeCompleto || ""}${prof.crp ? ` — CRP ${prof.crp}` : ""}</div>
         </div>
       `;
-      baixarHtml(`Atestado-${paciente.nome.replace(/\s+/g, "-")}`, corpo);
+      await baixarHtml(`Atestado-${paciente.nome.replace(/\s+/g, "-")}`, corpo);
       showT("Atestado gerado e salvo no histórico!");
       setFundamentacao("");
       setCid("");
@@ -449,7 +484,7 @@ function FormularioDeclaracao({ paciente, assinaturas, onGerado, showT }) {
           <div class="linha-nome">${prof.nomeCompleto || ""}${prof.crp ? ` — CRP ${prof.crp}` : ""}</div>
         </div>
       `;
-      baixarHtml(`Declaracao-${paciente.nome.replace(/\s+/g, "-")}`, corpo);
+      await baixarHtml(`Declaracao-${paciente.nome.replace(/\s+/g, "-")}`, corpo);
       showT("Declaração gerada e salva no histórico!");
       setNomeAcompanhante("");
       setHoraInicio("");
