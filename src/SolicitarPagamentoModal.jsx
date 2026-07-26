@@ -49,7 +49,7 @@ export function SolicitarPagamentoModal({ paciente, onClose }) {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data?.erro || `Erro ${r.status}`);
-      setLink(data.url);
+      setLink(data.linkCurto);
     } catch (e) {
       setErro(e.message || "Não consegui gerar o link. Tenta de novo.");
     } finally {
