@@ -77,10 +77,11 @@ function baixarHtml(nomeArquivo, corpoHtml) {
   .corpo{font-size:15px;text-align:justify;}
   .corpo p{margin:0 0 16px;}
   .data-local{margin-top:36px;font-size:14px;}
-  .assinaturas{display:flex;flex-direction:column;align-items:center;margin-top:56px;gap:2px;}
-  .assinaturas img.assinatura{max-height:70px;max-width:220px;display:block;}
-  .assinaturas img.carimbo{max-height:90px;max-width:200px;display:block;margin-top:6px;}
-  .linha-nome{border-top:1px solid #444;padding-top:6px;margin-top:4px;font-size:13px;min-width:260px;text-align:center;}
+  .assinaturas{display:flex;flex-direction:column;align-items:center;margin-top:56px;gap:10px;}
+  .bloco-assinatura-carimbo{display:flex;align-items:center;justify-content:center;gap:24px;}
+  .bloco-assinatura-carimbo img.assinatura{max-height:110px;max-width:260px;display:block;}
+  .bloco-assinatura-carimbo img.carimbo{max-height:130px;max-width:220px;display:block;}
+  .linha-nome{border-top:1px solid #444;padding-top:6px;margin-top:6px;font-size:13px;min-width:260px;text-align:center;}
   @media print{body{background:#fff;padding:0;}.folha{border:none;max-width:none;padding:0;}}
 </style>
 </head>
@@ -264,8 +265,10 @@ function FormularioAtestado({ paciente, assinaturas, onGerado, showT }) {
         </div>
         <div class="data-local">Uberaba, ${hoje()}.</div>
         <div class="assinaturas">
-          <img class="assinatura" src="${prof.assinatura}" alt="Assinatura"/>
-          ${prof.carimbo ? `<img class="carimbo" src="${prof.carimbo}" alt="Carimbo"/>` : ""}
+          <div class="bloco-assinatura-carimbo">
+            <img class="assinatura" src="${prof.assinatura}" alt="Assinatura"/>
+            ${prof.carimbo ? `<img class="carimbo" src="${prof.carimbo}" alt="Carimbo"/>` : ""}
+          </div>
           <div class="linha-nome">${prof.nomeCompleto || ""}${prof.crp ? ` — CRP ${prof.crp}` : ""}</div>
         </div>
       `;
@@ -394,8 +397,10 @@ function FormularioDeclaracao({ paciente, assinaturas, onGerado, showT }) {
         </div>
         <div class="data-local">Uberaba, ${hoje()}.</div>
         <div class="assinaturas">
-          <img class="assinatura" src="${prof.assinatura}" alt="Assinatura"/>
-          ${prof.carimbo ? `<img class="carimbo" src="${prof.carimbo}" alt="Carimbo"/>` : ""}
+          <div class="bloco-assinatura-carimbo">
+            <img class="assinatura" src="${prof.assinatura}" alt="Assinatura"/>
+            ${prof.carimbo ? `<img class="carimbo" src="${prof.carimbo}" alt="Carimbo"/>` : ""}
+          </div>
           <div class="linha-nome">${prof.nomeCompleto || ""}${prof.crp ? ` — CRP ${prof.crp}` : ""}</div>
         </div>
       `;
