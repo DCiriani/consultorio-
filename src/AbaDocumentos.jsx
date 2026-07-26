@@ -37,6 +37,50 @@ function hoje() {
   return new Date().toLocaleDateString("pt-BR");
 }
 
+// recorta o excesso de fundo branco/transparente ao redor do desenho,
+// deixando só a assinatura ou o carimbo de verdade (sem a folha em volta)
+function recortarEspacoBranco(canvas) {
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+  const dados = ctx.getImageData(0, 0, width, height).data;
+  const limiar = 245; // acima disso é considerado "quase branco"
+
+  let minX = width, minY = height, maxX = 0, maxY = 0;
+  let achouAlgo = false;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const r = dados[i], g = dados[i + 1], b = dados[i + 2], a = dados[i + 3];
+      const eFundo = a < 10 || (r > limiar && g > limiar && b > limiar);
+      if (!eFundo) {
+        achouAlgo = true;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (!achouAlgo) return canvas; // não achou nada, devolve como veio
+
+  const folga = 6; // uma respirada pequena ao redor do que sobrou
+  minX = Math.max(0, minX - folga);
+  minY = Math.max(0, minY - folga);
+  maxX = Math.min(width - 1, maxX + folga);
+  maxY = Math.min(height - 1, maxY + folga);
+
+  const recortado = document.createElement("canvas");
+  recortado.width = maxX - minX + 1;
+  recortado.height = maxY - minY + 1;
+  const ctxRecortado = recortado.getContext("2d");
+  ctxRecortado.fillStyle = "#fff";
+  ctxRecortado.fillRect(0, 0, recortado.width, recortado.height);
+  ctxRecortado.drawImage(canvas, minX, minY, recortado.width, recortado.height, 0, 0, recortado.width, recortado.height);
+  return recortado;
+}
+
 function redimensionarImagem(file, larguraMax = 480) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -51,7 +95,8 @@ function redimensionarImagem(file, larguraMax = 480) {
         ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/png"));
+        const canvasRecortado = recortarEspacoBranco(canvas);
+        resolve(canvasRecortado.toDataURL("image/png"));
       };
       img.onerror = reject;
       img.src = reader.result;
@@ -77,11 +122,11 @@ function baixarHtml(nomeArquivo, corpoHtml) {
   .corpo{font-size:15px;text-align:justify;}
   .corpo p{margin:0 0 16px;}
   .data-local{margin-top:36px;font-size:14px;}
-  .assinaturas{display:flex;flex-direction:column;align-items:center;margin-top:18px;gap:6px;}
-  .bloco-assinatura-carimbo{display:flex;align-items:center;justify-content:center;gap:8px;}
+  .assinaturas{display:flex;flex-direction:column;align-items:center;margin-top:10px;gap:2px;}
+  .bloco-assinatura-carimbo{display:flex;align-items:center;justify-content:center;gap:4px;}
   .bloco-assinatura-carimbo img.assinatura{max-height:320px;max-width:600px;display:block;}
   .bloco-assinatura-carimbo img.carimbo{max-height:130px;max-width:220px;display:block;}
-  .linha-nome{border-top:1px solid #444;padding-top:6px;margin-top:4px;font-size:13px;min-width:260px;text-align:center;}
+  .linha-nome{border-top:1px solid #444;padding-top:6px;margin-top:2px;font-size:13px;min-width:260px;text-align:center;}
   @media print{body{background:#fff;padding:0;}.folha{border:none;max-width:none;padding:0;}}
 </style>
 </head>
