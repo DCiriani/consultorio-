@@ -97,7 +97,7 @@ async function rotaSolicitar(req, res) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         handle: INFINITEPAY_HANDLE,
-        redirect_url: BASE_URL,
+        redirect_url: `${BASE_URL}/pagamento-confirmado`,
         webhook_url: `${BASE_URL}/api/pagamento?rota=webhook`,
         order_nsu: codigo,
         customer: { name: pacienteNome },

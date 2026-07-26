@@ -12,6 +12,7 @@ import { PaginaContratoPaciente } from "./ContratoPaciente";
 import { NotificacoesModulo } from "./NotificacoesModulo";
 import { AbaContrato } from "./ContratoModulo";
 import { PaginaDiarioPaciente } from "./PaginaDiarioPaciente";
+import { PaginaPagamentoConfirmado } from "./PaginaPagamentoConfirmado";
 import { AbaDiario } from "./AbaDiario";
 import { SolicitarPagamentoModal } from "./SolicitarPagamentoModal";
 
@@ -2586,6 +2587,9 @@ export default function App(){
   if(window.location.pathname==="/diario"){
     return <PaginaDiarioPaciente/>;
   }
+  if(window.location.pathname==="/pagamento-confirmado"){
+  return <PaginaPagamentoConfirmado/>;
+}
 
   if(tela==="login") return <Login onLogin={handleLogin}/>;
 
