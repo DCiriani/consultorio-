@@ -27,6 +27,76 @@ import logoEspacoCiriani from "./assets/logo-espaco-ciriani.png";
 const ID_DIEGO = "diego";
 const ID_RHANIA = "rhania";
 
+// ---------------------------------------------------------------------------
+//  Lista curada dos CID-10 mais comuns na prática psicológica (capítulo F —
+//  transtornos mentais e comportamentais — mais alguns Z relevantes).
+//  Não é exaustiva: confere sempre o código antes de usar no documento.
+// ---------------------------------------------------------------------------
+const CIDS_COMUNS = [
+  { codigo: "F32.0", nome: "Episódio depressivo leve" },
+  { codigo: "F32.1", nome: "Episódio depressivo moderado" },
+  { codigo: "F32.2", nome: "Episódio depressivo grave sem sintomas psicóticos" },
+  { codigo: "F32.9", nome: "Episódio depressivo não especificado" },
+  { codigo: "F33.0", nome: "Transtorno depressivo recorrente, episódio atual leve" },
+  { codigo: "F33.1", nome: "Transtorno depressivo recorrente, episódio atual moderado" },
+  { codigo: "F33.2", nome: "Transtorno depressivo recorrente, episódio atual grave sem sintomas psicóticos" },
+  { codigo: "F34.1", nome: "Distimia (transtorno depressivo persistente)" },
+  { codigo: "F34.0", nome: "Ciclotimia" },
+  { codigo: "F31.0", nome: "Transtorno afetivo bipolar, episódio atual hipomaníaco" },
+  { codigo: "F31.1", nome: "Transtorno afetivo bipolar, episódio atual maníaco sem sintomas psicóticos" },
+  { codigo: "F31.3", nome: "Transtorno afetivo bipolar, episódio atual depressão leve ou moderada" },
+  { codigo: "F41.0", nome: "Transtorno de pânico (ansiedade paroxística episódica)" },
+  { codigo: "F41.1", nome: "Transtorno de ansiedade generalizada" },
+  { codigo: "F41.2", nome: "Transtorno misto ansioso e depressivo" },
+  { codigo: "F40.0", nome: "Agorafobia" },
+  { codigo: "F40.1", nome: "Fobia social" },
+  { codigo: "F42", nome: "Transtorno obsessivo-compulsivo" },
+  { codigo: "F42.0", nome: "TOC — predomínio de pensamentos/ruminações obsessivas" },
+  { codigo: "F42.1", nome: "TOC — predomínio de comportamentos compulsivos (rituais)" },
+  { codigo: "F43.0", nome: "Reação aguda ao stress" },
+  { codigo: "F43.1", nome: "Transtorno de estresse pós-traumático (TEPT)" },
+  { codigo: "F43.2", nome: "Transtorno de adaptação" },
+  { codigo: "F43.20", nome: "Transtorno de adaptação — reação depressiva breve" },
+  { codigo: "F43.21", nome: "Transtorno de adaptação — reação depressiva prolongada" },
+  { codigo: "F43.25", nome: "Transtorno de adaptação — reação mista ansiosa e depressiva" },
+  { codigo: "F44", nome: "Transtornos dissociativos (de conversão)" },
+  { codigo: "F45.0", nome: "Transtorno de somatização" },
+  { codigo: "F45.2", nome: "Transtorno hipocondríaco" },
+  { codigo: "F50.0", nome: "Anorexia nervosa" },
+  { codigo: "F50.2", nome: "Bulimia nervosa" },
+  { codigo: "F50.8", nome: "Compulsão alimentar / outros transtornos alimentares" },
+  { codigo: "F51.0", nome: "Insônia não orgânica" },
+  { codigo: "F60.2", nome: "Transtorno de personalidade antissocial" },
+  { codigo: "F60.3", nome: "Transtorno de personalidade emocionalmente instável (borderline)" },
+  { codigo: "F60.5", nome: "Transtorno de personalidade anancástica (obsessivo-compulsiva)" },
+  { codigo: "F60.6", nome: "Transtorno de personalidade ansiosa (esquiva)" },
+  { codigo: "F60.7", nome: "Transtorno de personalidade dependente" },
+  { codigo: "F90.0", nome: "TDAH (distúrbio de atividade e da atenção)" },
+  { codigo: "F84.0", nome: "Autismo infantil (TEA)" },
+  { codigo: "F84.5", nome: "Síndrome de Asperger" },
+  { codigo: "F70", nome: "Retardo mental leve" },
+  { codigo: "F20", nome: "Esquizofrenia" },
+  { codigo: "F25", nome: "Transtorno esquizoafetivo" },
+  { codigo: "F10.1", nome: "Uso nocivo de álcool" },
+  { codigo: "F10.2", nome: "Síndrome de dependência do álcool" },
+  { codigo: "F12.1", nome: "Uso nocivo de canabinoides" },
+  { codigo: "F19.1", nome: "Uso nocivo de múltiplas drogas" },
+  { codigo: "F63.0", nome: "Jogo patológico" },
+  { codigo: "F93.0", nome: "Transtorno de ansiedade de separação" },
+  { codigo: "F94.0", nome: "Mutismo eletivo" },
+  { codigo: "F98.0", nome: "Enurese não orgânica" },
+  { codigo: "Z73.0", nome: "Esgotamento profissional (burnout)" },
+  { codigo: "Z63.0", nome: "Problemas de relacionamento com cônjuge/parceiro" },
+  { codigo: "Z61", nome: "Problemas relacionados a eventos negativos na infância" },
+];
+
+function normalizar(txt) {
+  return (txt || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // remove acentos, pra "depressao" achar "depressão"
+}
+
 const CX = { background: "#fff", borderRadius: 10, padding: 16, border: "1px solid #e0ede5", marginBottom: 12 };
 const BTN = { padding: "9px 18px", background: "#2a7a4a", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "sans-serif", fontWeight: 600 };
 const BTN_SEC = { padding: "9px 18px", background: "#fff", color: "#4a6a5a", border: "1.5px solid #c8ddd0", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "sans-serif" };
@@ -300,6 +370,7 @@ function ConfigurarAssinaturas({ onFechar, showT }) {
 function FormularioAtestado({ paciente, assinaturas, onGerado, showT }) {
   const [fundamentacao, setFundamentacao] = useState("");
   const [cid, setCid] = useState("");
+  const [sugestoesCid, setSugestoesCid] = useState([]);
   const [dias, setDias] = useState("");
   const [dataInicio, setDataInicio] = useState("");
   const [mostrarExemplo, setMostrarExemplo] = useState(false);
@@ -307,6 +378,24 @@ function FormularioAtestado({ paciente, assinaturas, onGerado, showT }) {
 
   const profId = paciente.profissional === ID_RHANIA ? ID_RHANIA : ID_DIEGO;
   const prof = assinaturas[profId] || {};
+
+  const buscarCid = (termo) => {
+    setCid(termo);
+    const q = normalizar(termo);
+    if (q.length < 2) {
+      setSugestoesCid([]);
+      return;
+    }
+    const encontrados = CIDS_COMUNS.filter(
+      (c) => normalizar(c.nome).includes(q) || normalizar(c.codigo).startsWith(q)
+    ).slice(0, 8);
+    setSugestoesCid(encontrados);
+  };
+
+  const escolherCid = (c) => {
+    setCid(`${c.codigo} — ${c.nome}`);
+    setSugestoesCid([]);
+  };
 
   const gerar = async () => {
     if (!fundamentacao.trim()) {
@@ -394,9 +483,46 @@ function FormularioAtestado({ paciente, assinaturas, onGerado, showT }) {
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
-        <div>
+        <div style={{ position: "relative" }}>
           <label style={LB}>CID (opcional)</label>
-          <input style={IN} value={cid} onChange={(e) => setCid(e.target.value)} placeholder="Ex: F41.1" />
+          <input
+            style={IN}
+            value={cid}
+            onChange={(e) => buscarCid(e.target.value)}
+            onBlur={() => setTimeout(() => setSugestoesCid([]), 150)}
+            placeholder="Digite o nome, ex: depressão"
+            autoComplete="off"
+          />
+          {sugestoesCid.length > 0 && (
+            <ul
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                minWidth: 280,
+                background: "#fff",
+                border: "1.5px solid #c8ddd0",
+                borderRadius: 8,
+                zIndex: 50,
+                listStyle: "none",
+                margin: 0,
+                padding: "4px 0",
+                boxShadow: "0 8px 24px rgba(0,40,20,0.12)",
+                maxHeight: 240,
+                overflowY: "auto",
+              }}
+            >
+              {sugestoesCid.map((c) => (
+                <li
+                  key={c.codigo}
+                  onMouseDown={() => escolherCid(c)}
+                  style={{ padding: "8px 12px", cursor: "pointer", fontSize: 13, fontFamily: "sans-serif" }}
+                >
+                  <strong>{c.codigo}</strong> — {c.nome}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div>
           <label style={LB}>Dias de afastamento</label>
