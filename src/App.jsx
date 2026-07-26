@@ -1149,7 +1149,13 @@ function Painel({pacientes,setPacientes,registros,setRegistros,titulares,setTitu
   const [menuMobileAberto,setMenuMobileAberto]=useState(false);
 const pacientesFiltrados = filtroProf==="todos" ? pacientes : pacientes.filter(p=>p.profissional===filtroProf);
 const nomesFiltrados = new Set(pacientesFiltrados.map(p=>p.nome));
-const registrosFiltrados = filtroProf==="todos" ? registros : registros.filter(r=>nomesFiltrados.has(r.nome));
+const registrosFiltrados = (filtroProf==="todos" ? registros : registros.filter(r=>nomesFiltrados.has(r.nome)))
+  .slice()
+  .sort((a,b)=>{
+    const ta = a.criadoEm?.toMillis ? a.criadoEm.toMillis() : (a.criadoEm?.toDate ? a.criadoEm.toDate().getTime() : 0);
+    const tb = b.criadoEm?.toMillis ? b.criadoEm.toMillis() : (b.criadoEm?.toDate ? b.criadoEm.toDate().getTime() : 0);
+    return tb - ta;
+  });
 const pacientesAtivos = pacientesFiltrados.filter(p=>!p.inativo);
 const pacientesInativos = pacientesFiltrados.filter(p=>p.inativo);
 const buscaLower = buscaPac.trim().toLowerCase();
