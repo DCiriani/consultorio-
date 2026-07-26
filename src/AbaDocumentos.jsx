@@ -137,7 +137,7 @@ async function baixarHtml(nomeArquivo, corpoHtml) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${nomeArquivo}</title>
 <style>
-  body{font-family:Georgia,serif;background:#f4f6f0;margin:0;padding:24px 16px;color:#1a3a2a;line-height:1.7;}
+  body{font-family:"Times New Roman",Times,serif;font-variant-numeric:lining-nums tabular-nums;background:#f4f6f0;margin:0;padding:24px 16px;color:#1a3a2a;line-height:1.7;}
   .folha{background:#fff;max-width:720px;margin:0 auto;padding:48px 44px;border-radius:6px;border:1px solid #deeade;display:flex;flex-direction:column;min-height:900px;box-sizing:border-box;}
   .conteudo{flex:1;}
   .cabecalho{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:36px;padding-bottom:20px;border-bottom:1px solid #e3ede6;}
@@ -166,8 +166,7 @@ async function baixarHtml(nomeArquivo, corpoHtml) {
     ${corpoHtml}
   </div>
   <div class="rodape">
-    R. Piauí, 1657 — Santa Maria, Uberaba - MG, 38050-460<br/>
-    (34) 99141-2984
+    R. Piauí, 1657 — Santa Maria, Uberaba - MG, 38050-460 — (34) 99141-2984
   </div>
 </div>
 </body>
