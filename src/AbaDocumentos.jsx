@@ -77,11 +77,11 @@ function baixarHtml(nomeArquivo, corpoHtml) {
   .corpo{font-size:15px;text-align:justify;}
   .corpo p{margin:0 0 16px;}
   .data-local{margin-top:36px;font-size:14px;}
-  .assinaturas{display:flex;flex-direction:column;align-items:center;margin-top:56px;gap:10px;}
-  .bloco-assinatura-carimbo{display:flex;align-items:center;justify-content:center;gap:24px;}
-  .bloco-assinatura-carimbo img.assinatura{max-height:110px;max-width:260px;display:block;}
+  .assinaturas{display:flex;flex-direction:column;align-items:center;margin-top:18px;gap:6px;}
+  .bloco-assinatura-carimbo{display:flex;align-items:center;justify-content:center;gap:8px;}
+  .bloco-assinatura-carimbo img.assinatura{max-height:320px;max-width:600px;display:block;}
   .bloco-assinatura-carimbo img.carimbo{max-height:130px;max-width:220px;display:block;}
-  .linha-nome{border-top:1px solid #444;padding-top:6px;margin-top:6px;font-size:13px;min-width:260px;text-align:center;}
+  .linha-nome{border-top:1px solid #444;padding-top:6px;margin-top:4px;font-size:13px;min-width:260px;text-align:center;}
   @media print{body{background:#fff;padding:0;}.folha{border:none;max-width:none;padding:0;}}
 </style>
 </head>
@@ -130,7 +130,7 @@ function ConfigurarAssinaturas({ onFechar, showT }) {
   const escolherImagem = async (campo, file) => {
     if (!file) return;
     try {
-      const base64 = await redimensionarImagem(file);
+      const base64 = await redimensionarImagem(file, campo === "assinatura" ? 900 : 480);
       atualizarCampo(campo, base64);
     } catch {
       showT("Não consegui ler a imagem.", "erro");
