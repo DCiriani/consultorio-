@@ -14,6 +14,7 @@ import { AbaContrato } from "./ContratoModulo";
 import { PaginaDiarioPaciente } from "./PaginaDiarioPaciente";
 import { PaginaPagamentoConfirmado } from "./PaginaPagamentoConfirmado";
 import { AbaDiario } from "./AbaDiario";
+import { AbaDocumentos } from "./AbaDocumentos";
 import { SolicitarPagamentoModal } from "./SolicitarPagamentoModal";
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
@@ -763,6 +764,9 @@ function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,paciente
             </div>
           }
 
+          <div style={{marginTop:22,borderTop:"1px solid #eef4ec",paddingTop:14}}>
+  <AbaDocumentos paciente={p} showT={showT}/>
+</div>
           {modalAssistente&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setModalAssistente(false)}>
             <div style={{background:"#fff",borderRadius:14,padding:28,width:"100%",maxWidth:560,boxShadow:"0 8px 40px rgba(0,0,0,0.3)",maxHeight:"85vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>

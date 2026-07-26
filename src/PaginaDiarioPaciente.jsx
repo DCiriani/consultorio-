@@ -20,9 +20,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 const LIMITE_AUDIO_MS = 3 * 60 * 1000; // 3 minutos
 
 const FORMATOS_ORIENTACAO = [
-  { id: "texto", emoji: "💬", titulo: "Resposta por texto", preco: "R$ 1,00" },
-  { id: "audio", emoji: "🎙️", titulo: "Resposta por áudio", preco: "R$ 1,00" },
-  { id: "video", emoji: "🎥", titulo: "Videochamada (30 min)", preco: "R$ 1,00" },
+  { id: "texto", emoji: "💬", titulo: "Resposta por texto", preco: "R$ 30,00" },
+  { id: "audio", emoji: "🎙️", titulo: "Resposta por áudio", preco: "R$ 50,00" },
+  { id: "video", emoji: "🎥", titulo: "Videochamada (30 min)", preco: "R$ 120,00" },
 ];
 
 const PERGUNTAS_TRIAGEM = [
@@ -640,7 +640,7 @@ export function PaginaDiarioPaciente() {
               style={estilos.textarea}
             />
             {erroOrientacao && <div style={estilos.mensagemErro}>{erroOrientacao}</div>}
-            <button onClick={enviarPedidoDeOrientacao} style={estilos.botaoSalvar}>Ir para pagamento — R$ 1,00</button>
+            <button onClick={enviarPedidoDeOrientacao} style={estilos.botaoSalvar}>Ir para pagamento — R$ 30,00</button>
           </div>
         )}
 
@@ -668,7 +668,7 @@ export function PaginaDiarioPaciente() {
               )}
             </div>
             {erroOrientacao && <div style={estilos.mensagemErro}>{erroOrientacao}</div>}
-            <button onClick={enviarPedidoDeOrientacao} style={estilos.botaoSalvar}>Ir para pagamento — R$ 1,00</button>
+            <button onClick={enviarPedidoDeOrientacao} style={estilos.botaoSalvar}>Ir para pagamento — R$ 50,00</button>
           </div>
         )}
 
@@ -679,7 +679,7 @@ export function PaginaDiarioPaciente() {
               Depois do pagamento, seu psicólogo vai te chamar para agendar o horário da chamada.
             </p>
             {erroOrientacao && <div style={estilos.mensagemErro}>{erroOrientacao}</div>}
-            <button onClick={enviarPedidoDeOrientacao} style={estilos.botaoSalvar}>Ir para pagamento — R$ 1,00</button>
+            <button onClick={enviarPedidoDeOrientacao} style={estilos.botaoSalvar}>Ir para pagamento — R$ 120,00</button>
           </div>
         )}
 
