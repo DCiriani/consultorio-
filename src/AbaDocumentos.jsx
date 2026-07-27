@@ -15,7 +15,7 @@
 // ============================================================================
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, getDocs, doc, getDoc, setDoc, query, where, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, doc, getDoc, setDoc, deleteDoc, query, where, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase";
 import logoEspacoCiriani from "./assets/logo-espaco-ciriani.png";
 
@@ -698,6 +698,18 @@ export function AbaDocumentos({ paciente, showT }) {
     setCarregandoHistorico(false);
   };
 
+  const excluirDocumento = async (id) => {
+    const ok = window.confirm("Apagar este documento do histórico? Não dá pra desfazer.");
+    if (!ok) return;
+    try {
+      await deleteDoc(doc(db, "documentos", id));
+      setHistorico((prev) => prev.filter((h) => h.id !== id));
+      showT("Documento apagado.");
+    } catch (e) {
+      showT("Erro ao apagar o documento.", "erro");
+    }
+  };
+
   useEffect(() => {
     carregarAssinaturas();
     carregarHistorico();
@@ -744,6 +756,12 @@ export function AbaDocumentos({ paciente, showT }) {
                   {h.profissionalNome ? ` · ${h.profissionalNome}` : ""}
                 </div>
               </div>
+              <button
+                onClick={() => excluirDocumento(h.id)}
+                style={{ background: "none", border: "none", color: "#c0392b", cursor: "pointer", fontSize: 12, fontFamily: "sans-serif" }}
+              >
+                🗑 excluir
+              </button>
             </div>
           ))}
       </div>
