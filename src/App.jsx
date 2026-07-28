@@ -2402,7 +2402,7 @@ const ABAS_SECUNDARIAS=[
             {PROFISSIONAIS.map(pr=><option key={pr.id} value={pr.id}>{pr.nome}</option>)}
           </select>
 
-          <button onClick={()=>{setAbaFichaInicial("dados");setDetalhe(p);}}
+          <button onClick={()=>{setAbaFichaInicial("dados");setDetalhe(p);}} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a"}}>Ver ficha</button>
           <button onClick={()=>setPacienteParaPagamento(p)} style={{padding:"6px 12px",background:"#fff7e8",border:"1px solid #e8cfa3",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#8a5a1a"}}>💰 Solicitar pagamento</button>
           <button onClick={()=>setEditandoPac(p)} style={{padding:"6px 12px",background:"#eaf0fb",border:"1px solid #b8cdf0",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a3a6a"}}>Editar</button>
           <button onClick={()=>inativarPac(p)} style={{padding:"6px 12px",background:"#fbf0e3",border:"1px solid #e8cfa3",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#8a5a1a"}}>Inativar</button>
@@ -2434,7 +2434,7 @@ const ABAS_SECUNDARIAS=[
             <div style={{fontWeight:700,fontSize:15,color:"#5a5a5a"}}>{p.nome}</div>
             <div style={{fontSize:13,color:"#8a8a8a",fontFamily:"sans-serif",marginTop:2}}>CPF: {p.cpf}{p.tel1&&` · ${p.tel1}`}</div>
           </div>
-          <button onClick={()=>{setAbaFichaInicial("dados");setDetalhe(p);}}
+          <button onClick={()=>{setAbaFichaInicial("dados");setDetalhe(p);}} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a"}}>Ver ficha</button>
           <button onClick={()=>reativarPac(p)} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a",fontWeight:600}}>Reativar</button>
         </div>
       ))}
