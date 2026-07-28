@@ -1821,6 +1821,7 @@ const ABAS_SECUNDARIAS=[
                         <div style={{fontFamily:"sans-serif",fontSize:12,color:"#5a7a6a",marginTop:2}}>
                           {evDoHorario.tipo==="sessao" ? `Sessão ${evDoHorario.modalidade==="online"?"· Online":"· Presencial"}` : "Compromisso pessoal"} · {PROFISSIONAIS.find(p=>p.id===evDoHorario.profissional)?.nome}
                         </div>
+                        {evDoHorario.status&&<span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20,marginTop:4,display:"inline-block",background:STATUS_SESSAO.find(s=>s.id===evDoHorario.status)?.cor,color:"#fff"}}>{STATUS_SESSAO.find(s=>s.id===evDoHorario.status)?.label.split(" (")[0]}</span>}
                       </div>
                       <button onClick={()=>setEditandoEvento({...evDoHorario})} style={{background:"none",border:"none",color:"#1a3a6a",cursor:"pointer",fontSize:13,fontFamily:"sans-serif",marginRight:8}}>editar</button>
                       <button onClick={()=>setOpcoesExclusao(evDoHorario)} style={{background:"none",border:"none",color:"#c0392b",cursor:"pointer",fontSize:16,padding:"0 4px"}}>✕</button>
@@ -1895,7 +1896,7 @@ const ABAS_SECUNDARIAS=[
                     return (
                       <div key={ev.id} onClick={()=>setEditandoEvento({...ev})} title="Clique para editar" style={{
                         position:"absolute", top, left:3, right:3, height:altura,
-                        background: ev.tipo!=="sessao" ? "#8A8A85" : ev.profissional==="rhania" ? "#9B7EDE" : "#3D7A63",
+                        background: ev.status ? STATUS_SESSAO.find(s=>s.id===ev.status)?.cor : ev.tipo!=="sessao" ? "#8A8A85" : ev.profissional==="rhania" ? "#9B7EDE" : "#3D7A63",
                         borderRadius:6, padding:"3px 6px", overflow:"hidden", cursor:"pointer",
                         boxShadow:"0 1px 3px rgba(0,0,0,0.15)"
                       }}>
@@ -1945,7 +1946,7 @@ const ABAS_SECUNDARIAS=[
               }}>
                 <div style={{fontFamily:"sans-serif",fontSize:12,fontWeight:700,color: ehHoje ? "#1a4a2a" : "#1a3a2a",marginBottom:3}}>{d.getDate()}</div>
                 {eventosDoDia.slice(0,2).map(ev=>(
-                  <div key={ev.id} style={{fontFamily:"sans-serif",fontSize:10,color:"#fff",background: ev.tipo==="sessao" ? "#2a7a4a" : "#B9762F",borderRadius:4,padding:"1px 4px",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                  <div key={ev.id} style={{fontFamily:"sans-serif",fontSize:10,color:"#fff",background: ev.status ? STATUS_SESSAO.find(s=>s.id===ev.status)?.cor : ev.tipo==="sessao" ? "#2a7a4a" : "#B9762F",borderRadius:4,padding:"1px 4px",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                     {ev.horario} {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
                   </div>
                 ))}
