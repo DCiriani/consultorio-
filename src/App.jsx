@@ -394,8 +394,8 @@ function FormPaciente({onSalvo,onVoltar,titulo,salvando,profissional,dadosInicia
   );
 }
 // ── MODAL FICHA ───────────────────────────────────────────────────────────────
-function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,pacientes,setPacientes,onClose}){
-  const [abaModal,setAbaModal]=useState("dados");
+function ModalFicha({p,titulares,registros,evolucoes,setEvolucoes,showT,pacientes,setPacientes,onClose,abaInicial}){
+  const [abaModal,setAbaModal]=useState(abaInicial||"dados");
   const [filtroAno,setFiltroAno]=useState("todos");
   const [filtroMes,setFiltroMes]=useState("todos");
   const Row=({l,v})=>v?<div style={{display:"flex",gap:12,padding:"8px 0",borderBottom:"1px solid #eef4ec",fontFamily:"sans-serif"}}><span style={{fontSize:11,fontWeight:700,color:"#4a6a5a",textTransform:"uppercase",width:110,flexShrink:0}}>{l}</span><span style={{fontSize:14,color:"#1a3a2a"}}>{v}</span></div>:null;
@@ -1249,6 +1249,7 @@ const pagamentosPendentesDash = registrosComData
   const [sugestoes,setSugestoes]=useState([]);const [sidx,setSidx]=useState(-1);
   const [toast,setToast]=useState(null);
   const [detalhe,setDetalhe]=useState(null);
+  const [abaFichaInicial,setAbaFichaInicial]=useState("dados");
   const [pacienteParaPagamento,setPacienteParaPagamento]=useState(null);
   const [modalCad,setModalCad]=useState(false);
   const [salvandoPag,setSalvandoPag]=useState(false);
@@ -1557,7 +1558,7 @@ const ABAS_SECUNDARIAS=[
   return(
     <div style={ROOT}>
       <Toast t={toast}/>
-{detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} evolucoes={evolucoes} setEvolucoes={setEvolucoes} showT={showT} pacientes={pacientes} setPacientes={setPacientes} onClose={()=>setDetalhe(null)}/>}
+{detalhe&&<ModalFicha p={detalhe} titulares={titulares} registros={registros} evolucoes={evolucoes} setEvolucoes={setEvolucoes} showT={showT} pacientes={pacientes} setPacientes={setPacientes} onClose={()=>setDetalhe(null)} abaInicial={abaFichaInicial}/>}
 {pacienteParaPagamento&&<SolicitarPagamentoModal paciente={pacienteParaPagamento} onClose={()=>setPacienteParaPagamento(null)}/>}
       {modalCad&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"20px 16px",overflowY:"auto"}}>
         <div style={{width:"100%",maxWidth:540}}><FormPaciente onSalvo={salvarNovoPac} onVoltar={()=>setModalCad(false)} titulo="Novo paciente" salvando={salvandoPac}/></div>
@@ -2107,6 +2108,14 @@ const ABAS_SECUNDARIAS=[
 
     <button onClick={salvarEdicaoEvento} style={{width:"100%",padding:13,background:"#2a7a4a",color:"#fff",border:"none",borderRadius:9,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"sans-serif",marginBottom: editandoEvento.tipo==="sessao" ? 18 : 0}}>✓ Salvar alterações</button>
 
+{editandoEvento.tipo==="sessao"&&<button onClick={()=>{
+  const pac=pacientes.find(x=>x.nome===editandoEvento.pacienteNome);
+  if(!pac){showT("Paciente não encontrado no cadastro.","erro");return;}
+  setEditandoEvento(null);
+  setAbaFichaInicial("atendimentos");
+  setDetalhe(pac);
+}} style={{width:"100%",padding:11,background:"#1a4a8a",color:"#fff",border:"none",borderRadius:9,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"sans-serif",marginBottom:18}}>📋 Abrir prontuário</button>}
+
     {editandoEvento.tipo==="sessao"&&<div style={{borderTop:"1px solid #eef4ec",paddingTop:16}}>
       <label style={LBS}>Status da sessão</label>
       <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
@@ -2393,7 +2402,7 @@ const ABAS_SECUNDARIAS=[
             {PROFISSIONAIS.map(pr=><option key={pr.id} value={pr.id}>{pr.nome}</option>)}
           </select>
 
-          <button onClick={()=>setDetalhe(p)} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a"}}>Ver ficha</button>
+          <button onClick={()=>{setAbaFichaInicial("dados");setDetalhe(p);}}
           <button onClick={()=>setPacienteParaPagamento(p)} style={{padding:"6px 12px",background:"#fff7e8",border:"1px solid #e8cfa3",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#8a5a1a"}}>💰 Solicitar pagamento</button>
           <button onClick={()=>setEditandoPac(p)} style={{padding:"6px 12px",background:"#eaf0fb",border:"1px solid #b8cdf0",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a3a6a"}}>Editar</button>
           <button onClick={()=>inativarPac(p)} style={{padding:"6px 12px",background:"#fbf0e3",border:"1px solid #e8cfa3",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#8a5a1a"}}>Inativar</button>
@@ -2425,7 +2434,7 @@ const ABAS_SECUNDARIAS=[
             <div style={{fontWeight:700,fontSize:15,color:"#5a5a5a"}}>{p.nome}</div>
             <div style={{fontSize:13,color:"#8a8a8a",fontFamily:"sans-serif",marginTop:2}}>CPF: {p.cpf}{p.tel1&&` · ${p.tel1}`}</div>
           </div>
-          <button onClick={()=>setDetalhe(p)} style={{padding:"6px 12px",background:"#fff",border:"1px solid #d8d8d4",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#5a5a5a"}}>Ver ficha</button>
+          <button onClick={()=>{setAbaFichaInicial("dados");setDetalhe(p);}}
           <button onClick={()=>reativarPac(p)} style={{padding:"6px 12px",background:"#e8f4ec",border:"1px solid #b0d8bc",borderRadius:6,cursor:"pointer",fontSize:12,fontFamily:"sans-serif",color:"#1a4a2a",fontWeight:600}}>Reativar</button>
         </div>
       ))}
