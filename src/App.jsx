@@ -1816,8 +1816,9 @@ const ABAS_SECUNDARIAS=[
                   ? <div style={{flex:1,display:"flex",alignItems:"center",gap:14,padding:"8px 12px",margin:"4px 0",background: evDoHorario.tipo!=="sessao" ? "#f2f2f0" : evDoHorario.profissional==="rhania" ? "#F3EFFA" : "#f7faf8",borderRadius:8,border:`1px solid ${evDoHorario.tipo!=="sessao" ? "#d8d8d4" : evDoHorario.profissional==="rhania" ? "#D4C5F0" : "#e0ede5"}`}}>
                       <div style={{flex:1}}>
                         <div style={{fontFamily:"sans-serif",fontWeight:700,fontSize:14,color:"#1a3a2a"}}>
-                          {evDoHorario.tipo==="sessao" ? evDoHorario.pacienteNome : evDoHorario.descricao}
-                        </div>
+  {evDoHorario.tipo==="sessao" ? evDoHorario.pacienteNome : evDoHorario.descricao}
+  {evDoHorario.tipo==="sessao" && pacientes.find(x=>x.nome===evDoHorario.pacienteNome)?.avisarPacote && <span title="Avisar sobre novo pacote" style={{marginLeft:6}}>🔔</span>}
+</div>
                         <div style={{fontFamily:"sans-serif",fontSize:12,color:"#5a7a6a",marginTop:2}}>
                           {evDoHorario.tipo==="sessao" ? `Sessão ${evDoHorario.modalidade==="online"?"· Online":"· Presencial"}` : "Compromisso pessoal"} · {PROFISSIONAIS.find(p=>p.id===evDoHorario.profissional)?.nome}
                         </div>
@@ -1901,8 +1902,9 @@ const ABAS_SECUNDARIAS=[
                         boxShadow:"0 1px 3px rgba(0,0,0,0.15)"
                       }}>
                         <div style={{fontFamily:"sans-serif",fontSize:11,fontWeight:700,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                          {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
-                        </div>
+  {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
+  {ev.tipo==="sessao" && pacientes.find(x=>x.nome===ev.pacienteNome)?.avisarPacote && " 🔔"}
+</div>
                         <div style={{fontFamily:"sans-serif",fontSize:10,color:"rgba(255,255,255,0.85)"}}>
                           {ev.horario}{ev.horarioFim?` – ${ev.horarioFim}`:""}{ev.tipo==="sessao"&&ev.modalidade?` · ${ev.modalidade==="online"?"Online":"Presencial"}`:""}
                         </div>
@@ -1947,8 +1949,8 @@ const ABAS_SECUNDARIAS=[
                 <div style={{fontFamily:"sans-serif",fontSize:12,fontWeight:700,color: ehHoje ? "#1a4a2a" : "#1a3a2a",marginBottom:3}}>{d.getDate()}</div>
                 {eventosDoDia.slice(0,2).map(ev=>(
                   <div key={ev.id} style={{fontFamily:"sans-serif",fontSize:10,color:"#fff",background: ev.status ? STATUS_SESSAO.find(s=>s.id===ev.status)?.cor : ev.tipo==="sessao" ? "#2a7a4a" : "#B9762F",borderRadius:4,padding:"1px 4px",marginBottom:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-                    {ev.horario} {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}
-                  </div>
+                    {ev.horario} {ev.tipo==="sessao" ? ev.pacienteNome : ev.descricao}{ev.tipo==="sessao" && pacientes.find(x=>x.nome===ev.pacienteNome)?.avisarPacote && " 🔔"}
+</div>
                 ))}
                 {eventosDoDia.length>2 && <div style={{fontFamily:"sans-serif",fontSize:10,color:"#5a7a6a"}}>+{eventosDoDia.length-2} mais</div>}
               </div>
