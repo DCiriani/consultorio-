@@ -320,7 +320,7 @@ function ItemDiario({ registro: r, audioUrls, onMarcarConversado, onMarcarChamad
         </span>
         {r.visibilidade === "orientacao" && (
           <span style={estilos.tagOrientacao}>
-            💬 Orientação {r.formatoResposta ? `(${r.formatoResposta})` : ""}
+            💬 Orientação {r.formatoResposta ? `(${r.formatoResposta === "video" ? "vídeo/áudio" : r.formatoResposta})` : ""}
           </span>
         )}
       </div>

@@ -22,7 +22,7 @@ const LIMITE_AUDIO_MS = 3 * 60 * 1000; // 3 minutos
 const FORMATOS_ORIENTACAO = [
   { id: "texto", emoji: "💬", titulo: "Resposta por texto", preco: "R$ 30,00" },
   { id: "audio", emoji: "🎙️", titulo: "Resposta por áudio", preco: "R$ 50,00" },
-  { id: "video", emoji: "🎥", titulo: "Videochamada (30 min)", preco: "R$ 120,00" },
+  { id: "video", emoji: "📞", titulo: "Chamada de vídeo ou áudio (30 min)", preco: "R$ 120,00" },
 ];
 
 const PERGUNTAS_TRIAGEM = [
@@ -43,7 +43,7 @@ const PERGUNTAS_TRIAGEM = [
 const COMO_FUNCIONA = {
   texto: "Funciona assim: você escreve sua dúvida com todos os detalhes. Seu psicólogo tem até 24h para te responder por escrito. Depois da resposta, você pode enviar mais uma mensagem sobre o mesmo assunto, e ele responde mais uma vez para fechar. É uma orientação única, focada em um ponto específico, então capriche nos detalhes.",
   audio: "Funciona assim: você grava sua dúvida em áudio, com todos os detalhes. Seu psicólogo tem até 24h para te responder, também em áudio. Depois da resposta, você pode gravar mais um áudio sobre o mesmo assunto, e ele responde mais uma vez para fechar. É uma orientação única, focada em um ponto específico, então capriche nos detalhes.",
-  video: "Funciona assim: depois do pagamento, seu psicólogo vai entrar em contato em até 72h para agendar uma chamada de 30 minutos com você. É uma orientação única, focada em um ponto específico, então pensa com antecedência no que quer conversar, para aproveitar bem o tempo.",
+  video: "Funciona assim: depois do pagamento, seu psicólogo vai entrar em contato em até 72h para combinar se a chamada de 30 minutos será por vídeo ou só por áudio, conforme sua preferência. É uma orientação única, focada em um ponto específico, então pensa com antecedência no que quer conversar, para aproveitar bem o tempo.",
 };
 
 export function PaginaDiarioPaciente() {
@@ -395,7 +395,7 @@ export function PaginaDiarioPaciente() {
 
       if (formatoEscolhido === "video") {
         body.tipo = "texto";
-        body.conteudo = "(pedido de videochamada de orientação — agendar por WhatsApp após o pagamento)";
+        body.conteudo = "(pedido de chamada de vídeo ou áudio de orientação — agendar por WhatsApp após o pagamento)";
       } else if (formatoEscolhido === "texto") {
         body.tipo = "texto";
         body.conteudo = textoOrientacao.trim();
@@ -676,7 +676,7 @@ export function PaginaDiarioPaciente() {
           <div style={estilos.card}>
             <button onClick={() => setEtapaOrientacao("triagem")} style={estilos.botaoVoltar}>← Voltar</button>
             <p style={estilos.perguntaVisibilidade}>
-              Depois do pagamento, seu psicólogo vai te chamar para agendar o horário da chamada.
+              Depois do pagamento, seu psicólogo vai te chamar para combinar o horário e se prefere vídeo ou áudio.
             </p>
             {erroOrientacao && <div style={estilos.mensagemErro}>{erroOrientacao}</div>}
             <button onClick={enviarPedidoDeOrientacao} style={estilos.botaoSalvar}>Ir para pagamento — R$ 120,00</button>
