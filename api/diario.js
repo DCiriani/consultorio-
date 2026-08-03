@@ -22,6 +22,7 @@
 // ============================================================================
 
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -135,6 +136,125 @@ async function registrarNotificacao({ tipo, titulo, mensagem, pacienteId, pacien
     criadoEm: admin.firestore.FieldValue.serverTimestamp(),
     dados: dados || {},
   });
+}
+
+// ---------------------------------------------------------------------------
+//  PIN de acesso — camada extra de proteção além do link em si. Sem isso,
+//  qualquer pessoa com acesso físico ao aparelho (ou ao link salvo) via
+//  tudo sem nada mais. Com o PIN, o link sozinho não basta.
+// ---------------------------------------------------------------------------
+const MAX_TENTATIVAS_PIN = 5;
+const BLOQUEIO_PIN_MS = 5 * 60 * 1000; // 5 minutos
+
+function hashPin(pin, salt) {
+  return crypto.createHash("sha256").update(`${salt}:${pin}`).digest("hex");
+}
+
+function pinValido(pin) {
+  return typeof pin === "string" && /^\d{4}$/.test(pin);
+}
+
+// ---------------------------------------------------------------------------
+//  AÇÃO: temPin — o paciente já configurou um PIN antes, ou é a 1ª vez?
+// ---------------------------------------------------------------------------
+async function acaoTemPin(req, res) {
+  const { token } = req.query;
+  if (!token) return res.status(400).json({ erro: "Token ausente" });
+
+  const doc = await db.collection("diarioTokens").doc(String(token)).get();
+  if (!doc.exists) return res.status(404).json({ erro: "Link inválido" });
+
+  return res.status(200).json({ temPin: !!doc.data().pinHash });
+}
+
+// ---------------------------------------------------------------------------
+//  AÇÃO: definirPin — 1ª configuração (só funciona se ainda não tiver PIN)
+// ---------------------------------------------------------------------------
+async function acaoDefinirPin(req, res) {
+  const { token, pin } = req.body || {};
+  if (!token) return res.status(400).json({ erro: "Token ausente" });
+  if (!pinValido(pin)) return res.status(400).json({ erro: "O PIN precisa ter 4 números." });
+
+  const ref = db.collection("diarioTokens").doc(String(token));
+  const doc = await ref.get();
+  if (!doc.exists) return res.status(404).json({ erro: "Link inválido" });
+  if (doc.data().pinHash) {
+    return res.status(400).json({ erro: "Já existe um PIN configurado." });
+  }
+
+  const salt = crypto.randomBytes(8).toString("hex");
+  await ref.update({
+    pinHash: hashPin(pin, salt),
+    pinSalt: salt,
+    tentativasFalhasPin: 0,
+    bloqueadoPinAte: null,
+  });
+
+  return res.status(200).json({ ok: true });
+}
+
+// ---------------------------------------------------------------------------
+//  AÇÃO: trocarPin — paciente troca o PIN sabendo o atual
+// ---------------------------------------------------------------------------
+async function acaoTrocarPin(req, res) {
+  const { token, pinAtual, pinNovo } = req.body || {};
+  if (!token) return res.status(400).json({ erro: "Token ausente" });
+  if (!pinValido(pinNovo)) return res.status(400).json({ erro: "O novo PIN precisa ter 4 números." });
+
+  const ref = db.collection("diarioTokens").doc(String(token));
+  const doc = await ref.get();
+  if (!doc.exists) return res.status(404).json({ erro: "Link inválido" });
+
+  const dados = doc.data();
+  if (!dados.pinHash) return res.status(400).json({ erro: "Nenhum PIN configurado ainda." });
+  if (hashPin(pinAtual, dados.pinSalt) !== dados.pinHash) {
+    return res.status(400).json({ erro: "PIN atual incorreto." });
+  }
+
+  const salt = crypto.randomBytes(8).toString("hex");
+  await ref.update({
+    pinHash: hashPin(pinNovo, salt),
+    pinSalt: salt,
+    tentativasFalhasPin: 0,
+    bloqueadoPinAte: null,
+  });
+
+  return res.status(200).json({ ok: true });
+}
+
+// ---------------------------------------------------------------------------
+//  AÇÃO: verificarPin — confere o PIN pra desbloquear o Diário, com
+//  bloqueio temporário depois de várias tentativas erradas
+// ---------------------------------------------------------------------------
+async function acaoVerificarPin(req, res) {
+  const { token, pin } = req.body || {};
+  if (!token) return res.status(400).json({ erro: "Token ausente" });
+
+  const ref = db.collection("diarioTokens").doc(String(token));
+  const doc = await ref.get();
+  if (!doc.exists) return res.status(404).json({ erro: "Link inválido" });
+
+  const dados = doc.data();
+  if (!dados.pinHash) return res.status(400).json({ erro: "Nenhum PIN configurado ainda." });
+
+  if (dados.bloqueadoPinAte && dados.bloqueadoPinAte.toMillis && dados.bloqueadoPinAte.toMillis() > Date.now()) {
+    const minutosRestantes = Math.ceil((dados.bloqueadoPinAte.toMillis() - Date.now()) / 60000);
+    return res.status(429).json({ erro: `Muitas tentativas erradas. Tenta de novo em ${minutosRestantes} min.` });
+  }
+
+  if (!pinValido(pin) || hashPin(pin, dados.pinSalt) !== dados.pinHash) {
+    const tentativas = (dados.tentativasFalhasPin || 0) + 1;
+    const atualizacao = { tentativasFalhasPin: tentativas };
+    if (tentativas >= MAX_TENTATIVAS_PIN) {
+      atualizacao.bloqueadoPinAte = admin.firestore.Timestamp.fromMillis(Date.now() + BLOQUEIO_PIN_MS);
+      atualizacao.tentativasFalhasPin = 0;
+    }
+    await ref.update(atualizacao);
+    return res.status(400).json({ erro: "PIN incorreto." });
+  }
+
+  await ref.update({ tentativasFalhasPin: 0, bloqueadoPinAte: null });
+  return res.status(200).json({ ok: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -672,6 +792,10 @@ const handler = async (req, res) => {
     if (req.method === "GET" && acao === "listar") return await acaoListar(req, res);
     if (req.method === "GET" && acao === "manifest") return await acaoManifest(req, res);
     if (req.method === "GET" && acao === "statusPagamento") return await acaoStatusPagamento(req, res);
+    if (req.method === "GET" && acao === "temPin") return await acaoTemPin(req, res);
+    if (req.method === "POST" && acao === "definirPin") return await acaoDefinirPin(req, res);
+    if (req.method === "POST" && acao === "trocarPin") return await acaoTrocarPin(req, res);
+    if (req.method === "POST" && acao === "verificarPin") return await acaoVerificarPin(req, res);
     if (req.method === "POST" && acao === "salvar") return await acaoSalvar(req, res);
     if (req.method === "POST" && acao === "iniciarPagamento") return await acaoIniciarPagamento(req, res);
     if (req.method === "POST" && acao === "webhookPagamento") return await acaoWebhookPagamento(req, res);

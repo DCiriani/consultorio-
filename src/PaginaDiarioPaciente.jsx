@@ -56,6 +56,20 @@ export function PaginaDiarioPaciente() {
   const [erroToken, setErroToken] = useState(null);
   const [paciente, setPaciente] = useState(null);
 
+  // ---- PIN de acesso (camada extra além do link) --------------------------
+  // "verificando" | "criar" | "verificar" | "desbloqueado"
+  const [etapaAcesso, setEtapaAcesso] = useState("verificando");
+  const [pinNovo1, setPinNovo1] = useState("");
+  const [pinNovo2, setPinNovo2] = useState("");
+  const [pinDigitado, setPinDigitado] = useState("");
+  const [erroPin, setErroPin] = useState(null);
+  const [processandoPin, setProcessandoPin] = useState(false);
+  const [mostrarEsqueci, setMostrarEsqueci] = useState(false);
+  const [trocandoPin, setTrocandoPin] = useState(false);
+  const [pinAtualTroca, setPinAtualTroca] = useState("");
+  const [pinNovoTroca1, setPinNovoTroca1] = useState("");
+  const [pinNovoTroca2, setPinNovoTroca2] = useState("");
+
   const [aba, setAba] = useState("escrever"); // "escrever" | "orientacao" | "historico"
 
   // ---- aba Escrever (privado / visível — sem pagamento) --------------------
@@ -123,6 +137,89 @@ export function PaginaDiarioPaciente() {
     setPromptInstalacao(null);
   };
 
+  // ---- funções de PIN -------------------------------------------------------
+  const criarPin = async () => {
+    setErroPin(null);
+    if (!/^\d{4}$/.test(pinNovo1)) {
+      setErroPin("O PIN precisa ter exatamente 4 números.");
+      return;
+    }
+    if (pinNovo1 !== pinNovo2) {
+      setErroPin("Os dois PINs não são iguais.");
+      return;
+    }
+    setProcessandoPin(true);
+    try {
+      const r = await fetch("/api/diario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "definirPin", token, pin: pinNovo1 }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.erro || "Não consegui criar o PIN.");
+      setEtapaAcesso("desbloqueado");
+    } catch (e) {
+      setErroPin(e.message);
+    } finally {
+      setProcessandoPin(false);
+    }
+  };
+
+  const verificarPinDigitado = async () => {
+    setErroPin(null);
+    if (!/^\d{4}$/.test(pinDigitado)) {
+      setErroPin("Digita os 4 números do seu PIN.");
+      return;
+    }
+    setProcessandoPin(true);
+    try {
+      const r = await fetch("/api/diario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "verificarPin", token, pin: pinDigitado }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.erro || "PIN incorreto.");
+      setEtapaAcesso("desbloqueado");
+      setPinDigitado("");
+    } catch (e) {
+      setErroPin(e.message);
+      setPinDigitado("");
+    } finally {
+      setProcessandoPin(false);
+    }
+  };
+
+  const trocarPinAtual = async () => {
+    setErroPin(null);
+    if (!/^\d{4}$/.test(pinNovoTroca1)) {
+      setErroPin("O novo PIN precisa ter exatamente 4 números.");
+      return;
+    }
+    if (pinNovoTroca1 !== pinNovoTroca2) {
+      setErroPin("Os dois PINs novos não são iguais.");
+      return;
+    }
+    setProcessandoPin(true);
+    try {
+      const r = await fetch("/api/diario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "trocarPin", token, pinAtual: pinAtualTroca, pinNovo: pinNovoTroca1 }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.erro || "Não consegui trocar o PIN.");
+      setTrocandoPin(false);
+      setPinAtualTroca("");
+      setPinNovoTroca1("");
+      setPinNovoTroca2("");
+    } catch (e) {
+      setErroPin(e.message);
+    } finally {
+      setProcessandoPin(false);
+    }
+  };
+
   // ---- valida o token ao carregar ------------------------------------------
   useEffect(() => {
     if (!token) {
@@ -145,6 +242,11 @@ export function PaginaDiarioPaciente() {
           document.head.appendChild(linkManifest);
         }
         linkManifest.href = `/api/diario?acao=manifest&token=${encodeURIComponent(token)}`;
+
+        return fetch(`/api/diario?acao=temPin&token=${encodeURIComponent(token)}`)
+          .then((r) => r.json())
+          .then((d) => setEtapaAcesso(d.temPin ? "verificar" : "criar"))
+          .catch(() => setEtapaAcesso("verificar")); // se der erro, pede PIN por segurança
       })
       .catch(() => setErroToken("Este link não é válido ou expirou. Fale com seu psicólogo."))
       .finally(() => setCarregando(false));
@@ -431,6 +533,85 @@ export function PaginaDiarioPaciente() {
   // ---- render ------------------------------------------------------------
   if (carregando) return <TelaCentral>Carregando...</TelaCentral>;
   if (erroToken) return <TelaCentral erro>{erroToken}</TelaCentral>;
+
+  if (etapaAcesso === "criar") {
+    return (
+      <TelaCentral>
+        <div style={{ textAlign: "left" }}>
+          <div style={{ textAlign: "center", marginBottom: 6 }}>
+            <span style={{ fontSize: 40 }}>🔒</span>
+          </div>
+          <h2 style={estilos.tituloPin}>Cria um PIN pra proteger seu Diário</h2>
+          <p style={estilos.textoPin}>
+            Só você vai saber esse número. Toda vez que abrir o Diário, mesmo pelo ícone salvo,
+            vai pedir esse PIN — assim, se alguém pegar seu celular, não consegue ver suas
+            anotações.
+          </p>
+          <label style={estilos.rotuloPin}>Escolhe um PIN de 4 números</label>
+          <input
+            style={estilos.inputPin}
+            value={pinNovo1}
+            onChange={(e) => setPinNovo1(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="••••"
+            autoFocus
+          />
+          <label style={estilos.rotuloPin}>Digita de novo, pra confirmar</label>
+          <input
+            style={estilos.inputPin}
+            value={pinNovo2}
+            onChange={(e) => setPinNovo2(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="••••"
+          />
+          {erroPin && <p style={estilos.erroPinTexto}>{erroPin}</p>}
+          <button onClick={criarPin} disabled={processandoPin} style={estilos.botaoSalvar}>
+            {processandoPin ? "Criando..." : "Criar PIN e continuar"}
+          </button>
+        </div>
+      </TelaCentral>
+    );
+  }
+
+  if (etapaAcesso === "verificar") {
+    return (
+      <TelaCentral>
+        <div style={{ textAlign: "left" }}>
+          <div style={{ textAlign: "center", marginBottom: 6 }}>
+            <span style={{ fontSize: 40 }}>🔒</span>
+          </div>
+          <h2 style={estilos.tituloPin}>Digite seu PIN</h2>
+          <p style={estilos.textoPin}>Pra entrar no seu Diário, digita o PIN de 4 números.</p>
+          <input
+            style={{ ...estilos.inputPin, textAlign: "center", fontSize: 26, letterSpacing: 8 }}
+            value={pinDigitado}
+            onChange={(e) => setPinDigitado(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            onKeyDown={(e) => e.key === "Enter" && verificarPinDigitado()}
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="••••"
+            autoFocus
+          />
+          {erroPin && <p style={estilos.erroPinTexto}>{erroPin}</p>}
+          <button onClick={verificarPinDigitado} disabled={processandoPin} style={estilos.botaoSalvar}>
+            {processandoPin ? "Verificando..." : "Entrar"}
+          </button>
+          {!mostrarEsqueci ? (
+            <button onClick={() => setMostrarEsqueci(true)} style={estilos.botaoEsqueciPin}>
+              Esqueci meu PIN
+            </button>
+          ) : (
+            <p style={estilos.textoEsqueci}>
+              Sem problema — fala com seu psicólogo pra ele liberar a criação de um PIN novo.
+            </p>
+          )}
+        </div>
+      </TelaCentral>
+    );
+  }
+
   if (verificandoPagamento) return <TelaCentral>Confirmando seu pagamento, só um instante...</TelaCentral>;
 
   const segundosRestantes = Math.max(0, Math.ceil((LIMITE_AUDIO_MS - tempoGravado) / 1000));
@@ -445,6 +626,61 @@ export function PaginaDiarioPaciente() {
 
       <div style={estilos.container}>
         <h1 style={estilos.titulo}>Diário — {paciente.pacienteNome}</h1>
+
+        {!trocandoPin ? (
+          <button onClick={() => setTrocandoPin(true)} style={estilos.botaoTrocarPin}>
+            🔒 Trocar meu PIN
+          </button>
+        ) : (
+          <div style={estilos.card}>
+            <p style={estilos.perguntaVisibilidade}>Trocar PIN</p>
+            <label style={estilos.rotuloPin}>PIN atual</label>
+            <input
+              style={estilos.inputPin}
+              value={pinAtualTroca}
+              onChange={(e) => setPinAtualTroca(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="••••"
+            />
+            <label style={estilos.rotuloPin}>Novo PIN</label>
+            <input
+              style={estilos.inputPin}
+              value={pinNovoTroca1}
+              onChange={(e) => setPinNovoTroca1(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="••••"
+            />
+            <label style={estilos.rotuloPin}>Confirma o novo PIN</label>
+            <input
+              style={estilos.inputPin}
+              value={pinNovoTroca2}
+              onChange={(e) => setPinNovoTroca2(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="••••"
+            />
+            {erroPin && <p style={estilos.erroPinTexto}>{erroPin}</p>}
+            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+              <button onClick={trocarPinAtual} disabled={processandoPin} style={estilos.botaoSalvar}>
+                {processandoPin ? "Salvando..." : "Salvar novo PIN"}
+              </button>
+              <button
+                onClick={() => {
+                  setTrocandoPin(false);
+                  setErroPin(null);
+                  setPinAtualTroca("");
+                  setPinNovoTroca1("");
+                  setPinNovoTroca2("");
+                }}
+                style={estilos.botaoCancelarReplica}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
 
         {statusPagamentoRetorno === "pago" && (
           <div style={estilos.avisoSucesso}>
@@ -995,6 +1231,15 @@ function ItemHistorico({ item, token, onRecarregar }) {
 // ---- estilos ------------------------------------------------------------
 
 const estilos = {
+  tituloPin: { fontSize: 19, color: "#2E3B2C", margin: "0 0 10px", textAlign: "center" },
+  textoPin: { fontSize: 13.5, color: "#555", lineHeight: 1.5, marginBottom: 18 },
+  rotuloPin: { display: "block", fontSize: 12, fontWeight: 600, color: "#444", marginBottom: 6, marginTop: 12 },
+  inputPin: { width: "100%", borderRadius: 10, border: "1.5px solid #DDD", padding: "12px 14px", fontSize: 18, boxSizing: "border-box", textAlign: "center", letterSpacing: 6 },
+  erroPinTexto: { color: "#B3261E", fontSize: 13, marginTop: 10 },
+  botaoEsqueciPin: { display: "block", margin: "14px auto 0", background: "none", border: "none", color: "#6F8F5E", textDecoration: "underline", cursor: "pointer", fontSize: 13 },
+  textoEsqueci: { fontSize: 13, color: "#666", textAlign: "center", marginTop: 14, lineHeight: 1.5 },
+  botaoTrocarPin: { background: "none", border: "none", color: "#6F8F5E", textDecoration: "underline", cursor: "pointer", fontSize: 12, padding: 0 },
+
   pagina: { minHeight: "100vh", background: "#F7F8F6", padding: "0 0 40px" },
   avisoEmergencia: { background: "#FDECEA", color: "#B3261E", textAlign: "center", padding: "10px 16px", fontSize: 13, fontWeight: 500 },
   avisoSucesso: { display: "flex", alignItems: "center", gap: 12, background: "#DFF3D8", border: "2px solid #4A8F3C", borderRadius: 12, padding: "16px 18px", marginBottom: 16 },

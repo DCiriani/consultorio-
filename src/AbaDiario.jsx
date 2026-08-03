@@ -43,7 +43,10 @@ function gerarTokenAleatorio() {
 
 export function AbaDiario({ pacienteId, pacienteNome }) {
   const [linkExistente, setLinkExistente] = useState(null);
+  const [tokenAtual, setTokenAtual] = useState(null);
   const [gerandoLink, setGerandoLink] = useState(false);
+  const [resetandoPin, setResetandoPin] = useState(false);
+  const [pinResetado, setPinResetado] = useState(false);
 
   const [registros, setRegistros] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -56,6 +59,7 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
       const q = query(collection(db, "diarioTokens"), where("pacienteId", "==", pacienteId));
       const snap = await getDocs(q);
       if (!snap.empty) {
+        setTokenAtual(snap.docs[0].id);
         setLinkExistente(`${window.location.origin}/diario?token=${snap.docs[0].id}`);
       }
     }
@@ -71,6 +75,7 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
         pacienteNome,
         criadoEm: serverTimestamp(),
       });
+      setTokenAtual(token);
       setLinkExistente(`${window.location.origin}/diario?token=${token}`);
     } catch (e) {
       alert("Não consegui gerar o link agora. Tenta de novo.");
@@ -163,6 +168,29 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
     setTimeout(() => setCopiado(false), 2000);
   };
 
+  const resetarPin = async () => {
+    if (!tokenAtual) return;
+    const ok = window.confirm(
+      `Resetar o PIN de ${pacienteNome}? Na próxima vez que ela(e) abrir o Diário, vai ter que criar um PIN novo.`
+    );
+    if (!ok) return;
+    setResetandoPin(true);
+    try {
+      await updateDoc(doc(db, "diarioTokens", tokenAtual), {
+        pinHash: null,
+        pinSalt: null,
+        tentativasFalhasPin: 0,
+        bloqueadoPinAte: null,
+      });
+      setPinResetado(true);
+      setTimeout(() => setPinResetado(false), 3000);
+    } catch (e) {
+      alert("Não consegui resetar o PIN agora. Tenta de novo.");
+    } finally {
+      setResetandoPin(false);
+    }
+  };
+
   return (
     <div style={estilos.container}>
       <div style={estilos.blocoLink}>
@@ -171,9 +199,14 @@ export function AbaDiario({ pacienteId, pacienteNome }) {
             {gerandoLink ? "Gerando..." : "Gerar link do diário"}
           </button>
         ) : (
-          <button onClick={copiarLink} style={copiado ? estilos.botaoCopiadoOk : estilos.botaoCopiarLink}>
-            {copiado ? "✓ Link copiado!" : "📋 Copiar link do diário"}
-          </button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <button onClick={copiarLink} style={copiado ? estilos.botaoCopiadoOk : estilos.botaoCopiarLink}>
+              {copiado ? "✓ Link copiado!" : "📋 Copiar link do diário"}
+            </button>
+            <button onClick={resetarPin} disabled={resetandoPin} style={estilos.botaoResetarPin}>
+              {resetandoPin ? "Resetando..." : pinResetado ? "✓ PIN resetado" : "🔓 Esqueceu o PIN? Resetar"}
+            </button>
+          </div>
         )}
       </div>
 
@@ -451,6 +484,7 @@ const estilos = {
   botaoGerar: { padding: "10px 16px", borderRadius: 8, border: "none", background: "#6F8F5E", color: "#FFF", cursor: "pointer" },
   botaoCopiarLink: { padding: "10px 16px", borderRadius: 8, border: "1px solid #6F8F5E", background: "#F1F6EE", color: "#3E5433", cursor: "pointer", fontWeight: 600, fontSize: 14 },
   botaoCopiadoOk: { padding: "10px 16px", borderRadius: 8, border: "1px solid #6F8F5E", background: "#6F8F5E", color: "#FFF", cursor: "pointer", fontWeight: 600, fontSize: 14 },
+  botaoResetarPin: { padding: "10px 16px", borderRadius: 8, border: "1px solid #DDD", background: "#FFF", color: "#666", cursor: "pointer", fontSize: 13 },
   item: { border: "1px solid #EEE", borderRadius: 10, padding: 12, marginBottom: 10 },
   itemCabecalho: { display: "flex", justifyContent: "space-between", alignItems: "center" },
   tagOrientacao: { fontSize: 12, fontWeight: 600, color: "#B3261E" },
